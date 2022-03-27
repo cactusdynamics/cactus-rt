@@ -1,0 +1,11 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+IndentWidth: 2
+ColumnLimit: 0
+PointerAlignment: Left
+AlignConsecutiveDeclarations: true
+ContinuationIndentWidth: 2
+# Doesn't work yet, but see https://reviews.llvm.org/D109557
+# AlignAfterOpenBracket: BlockIndent
+
