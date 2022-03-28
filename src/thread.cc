@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 #include <sys/resource.h>  // needed for getrusage
 #include <sys/time.h>      // needed for getrusage
+#include <unistd.h>
 
 #include <stdexcept>
 
@@ -14,7 +15,6 @@ void* Thread::RunThread(void* data) {
   Thread* thread = static_cast<Thread*>(data);
 
   if (thread->policy_ == SCHED_FIFO || thread->policy_ == SCHED_DEADLINE) {
-    spdlog::debug("starting RT thread at pid {}", getpid());
   }
 
   // Get the starting page fault count

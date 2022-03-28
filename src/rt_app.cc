@@ -1,12 +1,14 @@
 #include "rt_app.h"
 
 #include <malloc.h>
+#include <spdlog/spdlog.h>
 #include <sys/mman.h>
 
 #include <stdexcept>
 
 namespace rt_demo {
 void RTApp::Start() {
+  spdlog::info("Starting RTApp");
   LockMemory();
   for (const auto& thread : threads_) {
     thread->Start();
