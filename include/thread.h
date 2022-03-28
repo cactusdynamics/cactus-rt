@@ -6,6 +6,7 @@
 #include <sched.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <boost/core/noncopyable.hpp>
 #include <utility>
@@ -36,7 +37,8 @@ class Thread : private boost::noncopyable {
  protected:
   virtual void Run() noexcept = 0;
 
-  std::pair<long, long> GetPageFaultCount();
+  int64_t               NowNanoseconds() const noexcept;
+  std::pair<long, long> GetPageFaultCount() const noexcept;
 };
 }  // namespace rt_demo
 

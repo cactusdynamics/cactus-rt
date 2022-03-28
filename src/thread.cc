@@ -6,6 +6,8 @@
 
 #include <stdexcept>
 
+#include "rt_demo_sdt.h"
+
 namespace rt_demo {
 
 void* Thread::RunThread(void* data) {
@@ -16,7 +18,11 @@ void* Thread::RunThread(void* data) {
   thread->soft_page_fault_count_at_start_ = page_faults.first;
   thread->hard_page_fault_count_at_start_ = page_faults.second;
 
+  RT_DEMO_THREAD_START(thread->priority_, page_faults.first, page_faults.second);
+
   thread->Run();
+
+  RT_DEMO_THREAD_DONE(thread->priority_, page_faults.first, page_faults.second);
 
   page_faults = thread->GetPageFaultCount();
   auto soft_page_fault_diff = page_faults.first - thread->soft_page_fault_count_at_start_;
@@ -79,7 +85,15 @@ int Thread::Join() {
   return pthread_join(thread_, NULL);
 }
 
-std::pair<long, long> Thread::GetPageFaultCount() {
+int64_t Thread::NowNanoseconds() const noexcept {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  int64_t ns = ts.tv_nsec;
+  ns += ts.tv_sec * 1'000'000'000;
+  return ns;
+}
+
+std::pair<long, long> Thread::GetPageFaultCount() const noexcept {
   std::pair<long, long> page_faults;
 
   struct rusage usage;

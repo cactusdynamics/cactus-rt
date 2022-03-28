@@ -1,11 +1,11 @@
 #include "high_freq_controller.h"
 
+#include <cmath>
 #include <iostream>
 
 namespace rt_demo {
-void HighFrequencyController::Run() noexcept {
-  while (state_ < 1000) {
-    state_ += 10;
-  }
+bool HighFrequencyController::Loop() noexcept {
+  output_ += 1;
+  return false;
 }
 }  // namespace rt_demo

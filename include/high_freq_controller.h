@@ -1,17 +1,24 @@
 #ifndef RT_DEMO_HIGH_FREQ_CONTROLLER_H_
 #define RT_DEMO_HIGH_FREQ_CONTROLLER_H_
 
-#include "thread.h"
+#include <atomic>
+#include <utility>
+
+#include "cyclic_rt_thread.h"
 
 namespace rt_demo {
-class HighFrequencyController : public Thread {
-  int state_ = 0;
+class HighFrequencyController : public CyclicRTThread {
+  int output_ = 0;
+
+  // Doesn't work
+  // using AtomicControlData = std::atomic<std::pair<int, float>>;
+  // static_assert(AtomicControlData::is_always_lock_free, "AtomicControlData is not lock free and thus should not be used for RT");
 
  public:
-  HighFrequencyController() : Thread(80, SCHED_FIFO, 0, 16 * 1024 * 1024) {}
+  HighFrequencyController() : CyclicRTThread(1'000'000) {}
 
  protected:
-  virtual void Run() noexcept override;
+  virtual bool Loop() noexcept override final;
 };
 }  // namespace rt_demo
 
