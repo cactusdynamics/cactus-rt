@@ -2,11 +2,16 @@
 #define RT_DEMO_CYCLIC_RT_THREAD_H_
 
 #include "thread.h"
+#include "utils//online_mean_tracker.h"
 
 namespace rt_demo {
 class CyclicRTThread : public Thread {
   int64_t         period_ns_;
   struct timespec next_wakeup_time_;
+
+  // Debug information
+  utils::OnlineMeanTracker wakeup_latency_tracker_;
+  utils::OnlineMeanTracker iteration_latency_tracker_;
 
  public:
   CyclicRTThread(int64_t  period_ns,

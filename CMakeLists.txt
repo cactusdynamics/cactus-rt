@@ -42,6 +42,7 @@ add_executable(rt_demo
   src/low_freq_controller.cc
   src/high_freq_controller.cc
   src/data_monitor.cc
+  src/utils/online_mean_tracker.cc
 )
 
 target_compile_features(rt_demo
