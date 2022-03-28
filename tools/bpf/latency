@@ -1,0 +1,17 @@
+#!/usr/bin/env bpftrace
+
+usdt:./build/rt_demo:rt_demo:thread_start {
+  printf("Thread started with %d minor and %d major page faults\n", arg1, arg2);
+}
+
+usdt:./build/rt_demo:rt_demo:thread_done {
+  printf("Thread done with %d minor and %d major page faults\n", arg1, arg2);
+}
+
+usdt:./build/rt_demo:rt_demo:rt_iteration_start {
+  @wakeup_latency = lhist(arg0 / 1000, 0, 1000, 20);
+}
+
+usdt:./build/rt_demo:rt_demo:rt_iteration_done {
+  @iteration_latency = lhist(arg0 / 1000, 0, 1000, 20);
+}

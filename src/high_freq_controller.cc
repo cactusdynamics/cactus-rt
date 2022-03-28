@@ -6,6 +6,6 @@
 namespace rt_demo {
 bool HighFrequencyController::Loop() noexcept {
   output_ += 1;
-  return false;
+  return output_ >= 3'000;
 }
 }  // namespace rt_demo

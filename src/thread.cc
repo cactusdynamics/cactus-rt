@@ -13,20 +13,25 @@ namespace rt_demo {
 void* Thread::RunThread(void* data) {
   Thread* thread = static_cast<Thread*>(data);
 
+  if (thread->policy_ == SCHED_FIFO || thread->policy_ == SCHED_DEADLINE) {
+    spdlog::debug("starting RT thread at pid {}", getpid());
+  }
+
   // Get the starting page fault count
   auto page_faults = thread->GetPageFaultCount();
   thread->soft_page_fault_count_at_start_ = page_faults.first;
   thread->hard_page_fault_count_at_start_ = page_faults.second;
 
-  RT_DEMO_THREAD_START(thread->priority_, page_faults.first, page_faults.second);
+  RT_DEMO_THREAD_START(thread->policy_, page_faults.first, page_faults.second);
 
   thread->Run();
-
-  RT_DEMO_THREAD_DONE(thread->priority_, page_faults.first, page_faults.second);
 
   page_faults = thread->GetPageFaultCount();
   auto soft_page_fault_diff = page_faults.first - thread->soft_page_fault_count_at_start_;
   auto hard_page_fault_diff = page_faults.second - thread->hard_page_fault_count_at_start_;
+
+  RT_DEMO_THREAD_DONE(thread->policy_, page_faults.first, page_faults.second);
+
   spdlog::debug("Thread exitted with {} minor faults and {} major faults", soft_page_fault_diff, hard_page_fault_diff);
 
   return NULL;
