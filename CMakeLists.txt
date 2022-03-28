@@ -25,6 +25,7 @@ add_compile_options(
   -Wnull-dereference
   -Wuseless-cast
   -Wdouble-promotion
+  -O3
 )
 
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
@@ -75,6 +76,9 @@ add_custom_target(rt_demo_usdt_header
   COMMENT "Generate USDT probes header file"
 )
 
+# TODO: This is not great, as any file dependent on the usdt header will have
+# to be compiled every single time when we compile, even if nothing changed,
+# which is not great.
 add_dependencies(rt_demo_usdt_header rt_demo_usdt_header_clean)
 
 add_custom_target(rt_demo_usdt_obj_clean

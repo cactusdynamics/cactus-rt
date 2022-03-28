@@ -25,5 +25,5 @@ usdt:./build/rt_demo:rt_demo:rt_iteration_start {
 }
 
 usdt:./build/rt_demo:rt_demo:rt_iteration_done {
-  @iteration_latency[pid] = lhist(arg0 / 1000, 0, 1000, 20);
+  @iteration_latency[pid] = lhist(arg0 / 1000, 0, 200, 4);
 }
