@@ -27,8 +27,12 @@ class Thread : private boost::noncopyable {
   // A wrapper function so the Run() Function can be called from pthread.
   static void* RunThread(void* data);
 
+ protected:
+  struct timespec start_time_;
+
  public:
-  Thread(int priority, int policy = SCHED_OTHER, uint32_t cpu_affinity = 0, size_t stack_size = 0);
+  // According to sched_setscheduler(2), priority must be 0 if policy is SCHED_OTHER
+  Thread(int priority, int policy = SCHED_OTHER, uint32_t cpu_affinity = 0, size_t stack_size = 8 * 1024 * 1024);
   virtual ~Thread() {}
 
   void Start();

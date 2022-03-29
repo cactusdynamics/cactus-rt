@@ -15,7 +15,11 @@ void* Thread::RunThread(void* data) {
   Thread* thread = static_cast<Thread*>(data);
 
   if (thread->policy_ == SCHED_FIFO || thread->policy_ == SCHED_DEADLINE) {
+    // This is a real time thread
+    // TODO: additional logging?
   }
+
+  clock_gettime(CLOCK_MONOTONIC, &thread->start_time_);
 
   // Get the starting page fault count
   auto page_faults = thread->GetPageFaultCount();
@@ -94,7 +98,7 @@ int64_t Thread::NowNanoseconds() const noexcept {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   int64_t ns = ts.tv_nsec;
-  ns += ts.tv_sec * 1'000'000'000;
+  ns += ts.tv_sec * 1'000'000'000L;
   return ns;
 }
 

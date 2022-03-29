@@ -3,15 +3,9 @@
 #include <spdlog/spdlog.h>
 
 #include "rt_demo_sdt.h"
+#include "utils/utils.h"
 
 namespace rt_demo {
-
-static int64_t TimespecDiffNanoseconds(const struct timespec& ts1, const struct timespec& ts2) {
-  int64_t ts1ns = ts1.tv_sec * 1'000'000'000 + ts1.tv_nsec;
-  int64_t ts2ns = ts2.tv_sec * 1'000'000'000 + ts2.tv_nsec;
-
-  return ts1ns - ts2ns;
-}
 
 // Start -> End -> Next Wakeup Time -> Start -> End
 void CyclicRTThread::Run() noexcept {
@@ -22,7 +16,7 @@ void CyclicRTThread::Run() noexcept {
   while (true) {
     // TODO: check for errors for all the clock_gettime?
     clock_gettime(CLOCK_MONOTONIC, &start);
-    int64_t wakeup_latency = TimespecDiffNanoseconds(start, next_wakeup_time_);
+    int64_t wakeup_latency = utils::TimespecDiffNanoseconds(start, next_wakeup_time_);
     wakeup_latency_tracker_.AddValue(wakeup_latency);
     RT_DEMO_RT_ITERATION_START(wakeup_latency);
 
@@ -31,7 +25,7 @@ void CyclicRTThread::Run() noexcept {
     }
 
     clock_gettime(CLOCK_MONOTONIC, &end);
-    int64_t iteration_latency = TimespecDiffNanoseconds(end, start);
+    int64_t iteration_latency = utils::TimespecDiffNanoseconds(end, start);
     iteration_latency_tracker_.AddValue(iteration_latency);
     RT_DEMO_RT_ITERATION_DONE(iteration_latency);
 
