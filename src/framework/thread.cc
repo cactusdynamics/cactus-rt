@@ -1,4 +1,4 @@
-#include "thread.h"
+#include "framework/thread.h"
 
 #include <spdlog/spdlog.h>
 #include <sys/resource.h>  // needed for getrusage
@@ -9,7 +9,7 @@
 
 #include "rt_demo_sdt.h"
 
-namespace rt_demo {
+namespace rt_demo::framework {
 
 void* Thread::RunThread(void* data) {
   Thread* thread = static_cast<Thread*>(data);
@@ -18,8 +18,6 @@ void* Thread::RunThread(void* data) {
     // This is a real time thread
     // TODO: additional logging?
   }
-
-  clock_gettime(CLOCK_MONOTONIC, &thread->start_time_);
 
   // Get the starting page fault count
   auto page_faults = thread->GetPageFaultCount();
@@ -41,14 +39,19 @@ void* Thread::RunThread(void* data) {
   return NULL;
 }
 
-Thread::Thread(int priority, int policy, uint32_t cpu_affinity,
+Thread::Thread(const std::string& name, int priority,
+               int policy, uint32_t cpu_affinity,
                size_t stack_size) : priority_(priority),
                                     policy_(policy),
                                     cpu_affinity_(cpu_affinity),
-                                    stack_size_(stack_size) {
+                                    stack_size_(stack_size),
+                                    name_(name) {
 }
 
-void Thread::Start() {
+void Thread::Start(const struct timespec& ref_time) {
+  // TODO: prevent multiple calls to Start
+  ref_time_ = ref_time;
+
   int            ret;
   pthread_attr_t attr;
 
@@ -94,12 +97,12 @@ int Thread::Join() {
   return pthread_join(thread_, NULL);
 }
 
-int64_t Thread::NowNanoseconds() const noexcept {
+struct timespec Thread::Now() const noexcept {
+  // Confused about move or copy?
+  // https://gist.github.com/shuhaowu/916d1a1f3096f4b5f38edc635f612992
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  int64_t ns = ts.tv_nsec;
-  ns += ts.tv_sec * 1'000'000'000L;
-  return ns;
+  return ts;
 }
 
 std::pair<long, long> Thread::GetPageFaultCount() const noexcept {
@@ -114,4 +117,4 @@ std::pair<long, long> Thread::GetPageFaultCount() const noexcept {
   return page_faults;
 }
 
-}  // namespace rt_demo
+}  // namespace rt_demo::framework

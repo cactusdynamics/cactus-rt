@@ -1,11 +1,11 @@
-#include "cyclic_rt_thread.h"
+#include "framework/cyclic_rt_thread.h"
 
 #include <spdlog/spdlog.h>
 
 #include "rt_demo_sdt.h"
 #include "utils/utils.h"
 
-namespace rt_demo {
+namespace rt_demo::framework {
 
 // Start -> End -> Next Wakeup Time -> Start -> End
 void CyclicRTThread::Run() noexcept {
@@ -60,4 +60,4 @@ void CyclicRTThread::Wait() noexcept {
   clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time_, NULL);
 }
 
-}  // namespace rt_demo
+}  // namespace rt_demo::framework

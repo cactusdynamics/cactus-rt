@@ -1,4 +1,4 @@
-#include "rt_app.h"
+#include "framework/rt_app.h"
 
 #include <malloc.h>
 #include <spdlog/spdlog.h>
@@ -6,12 +6,17 @@
 
 #include <stdexcept>
 
-namespace rt_demo {
+namespace rt_demo::framework {
 void RTApp::Start() {
   spdlog::info("Starting RTApp");
   LockMemory();
+
+  clock_gettime(CLOCK_MONOTONIC, &ref_time_);
+  // TODO: get the wall clock time for better logging correlation. Not sure how to do that simultaneously, tho.
+
   for (const auto& thread : threads_) {
-    thread->Start();
+    spdlog::info("Starting thread {}", thread->Name());
+    thread->Start(ref_time_);
   }
 }
 
@@ -45,4 +50,4 @@ void RTApp::LockMemory() {
 
   // TODO: is prefaulting needed? https://github.com/ros2-realtime-demo/pendulum/issues/90
 }
-}  // namespace rt_demo
+}  // namespace rt_demo::framework

@@ -4,21 +4,47 @@
 #include <atomic>
 #include <utility>
 
-#include "cyclic_rt_thread.h"
+#include "data_monitor.h"
+#include "framework/cyclic_rt_thread.h"
 
 namespace rt_demo {
-class HighFrequencyController : public CyclicRTThread {
-  int output_ = 0;
+class HighFrequencyController : public framework::CyclicRTThread {
+  using AtomicFlag = std::atomic<char>;
+  static_assert(AtomicFlag::is_always_lock_free, "AtomicFlag is not lock free thus should not be used for RT on this platform");
 
-  // Doesn't work
-  // using AtomicControlData = std::atomic<std::pair<int, float>>;
-  // static_assert(AtomicControlData::is_always_lock_free, "AtomicControlData is not lock free and thus should not be used for RT");
+  constexpr static char kFlagEnabledBit = 0x1;
+
+  AtomicFlag   flag_;
+  uint64_t     iterations_;
+  uint64_t     max_iterations_;
+  DataMonitor& data_monitor_;
 
  public:
-  HighFrequencyController() : CyclicRTThread(1'000'000) {}
+  enum class WaveFunction {
+    SIN,
+    COS,
+  };
+
+  explicit HighFrequencyController(DataMonitor& data_monitor, uint64_t max_iteration = 15'000) : CyclicRTThread("HFC", 1'000'000),
+                                                                                                 flag_(0),
+                                                                                                 iterations_(0),
+                                                                                                 max_iterations_(max_iteration),
+                                                                                                 data_monitor_(data_monitor) {
+  }
+
+  // Do not allow rvalue reference to prevent UB.
+  // TODO: not 100% certain if this is needed.
+  HighFrequencyController(DataMonitor&&, int64_t) = delete;
+
+  void SetEnabled(bool enabled) noexcept;
+  void SetFunction(WaveFunction function) noexcept;
 
  protected:
   virtual bool Loop() noexcept override final;
+
+ private:
+  bool         IsEnabled() const noexcept;
+  WaveFunction CurrentFunction() const noexcept;
 };
 }  // namespace rt_demo
 

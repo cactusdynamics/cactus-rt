@@ -5,11 +5,12 @@
 #include <memory>
 #include <vector>
 
-#include "thread.h"
+#include "framework/thread.h"
 
-namespace rt_demo {
+namespace rt_demo::framework {
 class RTApp : private boost::noncopyable {
   std::vector<std::unique_ptr<Thread>> threads_;
+  struct timespec                      ref_time_;
 
  public:
   RTApp() {}
@@ -24,6 +25,6 @@ class RTApp : private boost::noncopyable {
  private:
   void LockMemory();
 };
-}  // namespace rt_demo
+}  // namespace rt_demo::framework
 
 #endif

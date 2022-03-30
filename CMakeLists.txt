@@ -37,13 +37,13 @@ find_package(spdlog REQUIRED)
 
 add_executable(rt_demo
   src/main.cc
-  src/thread.cc
-  src/rt_app.cc
-  src/cyclic_rt_thread.cc
+  src/framework/thread.cc
+  src/framework/rt_app.cc
+  src/framework/cyclic_rt_thread.cc
+  src/utils/online_mean_tracker.cc
   src/low_freq_controller.cc
   src/high_freq_controller.cc
   src/data_monitor.cc
-  src/utils/online_mean_tracker.cc
 )
 
 target_compile_features(rt_demo
