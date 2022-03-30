@@ -25,11 +25,11 @@ class HighFrequencyController : public framework::CyclicRTThread {
     COS,
   };
 
-  explicit HighFrequencyController(DataMonitor& data_monitor, uint64_t max_iteration = 15'000) : CyclicRTThread("HFC", 1'000'000),
-                                                                                                 flag_(0),
-                                                                                                 iterations_(0),
-                                                                                                 max_iterations_(max_iteration),
-                                                                                                 data_monitor_(data_monitor) {
+  explicit HighFrequencyController(DataMonitor& data_monitor, uint64_t max_iteration = 3'000) : CyclicRTThread("HFC", 1'000'000),
+                                                                                                flag_(kFlagEnabledBit),
+                                                                                                iterations_(0),
+                                                                                                max_iterations_(max_iteration),
+                                                                                                data_monitor_(data_monitor) {
   }
 
   // Do not allow rvalue reference to prevent UB.

@@ -55,7 +55,7 @@ class DataMonitor : public framework::Thread {
   virtual void Run() noexcept override final;
 
  private:
-  void WriteData();
+  void WriteData() noexcept;
 };
 }  // namespace rt_demo
 
