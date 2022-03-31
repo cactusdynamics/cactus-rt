@@ -24,6 +24,7 @@ class CyclicRTThread : public Thread {
  protected:
   virtual void Run() noexcept override final;
   virtual bool Loop() noexcept = 0;  // Returns true if exit is wanted.
+  virtual void AfterRun() override;
 
   void Wait() noexcept;
 };

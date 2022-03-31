@@ -40,11 +40,9 @@ void CyclicRTThread::Run() noexcept {
 
     Wait();
   }
+}
 
-  // TODO: move this code out of here and somehow into Thread::RunThread even
-  // tho it doesn't have access to these trackers. This probably requires like
-  // an Thread::AfterRun() and Thread::BeforeRun() virtual function that is
-  // called from there.
+void CyclicRTThread::AfterRun() {
   spdlog::debug("wakeup latency:    {}\t{}\t{}", wakeup_latency_tracker_.Min() / 1000, wakeup_latency_tracker_.Mean() / 1000, wakeup_latency_tracker_.Max() / 1000);
   spdlog::debug("iteration latency: {}\t{}\t{}", iteration_latency_tracker_.Min() / 1000, iteration_latency_tracker_.Mean() / 1000, iteration_latency_tracker_.Max() / 1000);
 }

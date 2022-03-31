@@ -14,14 +14,14 @@ void RTApp::Start() {
   clock_gettime(CLOCK_MONOTONIC, &ref_time_);
   // TODO: get the wall clock time for better logging correlation. Not sure how to do that simultaneously, tho.
 
-  for (const auto& thread : threads_) {
+  for (auto* thread : threads_) {
     spdlog::info("Starting thread {}", thread->Name());
     thread->Start(ref_time_);
   }
 }
 
 void RTApp::Join() {
-  for (const auto& thread : threads_) {
+  for (auto* thread : threads_) {
     thread->Join();
   }
 }

@@ -61,6 +61,7 @@ target_link_libraries(rt_demo
   PRIVATE
   Threads::Threads
   spdlog::spdlog
+  stdc++fs
   ${USDT_OBJ}
 )
 

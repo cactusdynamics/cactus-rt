@@ -17,6 +17,7 @@ class HighFrequencyController : public framework::CyclicRTThread {
   AtomicFlag   flag_;
   uint64_t     iterations_;
   uint64_t     max_iterations_;
+  uint64_t     data_logged_;
   DataMonitor& data_monitor_;
 
  public:
@@ -29,6 +30,7 @@ class HighFrequencyController : public framework::CyclicRTThread {
                                                                                                 flag_(kFlagEnabledBit),
                                                                                                 iterations_(0),
                                                                                                 max_iterations_(max_iteration),
+                                                                                                data_logged_(0),
                                                                                                 data_monitor_(data_monitor) {
   }
 
@@ -41,6 +43,7 @@ class HighFrequencyController : public framework::CyclicRTThread {
 
  protected:
   virtual bool Loop() noexcept override final;
+  virtual void AfterRun() override final;
 
  private:
   bool         IsEnabled() const noexcept;

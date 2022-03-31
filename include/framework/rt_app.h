@@ -9,18 +9,19 @@
 
 namespace rt_demo::framework {
 class RTApp : private boost::noncopyable {
-  std::vector<std::unique_ptr<Thread>> threads_;
-  struct timespec                      ref_time_;
+  std::vector<Thread*> threads_;
+  struct timespec      ref_time_;
 
  public:
   RTApp() {}
+  virtual ~RTApp() = default;
 
-  void AddThread(std::unique_ptr<Thread> thread) {
-    threads_.push_back(std::move(thread));
+  void AddThread(Thread* thread) {
+    threads_.push_back(thread);
   }
 
-  void Start();
-  void Join();
+  virtual void Start();
+  virtual void Join();
 
  private:
   void LockMemory();

@@ -1,5 +1,7 @@
 #include "high_freq_controller.h"
 
+#include <spdlog/spdlog.h>
+
 #include <cmath>
 #include <iostream>
 
@@ -30,9 +32,16 @@ bool HighFrequencyController::Loop() noexcept {
   HFCOutput data{elapsed_ns, output};
 
   // TODO: check success?
-  data_monitor_.LogOutput(data);
+  if (data_monitor_.LogOutput(data)) {
+    ++data_logged_;
+  }
 
   return iterations_ >= max_iterations_;
+}
+
+void HighFrequencyController::AfterRun() {
+  CyclicRTThread::AfterRun();
+  spdlog::debug("HFC logged data {} times", data_logged_);
 }
 
 void HighFrequencyController::SetEnabled(bool enabled) noexcept {

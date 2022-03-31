@@ -50,6 +50,8 @@ class Thread : private boost::noncopyable {
 
  protected:
   virtual void Run() noexcept = 0;
+  virtual void BeforeRun() {}
+  virtual void AfterRun() {}
 
   struct timespec       Now() const noexcept;
   std::pair<long, long> GetPageFaultCount() const noexcept;

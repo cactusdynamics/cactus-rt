@@ -26,12 +26,12 @@ Data passing demos
 
 | Done? | Source | Target | Name | Type | Mechanism | Description |
 |-------|--------|--------|------|------|-----------|-------------|
-| No | LF     | HF     | `flag` | `char` | `atomic` | A flag that controls enable/disable and the function to use |
+| Partially | LF     | HF     | `flag` | `char` | `atomic` | A flag that controls enable/disable and the function to use |
 | No | LF     | DM     | `flag` | `char` | FIFO | Same as above |
 | No | LF     | HF     | `control_param` | `struct{int, float}` | CAS Loop | Some parameters |
 | No | LF     | DM     | `control_param` | `struct{int, float}` | FIFO | Same as above |
 | No | LF     | DM     | `control_param` | `struct{int, float}` | Double buffering | Same as above, but for displaying live in the terminal |
-| No | HF     | DM     | `output` | `int` | FIFO | The output data from the HF thread |
+| Yes | HF     | DM     | `output` | `int` | `boost::spsc_queue` | The output data from the HF thread |
 
 Dependencies
 ------------

@@ -19,6 +19,8 @@ void* Thread::RunThread(void* data) {
     // TODO: additional logging?
   }
 
+  thread->BeforeRun();
+
   // Get the starting page fault count
   auto page_faults = thread->GetPageFaultCount();
   thread->soft_page_fault_count_at_start_ = page_faults.first;
@@ -33,8 +35,9 @@ void* Thread::RunThread(void* data) {
   auto hard_page_fault_diff = page_faults.second - thread->hard_page_fault_count_at_start_;
 
   RT_DEMO_THREAD_DONE(thread->policy_, page_faults.first, page_faults.second);
-
   spdlog::debug("Thread exitted with {} minor faults and {} major faults", soft_page_fault_diff, hard_page_fault_diff);
+
+  thread->AfterRun();
 
   return NULL;
 }

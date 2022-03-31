@@ -2,6 +2,8 @@
 #define RT_DEMO_DATA_MONITOR_H_
 
 #include <boost/lockfree/spsc_queue.hpp>
+#include <filesystem>
+#include <fstream>
 #include <utility>
 #include <vector>
 
@@ -33,15 +35,34 @@ class DataMonitor : public framework::Thread {
   std::pair<uint64_t, uint64_t> lf_fifo_push_failed_;
   std::vector<LFCOutput>        lf_data_buf_;
 
-  double write_data_interval_;
+  std::atomic_bool stopped_;
+  double           write_data_interval_;
+
+  std::ofstream hf_data_file_;
 
  public:
-  DataMonitor(double write_data_interval = 1.0) : Thread("DM", 0, SCHED_OTHER),
-                                                  hf_fifo_push_failed_(0, 0),
-                                                  lf_fifo_push_failed_(0, 0),
-                                                  write_data_interval_(write_data_interval) {
+  DataMonitor(const std::string& datadir,
+              double             write_data_interval = 1.0)
+      : Thread("DM", 0, SCHED_OTHER),
+        hf_fifo_push_failed_(0, 0),
+        lf_fifo_push_failed_(0, 0),
+        stopped_(false),
+        write_data_interval_(write_data_interval) {
     hf_data_buf_.reserve(kQueueCapacity);
     lf_data_buf_.reserve(kQueueCapacity);
+
+    std::filesystem::path dir{datadir};
+    std::filesystem::path hf_filename{"hfc_data.csv"};
+    std::filesystem::path path = dir / hf_filename;
+
+    hf_data_file_.open(path.string());
+    if (!hf_data_file_.is_open()) {
+      throw std::runtime_error{"failed to open hfc_data.csv file"};
+    }
+  }
+
+  virtual ~DataMonitor() {
+    hf_data_file_.close();
   }
 
   /**
@@ -50,6 +71,8 @@ class DataMonitor : public framework::Thread {
    * @returns true if the push operation is successful
    */
   bool LogOutput(const HFCOutput& data) noexcept;
+
+  void RequestStop() noexcept;
 
  protected:
   virtual void Run() noexcept override final;
