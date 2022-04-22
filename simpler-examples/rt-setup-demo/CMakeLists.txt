@@ -34,12 +34,13 @@ add_executable(rt_setup_demo
   src/main.cc
   src/rt/thread.cc
   src/rt/app.cc
-  src/rt/cyclic_rt_thread.cc
+  src/rt/cyclic_fifo_thread.cc
+  src/rt/latency_tracker.cc
 )
 
 set_target_properties(rt_setup_demo
   PROPERTIES
-  CXX_CLANG_TIDY clang-tidy
+  CXX_CLANG_TIDY clang-tidy-11
 )
 
 target_compile_features(rt_setup_demo
@@ -47,10 +48,15 @@ target_compile_features(rt_setup_demo
   cxx_std_20
 )
 
+target_compile_definitions(rt_setup_demo
+  PRIVATE
+  SPDLOG_ACTIVE_LEVEL=1 # DEBUG
+)
+
+
 target_include_directories(rt_setup_demo
   PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 target_link_libraries(rt_setup_demo
