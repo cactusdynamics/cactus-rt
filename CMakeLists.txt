@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(rt_setup_demo)
+project(rt_demo)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -24,43 +24,14 @@ add_compile_options(
   -O3
 )
 
-# https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package(Threads REQUIRED)
-find_package(spdlog REQUIRED)
+add_subdirectory(libs/rt)
 
-add_executable(rt_setup_demo
-  src/main.cc
-  src/rt/thread.cc
-  src/rt/app.cc
-  src/rt/cyclic_fifo_thread.cc
-  src/rt/latency_tracker.cc
+add_executable(rt_default_demo
+  examples/default_example/main.cc
 )
 
-set_target_properties(rt_setup_demo
-  PROPERTIES
-  CXX_CLANG_TIDY clang-tidy-11
-)
-
-target_compile_features(rt_setup_demo
-  PUBLIC
-  cxx_std_20
-)
-
-target_compile_definitions(rt_setup_demo
+target_link_libraries(rt_default_demo
   PRIVATE
-  SPDLOG_ACTIVE_LEVEL=1 # DEBUG
+  rt_app_lib
 )
 
-
-target_include_directories(rt_setup_demo
-  PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_link_libraries(rt_setup_demo
-  PRIVATE
-  Threads::Threads
-  spdlog::spdlog
-)
