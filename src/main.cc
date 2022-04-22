@@ -1,33 +1,51 @@
 #include <spdlog/spdlog.h>
+#include <unistd.h>
 
-#include "data_monitor.h"
-#include "framework/rt_app.h"
-#include "high_freq_controller.h"
+#include "rt/app.h"
+#include "rt/cyclic_fifo_thread.h"
+#include "rt/utils.h"
 
-class RTDemoApp : public rt_demo::framework::RTApp {
-  rt_demo::DataMonitor             data_monitor_;
-  rt_demo::HighFrequencyController hfc_;
-
+// A no-op thread that only serves to do nothing and measure the latency
+class CyclicThread : public rt::CyclicFifoThread {
  public:
-  RTDemoApp(const std::string& datadir) : data_monitor_(datadir),
-                                          hfc_(data_monitor_) {
-    AddThread(&data_monitor_);
-    AddThread(&hfc_);
-  }
+  CyclicThread() : rt::CyclicFifoThread("CyclicThread", 1'000'000, true) {}
 
-  virtual void Join() override {
-    hfc_.Join();
-    spdlog::debug("hfc joined");
-    data_monitor_.RequestStop();
-    data_monitor_.Join();
+ protected:
+  bool Loop() noexcept final {
+    return false;
   }
 };
 
-RTDemoApp app{"data"};
+class RTApp : public rt::App {
+  CyclicThread cyclic_thread_;
 
-int main(int argc, const char** argv) {
+ public:
+  void Start() final {
+    rt::App::Start();
+    auto monotonic_now = rt::NowNs();
+    auto wall_now = rt::WallNowNs();
+    cyclic_thread_.Start(monotonic_now, wall_now);
+  }
+
+  void Join() {
+    cyclic_thread_.Join();
+  }
+
+  void Stop() {
+    cyclic_thread_.RequestStop();
+    Join();
+  }
+};
+
+RTApp app;
+
+int main() {
   spdlog::set_level(spdlog::level::debug);
+
+  constexpr unsigned int time = 60;
+  SPDLOG_INFO("Testing latency for {}s", time);
   app.Start();
-  app.Join();
+  sleep(time);
+  app.Stop();
   return 0;
 }
