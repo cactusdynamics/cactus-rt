@@ -24,7 +24,13 @@ add_compile_options(
   -O3
 )
 
+add_definitions(-DSPDLOG_ACTIVE_LEVEL=1) # debug level
+
+set(CMAKE_CXX_CLANG_TIDY clang-tidy-11)
+
 add_subdirectory(libs/rt)
+
+find_package(Boost REQUIRED)
 
 add_executable(rt_default_demo
   examples/default_example/main.cc

@@ -17,11 +17,17 @@ inline int64_t WallNowNs() {
   return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
 }
 
-inline struct timespec SubtractTimespecByNs(struct timespec ts, int64_t ns) {
-  ts.tv_nsec -= ns;
+inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
+  ts.tv_nsec += ns;
+
+  while (ts.tv_nsec >= 1'000'000'000) {
+    ++ts.tv_sec;
+    ts.tv_nsec -= 1'000'000'000;
+  }
+
   while (ts.tv_nsec < 0) {
+    --ts.tv_sec;
     ts.tv_nsec += 1'000'000'000;
-    ts.tv_sec++;
   }
 
   return ts;

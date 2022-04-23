@@ -18,6 +18,7 @@ class CyclicFifoThread : public Thread {
   // Debug information
   LatencyTracker wakeup_latency_tracker_;
   LatencyTracker loop_latency_tracker_;
+  LatencyTracker busy_wait_latency_tracker_;
 
  public:
   /**
@@ -61,12 +62,20 @@ class CyclicFifoThread : public Thread {
   /**
    * Track the latency wakeup and loop latency. The default behavior is to track them in histograms that updates online.
    */
-  virtual void TrackLatency(int64_t wakeup_latency, int64_t loop_latency) noexcept;
+  virtual void TrackLatency(int64_t wakeup_latency, int64_t loop_latency) noexcept {}
 
  private:
   void CalculateAndSetNextWakeupTime() noexcept;
-  void SleepWait() noexcept;
-  void SleepAndBusyWait() noexcept;
+
+  /**
+   * @returns the busy wait time, which is 0 here.
+   */
+  double SleepWait() noexcept;
+
+  /**
+   * @returns the busy wait time
+   */
+  double SleepAndBusyWait() noexcept;
 
   // TODO: add lttng tracing or USDT
   inline void TraceLoopStart(int64_t /* wakeup_latency */) noexcept {}

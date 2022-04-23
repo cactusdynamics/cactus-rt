@@ -7,13 +7,15 @@
 namespace rt {
 void CyclicFifoThread::Run() noexcept {
   clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
-  int64_t loop_start, loop_end, should_have_woken_up_at, wakeup_latency, loop_latency;
+  int64_t loop_start, loop_end, should_have_woken_up_at;
+  double  wakeup_latency, loop_latency, busy_wait_latency;
 
   while (!should_stop_.load()) {
     should_have_woken_up_at = next_wakeup_time_.tv_sec * 1'000'000'000 + next_wakeup_time_.tv_nsec;
     loop_start = NowNs();
 
-    wakeup_latency = loop_start - should_have_woken_up_at;
+    wakeup_latency = static_cast<double>(loop_start - should_have_woken_up_at) / 1000.0;
+
     TraceLoopStart(wakeup_latency);
 
     if (Loop()) {
@@ -21,17 +23,22 @@ void CyclicFifoThread::Run() noexcept {
     }
 
     loop_end = NowNs();
-    loop_latency = loop_end - loop_start;
+    loop_latency = static_cast<double>(loop_end - loop_start) / 1000.0;
 
     TraceLoopEnd(loop_latency);
 
-    // TODO: Trace iteration done with loop_latency
     TrackLatency(wakeup_latency, loop_latency);
+
+    wakeup_latency_tracker_.RecordValue(wakeup_latency);
+    loop_latency_tracker_.RecordValue(loop_latency);
+
     if (sleep_and_busy_wait_) {
-      SleepAndBusyWait();
+      busy_wait_latency = SleepAndBusyWait();
     } else {
-      SleepWait();
+      busy_wait_latency = SleepWait();
     }
+
+    busy_wait_latency_tracker_.RecordValue(busy_wait_latency);
   }
 }
 
@@ -41,30 +48,25 @@ void CyclicFifoThread::AfterRun() {
 
   SPDLOG_DEBUG("loop_latency:");
   loop_latency_tracker_.DumpToLogger();
-}
 
-void CyclicFifoThread::TrackLatency(int64_t wakeup_latency, int64_t loop_latency) noexcept {
-  wakeup_latency_tracker_.RecordValue(static_cast<double>(wakeup_latency) / 1'000.0);
-  loop_latency_tracker_.RecordValue(static_cast<double>(loop_latency) / 1'000.0);
+  SPDLOG_DEBUG("busy_wait_latency:");
+  busy_wait_latency_tracker_.DumpToLogger();
 }
 
 void CyclicFifoThread::CalculateAndSetNextWakeupTime() noexcept {
-  next_wakeup_time_.tv_nsec += period_ns_;
-  while (next_wakeup_time_.tv_nsec >= 1'000'000'000) {
-    ++next_wakeup_time_.tv_sec;
-    next_wakeup_time_.tv_nsec -= 1'000'000'000;
-  }
+  next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
 }
 
-void CyclicFifoThread::SleepWait() noexcept {
+double CyclicFifoThread::SleepWait() noexcept {
   CalculateAndSetNextWakeupTime();
 
   // TODO: check for errors?
   // TODO: can there be remainders?
   clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time_, NULL);
+  return 0.0;
 }
 
-void CyclicFifoThread::SleepAndBusyWait() noexcept {
+double CyclicFifoThread::SleepAndBusyWait() noexcept {
   CalculateAndSetNextWakeupTime();
 
   // TODO: refactor some of these timespec -> ns int64_t conversion into an utils function
@@ -82,14 +84,18 @@ void CyclicFifoThread::SleepAndBusyWait() noexcept {
   // above defined scheduling latency. I would just take the max latency number
   // from cyclictest instead, which I think is appropriate for just 1x.
   if (next_wakeup_time_ns - now >= scheduling_latency_ns_) {
-    struct timespec next_wakeup_time_minus_scheduling_latency = SubtractTimespecByNs(next_wakeup_time_, scheduling_latency_ns_);
+    struct timespec next_wakeup_time_minus_scheduling_latency = AddTimespecByNs(next_wakeup_time_, -scheduling_latency_ns_);
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time_minus_scheduling_latency, NULL);
   }
+
+  now = NowNs();
 
   while (next_wakeup_time_ns - NowNs() > 0) {
     // busy wait
     // TODO: add asm nop? Doesn't seem necessary as we're running a bunch of clock_gettime syscalls anyway..
   }
+
+  return static_cast<double>(NowNs() - now) / 1'000.0;
 }
 
 }  // namespace rt
