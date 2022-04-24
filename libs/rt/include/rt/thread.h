@@ -81,6 +81,9 @@ class Thread {
   const std::string& Name() const { return name_; }
 
  protected:
+  int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
+  int64_t StartWallTimeNs() const { return start_wall_time_ns_; }
+
   /**
    * Override this method to do work. If this is a real-time thread, once this
    * method is entered, the code in it should be RT-compatible.

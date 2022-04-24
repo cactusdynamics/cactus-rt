@@ -18,7 +18,7 @@ void CyclicFifoThread::Run() noexcept {
 
     TraceLoopStart(wakeup_latency);
 
-    if (Loop()) {
+    if (Loop(loop_start - StartMonotonicTimeNs())) {
       break;
     }
 

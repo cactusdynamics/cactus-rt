@@ -11,7 +11,7 @@ class CyclicThread : public rt::CyclicFifoThread {
   CyclicThread() : rt::CyclicFifoThread("CyclicThread", 1'000'000, true) {}
 
  protected:
-  bool Loop() noexcept final {
+  bool Loop(int64_t /*now*/) noexcept final {
     return false;
   }
 };

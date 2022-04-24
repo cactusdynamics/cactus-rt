@@ -55,14 +55,17 @@ class CyclicFifoThread : public Thread {
   /**
    * Called every loop.
    *
+   * @param now Ellapsed time since StartMonotonicTimeNs() in nanoseconds.
    * @returns true if exit from the loop is desired
    */
-  virtual bool Loop() noexcept = 0;
+  virtual bool Loop(int64_t ellapsed_ns) noexcept = 0;
 
   /**
    * Track the latency wakeup and loop latency. The default behavior is to track them in histograms that updates online.
+   * @param wakeup_latency the latency of wakeup (scheduling latency) in us.
+   * @param loop_latency the latency of Loop() call in us.
    */
-  virtual void TrackLatency(int64_t wakeup_latency, int64_t loop_latency) noexcept {}
+  virtual void TrackLatency(double /*wakeup_latency*/, double /*loop_latency*/) noexcept {}
 
  private:
   void CalculateAndSetNextWakeupTime() noexcept;
