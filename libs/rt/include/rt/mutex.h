@@ -26,7 +26,12 @@ class mutex {
   mutex() {
     pthread_mutexattr_t attr;
 
-    int res = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+    int res = pthread_mutexattr_init(&attr);
+    if (res != 0) {
+      throw std::runtime_error{std::string("cannot pthread_mutexattr_init: ") + std::strerror(res)};
+    }
+
+    res = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
     if (res != 0) {
       throw std::runtime_error{std::string("cannot pthread_mutexattr_setprotocol: ") + std::strerror(res)};
     }
@@ -48,7 +53,7 @@ class mutex {
   void lock() {
     auto res = pthread_mutex_lock(&m_);
     if (res != 0) {
-      throw std::runtime_error(std::string("failed to acquire lock due to error ") + std::strerror(res));
+      throw std::runtime_error(std::string("failed pthread_mutex_lock: ") + std::strerror(res));
     }
   }
 
