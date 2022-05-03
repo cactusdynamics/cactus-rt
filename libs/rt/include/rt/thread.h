@@ -48,7 +48,7 @@ class Thread {
         policy_(policy),
         cpu_affinity_(cpu_affinity),
         // In case stack_size is 0...
-        stack_size_(PTHREAD_STACK_MIN + stack_size){};
+        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size){};
 
   virtual ~Thread() = default;
 

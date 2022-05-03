@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <limits>
 
+using std::size_t;
+
 namespace rt {
 
 class LatencyTracker {

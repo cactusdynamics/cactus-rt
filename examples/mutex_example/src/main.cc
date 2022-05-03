@@ -1,4 +1,5 @@
 #include <rt/rt.h>
+#include <spdlog/spdlog.h>
 
 #include <atomic>
 #include <cmath>
@@ -27,14 +28,14 @@ class RTThread : public rt::CyclicFifoThread {
 
  protected:
   bool Loop(int64_t ellapsed_ns) noexcept final {
-    constexpr double period = 1000.0;
+    constexpr double period = 5'000'000'000.0;  // 5 seconds period
     constexpr double amplitude = 1.0;
 
     Data d;
-    d.v1 = amplitude * cos(2 * M_PI / period * ellapsed_ns);
-    d.v2 = d.v1 * 10;
-    d.v3 = d.v1 * 100;
-    d.v4 = d.v1 * 1000;
+    d.v1 = ellapsed_ns / 1'000'000'000.0;
+    d.v2 = ellapsed_ns / 1'000'000.0;
+    d.v3 = amplitude * cos(2 * M_PI / period * ellapsed_ns);
+    d.v4 = d.v3 * 10;
 
     buf_.Write(d);
 
@@ -107,6 +108,7 @@ void TrivialDemo() {
 }
 
 int main() {
+  spdlog::set_level(spdlog::level::debug);
   TrivialDemo();
 
   RTApp app;
