@@ -9,17 +9,18 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace rt {
 
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
 
 class Thread {
-  std::string name_;
-  int         priority_;
-  int         policy_;
-  uint32_t    cpu_affinity_;
-  size_t      stack_size_;
+  std::string         name_;
+  int                 priority_;
+  int                 policy_;
+  std::vector<size_t> cpu_affinity_;
+  size_t              stack_size_;
 
   pthread_t thread_;
 
@@ -38,11 +39,11 @@ class Thread {
   static void ReserveStackForThread();
 
  public:
-  Thread(const std::string& name,
-         int                priority,
-         int                policy = SCHED_OTHER,
-         uint32_t           cpu_affinity = 0,
-         size_t             stack_size = kDefaultStackSize)
+  Thread(const std::string&  name,
+         int                 priority,
+         int                 policy = SCHED_OTHER,
+         std::vector<size_t> cpu_affinity = {},
+         size_t              stack_size = kDefaultStackSize)
       : name_(name),
         priority_(priority),
         policy_(policy),

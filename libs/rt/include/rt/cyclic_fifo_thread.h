@@ -2,6 +2,7 @@
 #define RT_DEMO_RT_CYCLIC_FIFO_THREAD_H_
 
 #include <atomic>
+#include <vector>
 
 #include "rt/latency_tracker.h"
 #include "rt/thread.h"
@@ -31,13 +32,13 @@ class CyclicFifoThread : public Thread {
    * @param sleep_and_busy_wait Use the sleep + busy wait method to potentially achieve lower jitter at the expense of CPU. Default to false.
    * @param scheduling_latency_ns The estimated scheduling delay if busy wait is to be used. No effect if not set.
    */
-  CyclicFifoThread(const std::string& name,
-                   int64_t            period_ns,
-                   bool               sleep_and_busy_wait = false,
-                   int64_t            scheduling_latency_ns = 150 * 1000,  // Assume 150 us of scheduling latency?
-                   int                priority = 80,
-                   uint32_t           cpu_affinity = 0,
-                   size_t             stack_size = kDefaultStackSize)
+  CyclicFifoThread(const std::string&  name,
+                   int64_t             period_ns,
+                   int                 priority = 80,
+                   std::vector<size_t> cpu_affinity = {},
+                   bool                sleep_and_busy_wait = false,
+                   int64_t             scheduling_latency_ns = 150 * 1000,  // Assume 150 us of scheduling latency?
+                   size_t              stack_size = kDefaultStackSize)
       : Thread(name, priority, SCHED_FIFO, cpu_affinity, stack_size),
         period_ns_(period_ns),
         sleep_and_busy_wait_(sleep_and_busy_wait),

@@ -55,7 +55,7 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
   // Initialize the pthread attribute
   int ret = pthread_attr_init(&attr);
   if (ret) {
-    throw std::runtime_error("error in pthread_attr_init: " + std::to_string(ret));
+    throw std::runtime_error(std::string("error in pthread_attr_init: ") + std::strerror(ret));
   }
 
   // Set a stack size
@@ -68,13 +68,13 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
   // and thus will simply optimize it out.
   ret = pthread_attr_setstacksize(&attr, stack_size_);
   if (ret) {
-    throw std::runtime_error("error in pthread_attr_setstacksize: " + std::to_string(ret));
+    throw std::runtime_error(std::string("error in pthread_attr_setstacksize: ") + std::strerror(ret));
   }
 
   // Set the scheduler policy
   ret = pthread_attr_setschedpolicy(&attr, policy_);
   if (ret) {
-    throw std::runtime_error("error in pthread_attr_setschedpolicy: " + std::to_string(ret));
+    throw std::runtime_error(std::string("error in pthread_attr_setschedpolicy: ") + std::strerror(ret));
   }
 
   // Set the scheduler priority
@@ -82,18 +82,32 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
   param.sched_priority = priority_;
   ret = pthread_attr_setschedparam(&attr, &param);
   if (ret) {
-    throw std::runtime_error("error in pthread_attr_setschedparam: " + std::to_string(ret));
+    throw std::runtime_error(std::string("error in pthread_attr_setschedparam: ") + std::strerror(ret));
   }
 
   // Make sure threads created using the thread_attr_ takes the value from the attribute instead of inherit from the parent thread.
   ret = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   if (ret) {
-    throw std::runtime_error("error in pthread_attr_setinheritsched: " + std::to_string(ret));
+    throw std::runtime_error(std::string("error in pthread_attr_setinheritsched: ") + std::strerror(ret));
+  }
+
+  // Setting CPU mask
+  if (cpu_affinity_.size() > 0) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    for (auto cpu : cpu_affinity_) {
+      CPU_SET(cpu, &cpuset);
+    }
+
+    ret = pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
+    if (ret) {
+      throw std::runtime_error(std::string("error in pthread_attr_setaffinity_np: ") + std::strerror(ret));
+    }
   }
 
   ret = pthread_create(&thread_, &attr, &Thread::RunThread, this);
   if (ret) {
-    throw std::runtime_error("error in pthread_create: " + std::to_string(ret));
+    throw std::runtime_error(std::string("error in pthread_create: ") + std::strerror(ret));
   }
 }
 
