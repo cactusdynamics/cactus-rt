@@ -11,7 +11,7 @@ class RTApp : public rt::App {
  public:
   RTApp(const std::string& data_file_path)
       : data_logger_(data_file_path),
-        rt_thread_(data_logger_, 1'000'000, std::vector<size_t>(), 30'000, false) {
+        rt_thread_(data_logger_, 1'000'000, std::vector<size_t>(), 30'000) {
   }
 
   void Start() final {

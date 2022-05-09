@@ -18,12 +18,12 @@ struct Data {
   double v4 = 0.0;
 };
 
-class RTThread : public rt::CyclicFifoThread {
+class RTThread : public rt::CyclicFifoThread<> {
   NaiveDoubleBuffer<Data>& buf_;
 
  public:
   RTThread(NaiveDoubleBuffer<Data>& buf)
-      : CyclicFifoThread("RTThread", 1'000'000), buf_(buf) {
+      : CyclicFifoThread<>("RTThread", 1'000'000), buf_(buf) {
   }
 
  protected:

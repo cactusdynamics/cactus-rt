@@ -8,7 +8,6 @@ add_library(rt_app_lib
   STATIC
   src/thread.cc
   src/app.cc
-  src/cyclic_fifo_thread.cc
   src/latency_tracker.cc
 )
 

@@ -6,9 +6,9 @@
 #include "rt/utils.h"
 
 // A no-op thread that only serves to do nothing and measure the latency
-class CyclicThread : public rt::CyclicFifoThread {
+class CyclicThread : public rt::CyclicFifoThread<> {
  public:
-  CyclicThread(std::vector<size_t> cpu_affinity) : rt::CyclicFifoThread("CyclicThread", 1'000'000, 80, cpu_affinity, false) {}
+  CyclicThread(std::vector<size_t> cpu_affinity) : rt::CyclicFifoThread<>("CyclicThread", 1'000'000, 80, cpu_affinity, false) {}
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
@@ -39,7 +39,7 @@ class RTApp : public rt::App {
   }
 };
 
-static const std::vector<size_t> cpu_affinity = {2, 3};
+static const std::vector<size_t> cpu_affinity = {2};
 
 RTApp app(cpu_affinity);
 
