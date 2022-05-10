@@ -39,9 +39,7 @@ class RTApp : public rt::App {
   }
 };
 
-static const std::vector<size_t> cpu_affinity = {2};
-
-RTApp app(cpu_affinity);
+RTApp app(std::vector<size_t>{2});
 
 int main() {
   spdlog::set_level(spdlog::level::debug);

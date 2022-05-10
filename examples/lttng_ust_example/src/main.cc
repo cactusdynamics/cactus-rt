@@ -48,8 +48,6 @@ class RTApp : public rt::App {
   }
 };
 
-static const std::vector<size_t> cpu_affinity = {2};
-
 RTApp app;
 
 int main() {
