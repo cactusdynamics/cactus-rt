@@ -163,9 +163,9 @@ class CyclicFifoThread : public Thread {
     return static_cast<double>(NowNs() - now) / 1'000.0;
   }
 
-  // TODO: add lttng tracing or USDT
-  inline void TraceLoopStart(int64_t /* wakeup_latency */) noexcept {}
-  inline void TraceLoopEnd(int64_t /* loop_latency */) noexcept {}
+  virtual void TraceLoopStart(double /* wakeup_latency_us */) noexcept {}
+
+  virtual void TraceLoopEnd(double /* loop_latency_us */) noexcept {}
 };
 }  // namespace rt
 
