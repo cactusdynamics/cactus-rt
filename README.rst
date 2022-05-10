@@ -6,11 +6,13 @@ Real-time app framework and demo
 Examples
 --------
 
+See each example's README for more details on what they do.
+
 * |simple_example|_: shows a no-op application with a single RT
   ``CyclicFifoThread``. Also shows how to pin the RT thread onto a CPU via
   ``cpu_affinity``.
 * |mutex_example|_: shows the usage of the ``rt::mutex``, which is a
-  priority-inheritance mutex that conforms to the same interface as
+  priority-inheriting mutex that conforms to the same interface as
   ``std::mutex``, which allows it to be used with ``std::scoped_lock``.
 * |message_passing_example|_: shows a more complete application with a
   ``CyclicFifoThread`` computing a cosine function and outputting the data via
@@ -46,17 +48,27 @@ Tested on Debian 10 and Ubuntu 20.04:
 - ``lttng-tools`` is used for tracing the ``lttng_ust_example``.
 - ``libboost-dev`` is only used for the lockfree queue in the ``message_passing_example``.
 
-----------
-Validation
-----------
+Of course you also need a C++ compiler and cmake.
 
-Validating CPU affinity
------------------------
+-----
+Build
+-----
 
 .. code-block:: console
 
-   $ ps -T -eo pid,tid,cls,rtprio,psr,cmd  | grep rt_simple_example
+   $ cmake -Bbuild
+   $ cmake --build build -j $(nproc)
 
-The ``psr`` column shows the last scheduled processor of the process. Since an
-application can have many threads with only one thread being scheduled with
-FIFO/DEADLINE and an ``rtprio``, look for that thread in the output.
+To turn on ``clang-tidy``:
+
+.. code-block:: console
+
+   $ cmake -Bbuild -DENABLE_CLANG_TIDY=ON
+   $ cmake --build build -j $(nproc)
+
+To turn OFF building the examples (for embedding into other projects):
+
+.. code-block:: console
+
+   $ cmake -Bbuild -DENABLE_EXAMPLES=OFF
+   $ cmake --build build -j $(nproc)
