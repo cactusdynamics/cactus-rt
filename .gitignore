@@ -3,3 +3,5 @@ build/
 data/
 .ipynb_checkpoints
 *.svg
+
+trace.txt
