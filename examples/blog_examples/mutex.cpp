@@ -82,6 +82,7 @@ int Read() {
 
 int main() {
   // Non RT thread is fine. This is just an example to use the above mutex class.
+  // Note: not guaranteed to print 30 in the console, as t2 can happen before t1.
   std::thread t1([]() {
     Write(5);
   });
