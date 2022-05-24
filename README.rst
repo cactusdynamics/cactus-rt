@@ -115,3 +115,10 @@ To turn OFF building the examples (for embedding into other projects):
 
    $ cmake -Bbuild -DENABLE_EXAMPLES=OFF
    $ cmake --build build -j $(nproc)
+
+-------
+LICENSE
+-------
+
+Defaults to `MPL 2.0 <https://www.mozilla.org/MPL/2.0/>`__. If you have
+concerns please contact me.
