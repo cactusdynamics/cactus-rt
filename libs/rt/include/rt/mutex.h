@@ -42,6 +42,8 @@ class mutex {
     }
   }
 
+  // Do not let the mutex go out of scope without unlocking it first.
+  // Destroying a locked mutex is undefined behavior.
   ~mutex() {
     // TODO: how do you handle errors? You can't throw in a destructor.
     pthread_mutex_destroy(&m_);
