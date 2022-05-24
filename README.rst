@@ -2,6 +2,8 @@
 Real-time app framework and demo
 ================================
 
+Relevant blog posts: `Part 1 <https://shuhaowu.com/blog/2022/01-linux-rt-appdev-part1.html>`__ | `Part 2 <https://shuhaowu.com/blog/2022/02-linux-rt-appdev-part2.html>`__ | `Part 3 <https://shuhaowu.com/blog/2022/03-linux-rt-appdev-part3.html>`__ | `Part 4 <https://shuhaowu.com/blog/2022/04-linux-rt-appdev-part4.html>`__
+
 --------------
 ``rt`` library
 --------------
