@@ -1,277 +1,440 @@
----- MODULE CASExchangeLoop ----
-EXTENDS TLC, Integers, Sequences, FiniteSets
+-------------------------- MODULE CASExchangeLoop --------------------------
 
-\* Maximum capacity of Memory
-CONSTANT MemoryCapacity
+EXTENDS Integers, FiniteSets, Sequences
 
-\* A (model) value representing that a memory location is uninitialized
-CONSTANT Uninitialized
+\* Maximum capacity of memory available to the algorithm
+CONSTANT kMemoryCapacity
 
-\* Number of iterations for the RT loop to run.
-\* When the RT loop terminates, it also terminates the non-RT loop.
-\* Action constraints in TLC should prevent the non-RT loop from infinitely
-\* spinning.
-CONSTANT RTIterations
+\* A (model) value representing uninitialized memory.
+CONSTANT kUninitialized
+
+\* The number of iterations the RT loop is allowed to run. When the RT loop
+\* terminates, the specification forces the termination of the non-RT loop so
+\* TLC does not check forever.
+CONSTANT kNumOfRTIterations
 
 (*--algorithm CASExchangeLoop
 variables
-  \* Initialize the memory to be uninitialized except the first entry
-  Memory = [i \in 1..MemoryCapacity |-> IF i = 1 THEN 1 ELSE Uninitialized],
-
-  OwnedPointer = 1,
-  AtomicPointer = 1,
-
-  \* Set to TRUE once the non-RT loop exits.
+  \* Initialize memory array. Set the first element to a valid value and every 
+  \* else to be uninitialized.
+  \*
+  \* Valid values in the memory array are integers, which represents arbitrary
+  \* objects in a real programming language. If it is kUninitialied, then the
+  \* memory has not been allocated.
+  \*
+  \* The CASExchange algorithm is all about swapping pointers in real life. In
+  \* TLA+, this is represented via indices.
+  Memory = [i \in 1..kMemoryCapacity |-> IF i = 1 THEN 1 ELSE kUninitialized],
+  \* Used as a workaround to detect data race.
+  \* TODO: give links to the mailing list post.
+  MemoryAccessCounter = [i \in 1..kMemoryCapacity |-> 0],
+  \* PlusCal procedures cannot directly return variables. A global variable is needed.
+  \* Since we only call Malloc/Read from a single thread, we can get away with a
+  \* single variable, otherwise we would need a function with the domain = ProcSet.
+  NewPointer,     \* Return value for  Malloc
+  MemoryRead = 0, \* Return value for ReadMemory
+  \* This is the atomic<Data*> that is getting swapped. It corresponds to
+  \* the biquadCoeff variable from the farbot presentation (slide 45).
+  AtomicDataPointer = 1,
+  \* This is the global owner of the data, which in code would be an
+  \* unique_ptr<Data>. It corresponds to the storage variable from the farbot
+  \* presentation (slide 45).
+  StorageDataPointer = 1,
+  \* This is an artificial variable to ensure the algorithm terminates.
+  \* TODO: maybe this is not needed and we still can assert useful stuff, but
+  \* I'm not sure how to do it. Alternatively, could use State Constraints?
   Stopped = FALSE;
 
-macro CompareAndSwap(oldValue, newValue, value, swapped) begin
-  if (value = oldValue) then
-    value := newValue;
+macro CompareAndSwap(expectedValue, newValue, valueRef, swapped) begin
+  if (valueRef = expectedValue) then
+    valueRef := newValue;
     swapped := TRUE;
   else
     swapped := FALSE;
   end if;
 end macro;
 
-fair process NonRTThread = "NonRTThread"
+\* This version of compare and swap is incorrectly implemented. 
+\* Comment it in to observe the effects.
+\*macro CompareAndSwap(expectedValue, newValue, valueRef, swapped) begin
+\*  valueRef := newValue;
+\*  swapped := TRUE;
+\*end macro;
+
+procedure Malloc() begin
+  malloc1:
+    \* Find a free slot of memory. If we run out of memory, obviously that is bad
+    \* as the algorithm should have bounded memory usage.
+    NewPointer := CHOOSE i \in DOMAIN Memory : Memory[i] = kUninitialized;
+  
+    \* Just need to set it to any value that's not kUninitialized for the spec to
+    \* recognize it as a valid object.
+    Memory[NewPointer] := NewPointer;
+
+    MemoryAccessCounter[NewPointer] := MemoryAccessCounter[NewPointer] + 1;
+  malloc2:
+    MemoryAccessCounter[NewPointer] := MemoryAccessCounter[NewPointer] - 1;
+    return;
+end procedure;
+
+procedure Free(pointer) begin
+  free1:
+    Memory[pointer] := kUninitialized;
+    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] + 1;
+  free2:
+    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] - 1;
+    return;
+end procedure;
+
+procedure ReadMemory(pointer) begin
+  readmem1:
+    MemoryRead := Memory[pointer];
+    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] + 1;
+  readmem2:
+    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] - 1;
+    return;
+end procedure;
+
+fair process NonRtThread = "NonRtThread"
   variables
-    nonRTLocalDataPointer,
-    expected,
-    swapped = FALSE,
-    nonRTLoopIdx = 0; \* Needed for the action constraint
+    expectedPointer,  \* Holds the expected pointer during the CAS loop.
+    swapped,          \* A boolean indicating whether or not the CAS was successful.
+    nonRTLoopIdx = 0; \* Needed to ensure TLC doesn't loop forever.
 begin
   non_rt_loop:
-    while (Stopped # TRUE) do
-      nonRTLoopIdx := nonRTLoopIdx + 1;
-      swapped := FALSE;
+    while (Stopped = FALSE) do
+      nonRTLoopIdx := nonRTLoopIdx + 1; \* Non-essential part of the spec to make it work with TLC.
+      swapped := FALSE; \* Technically, this variable should be pushed into the stack every loop, so we have to reset it every loop.
       non_rt_new:
-        nonRTLocalDataPointer := CHOOSE i \in DOMAIN Memory : Memory[i] = Uninitialized;
-        Memory[nonRTLocalDataPointer] := nonRTLocalDataPointer;
-        \* This checks that there's no data race with the rt_proc.
-        \* It is kind of a hack, but I'm not 100% certain how to write an invariant for this.
-        assert (pc["RTThread"] # "rt_proc" \/ nonRTLocalDataPointer # rtLocalDataPointer);
+        call Malloc();
       non_rt_cas_loop:
         while (swapped = FALSE) do
-          non_rt_cas_step1:
-            expected := OwnedPointer;
-          non_rt_cas_step2:
-            CompareAndSwap(expected, nonRTLocalDataPointer, AtomicPointer, swapped);
+          non_rt_cas_read:
+            \* In C++, compare_exchange_strong will update the value of expected
+            \* if it fails. However, in the reference code, this behavior is
+            \* "forced" off as the for loop reads the expected from storage 
+            \* every iteration. This is why the following line of code is needed.
+            expectedPointer := StorageDataPointer;
+          non_rt_cas_cas:
+            CompareAndSwap(expectedPointer, NewPointer, AtomicDataPointer, swapped);
         end while;
-      non_rt_delete_data:
-        Memory[OwnedPointer] := Uninitialized;
-        \* This checks that there's no data race with the rt_proc.
-        \* It is kind of a hack, but I'm not 100% certain how to write an invariant for this.
-        assert (pc["RTThread"] # "rt_proc" \/ OwnedPointer # rtLocalDataPointer);
-      non_rt_move_pointer:
-        OwnedPointer := nonRTLocalDataPointer;
+        \* At this point, the original AtomicDataPointer should have taken the 
+        \* value of the newly allocated newDataPointer. The StorageDataPointer
+        \* is unchanged for now, and the ownership resides with the local
+        \* variable newDataPointer, which is about to be deleted as it goes out
+        \* of scope. The reference implementation then does 
+        \* OwnedDataPointer = std::move(newDataPointer), which is captured in
+        \* the next two steps. This ensures the old data is cleaned up and the 
+        \* data is properly owned (by a global variable).
+      non_rt_delete:
+        \* Is the order correct? Does unique_ptr delete first then reassign? 
+        \* Certainly easier to write in TLA if true.
+        \* TODO: maybe it doesn't even matter. This can be confirmed by swapping
+        \* these two steps and rerunning TLC.
+        call Free(StorageDataPointer);
+      non_rt_move_ptr:
+        StorageDataPointer := NewPointer;
     end while;
 end process;
 
-fair process RTThread = "RTThread"
-variables
-  rtLocalDataPointer,
-  rtLoopIdx = 0;
+fair process RtThread = "RtThread"
+  variables
+    rtLocalPointer, \* The pointer read by the RT thread.
+    rtLoopIdx = 0,  \* Needed to ensure TLC doesn't loop forever.
 begin
   rt_loop:
-    while (rtLoopIdx < RTIterations) do
+    while (rtLoopIdx < kNumOfRTIterations) do
       rtLoopIdx := rtLoopIdx + 1;
       rt_exchange:
-        \* Exchange the global pointer with "null" pointer in an atomic step.
-        rtLocalDataPointer := AtomicPointer || AtomicPointer := 0;
-      rt_proc:
-        skip;
-        \* The following should be caught by the invariant, so it is skipped for now.
-        \* assert Memory[rtLocalDataPointer] # Uninitialized;
-      rt_set_back:
-        AtomicPointer := rtLocalDataPointer;
+        \* Atomically exchange the AtomicDataPointer with a "null" value to
+        \* signal to the non-RT thread that it is busy with the data and
+        \* shouldn't be changed while it is busy.
+        rtLocalPointer := AtomicDataPointer || AtomicDataPointer := 0;
+      rt_use_data:
+        call ReadMemory(rtLocalPointer);
+      rt_exchange_back:
+        AtomicDataPointer := rtLocalPointer;
     end while;
-    Stopped := TRUE;
 end process;
 
-end algorithm; *)
-\* BEGIN TRANSLATION (chksum(pcal) = "972fce36" /\ chksum(tla) = "66515f9d")
+end algorithm*)
+\* BEGIN TRANSLATION (chksum(pcal) = "3356c69d" /\ chksum(tla) = "d971d4e")
+\* Parameter pointer of procedure Free at line 78 col 16 changed to pointer_
 CONSTANT defaultInitValue
-VARIABLES Memory, OwnedPointer, AtomicPointer, Stopped, pc,
-          nonRTLocalDataPointer, expected, swapped, nonRTLoopIdx,
-          rtLocalDataPointer, rtLoopIdx
+VARIABLES Memory, MemoryAccessCounter, NewPointer, MemoryRead, 
+          AtomicDataPointer, StorageDataPointer, Stopped, pc, stack, pointer_, 
+          pointer, expectedPointer, swapped, nonRTLoopIdx, rtLocalPointer, 
+          rtLoopIdx
 
-vars == << Memory, OwnedPointer, AtomicPointer, Stopped, pc,
-           nonRTLocalDataPointer, expected, swapped, nonRTLoopIdx,
-           rtLocalDataPointer, rtLoopIdx >>
+vars == << Memory, MemoryAccessCounter, NewPointer, MemoryRead, 
+           AtomicDataPointer, StorageDataPointer, Stopped, pc, stack, 
+           pointer_, pointer, expectedPointer, swapped, nonRTLoopIdx, 
+           rtLocalPointer, rtLoopIdx >>
 
-ProcSet == {"NonRTThread"} \cup {"RTThread"}
+ProcSet == {"NonRtThread"} \cup {"RtThread"}
 
 Init == (* Global variables *)
-        /\ Memory = [i \in 1..MemoryCapacity |-> IF i = 1 THEN 1 ELSE Uninitialized]
-        /\ OwnedPointer = 1
-        /\ AtomicPointer = 1
+        /\ Memory = [i \in 1..kMemoryCapacity |-> IF i = 1 THEN 1 ELSE kUninitialized]
+        /\ MemoryAccessCounter = [i \in 1..kMemoryCapacity |-> 0]
+        /\ NewPointer = defaultInitValue
+        /\ MemoryRead = 0
+        /\ AtomicDataPointer = 1
+        /\ StorageDataPointer = 1
         /\ Stopped = FALSE
-        (* Process NonRTThread *)
-        /\ nonRTLocalDataPointer = defaultInitValue
-        /\ expected = defaultInitValue
-        /\ swapped = FALSE
+        (* Procedure Free *)
+        /\ pointer_ = [ self \in ProcSet |-> defaultInitValue]
+        (* Procedure ReadMemory *)
+        /\ pointer = [ self \in ProcSet |-> defaultInitValue]
+        (* Process NonRtThread *)
+        /\ expectedPointer = defaultInitValue
+        /\ swapped = defaultInitValue
         /\ nonRTLoopIdx = 0
-        (* Process RTThread *)
-        /\ rtLocalDataPointer = defaultInitValue
+        (* Process RtThread *)
+        /\ rtLocalPointer = defaultInitValue
         /\ rtLoopIdx = 0
-        /\ pc = [self \in ProcSet |-> CASE self = "NonRTThread" -> "non_rt_loop"
-                                        [] self = "RTThread" -> "rt_loop"]
+        /\ stack = [self \in ProcSet |-> << >>]
+        /\ pc = [self \in ProcSet |-> CASE self = "NonRtThread" -> "non_rt_loop"
+                                        [] self = "RtThread" -> "rt_loop"]
 
-non_rt_loop == /\ pc["NonRTThread"] = "non_rt_loop"
-               /\ IF (Stopped # TRUE)
+malloc1(self) == /\ pc[self] = "malloc1"
+                 /\ NewPointer' = (CHOOSE i \in DOMAIN Memory : Memory[i] = kUninitialized)
+                 /\ Memory' = [Memory EXCEPT ![NewPointer'] = NewPointer']
+                 /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![NewPointer'] = MemoryAccessCounter[NewPointer'] + 1]
+                 /\ pc' = [pc EXCEPT ![self] = "malloc2"]
+                 /\ UNCHANGED << MemoryRead, AtomicDataPointer, 
+                                 StorageDataPointer, Stopped, stack, pointer_, 
+                                 pointer, expectedPointer, swapped, 
+                                 nonRTLoopIdx, rtLocalPointer, rtLoopIdx >>
+
+malloc2(self) == /\ pc[self] = "malloc2"
+                 /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![NewPointer] = MemoryAccessCounter[NewPointer] - 1]
+                 /\ pc' = [pc EXCEPT ![self] = Head(stack[self]).pc]
+                 /\ stack' = [stack EXCEPT ![self] = Tail(stack[self])]
+                 /\ UNCHANGED << Memory, NewPointer, MemoryRead, 
+                                 AtomicDataPointer, StorageDataPointer, 
+                                 Stopped, pointer_, pointer, expectedPointer, 
+                                 swapped, nonRTLoopIdx, rtLocalPointer, 
+                                 rtLoopIdx >>
+
+Malloc(self) == malloc1(self) \/ malloc2(self)
+
+free1(self) == /\ pc[self] = "free1"
+               /\ Memory' = [Memory EXCEPT ![pointer_[self]] = kUninitialized]
+               /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer_[self]] = MemoryAccessCounter[pointer_[self]] + 1]
+               /\ pc' = [pc EXCEPT ![self] = "free2"]
+               /\ UNCHANGED << NewPointer, MemoryRead, AtomicDataPointer, 
+                               StorageDataPointer, Stopped, stack, pointer_, 
+                               pointer, expectedPointer, swapped, nonRTLoopIdx, 
+                               rtLocalPointer, rtLoopIdx >>
+
+free2(self) == /\ pc[self] = "free2"
+               /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer_[self]] = MemoryAccessCounter[pointer_[self]] - 1]
+               /\ pc' = [pc EXCEPT ![self] = Head(stack[self]).pc]
+               /\ pointer_' = [pointer_ EXCEPT ![self] = Head(stack[self]).pointer_]
+               /\ stack' = [stack EXCEPT ![self] = Tail(stack[self])]
+               /\ UNCHANGED << Memory, NewPointer, MemoryRead, 
+                               AtomicDataPointer, StorageDataPointer, Stopped, 
+                               pointer, expectedPointer, swapped, nonRTLoopIdx, 
+                               rtLocalPointer, rtLoopIdx >>
+
+Free(self) == free1(self) \/ free2(self)
+
+readmem1(self) == /\ pc[self] = "readmem1"
+                  /\ MemoryRead' = Memory[pointer[self]]
+                  /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer[self]] = MemoryAccessCounter[pointer[self]] + 1]
+                  /\ pc' = [pc EXCEPT ![self] = "readmem2"]
+                  /\ UNCHANGED << Memory, NewPointer, AtomicDataPointer, 
+                                  StorageDataPointer, Stopped, stack, pointer_, 
+                                  pointer, expectedPointer, swapped, 
+                                  nonRTLoopIdx, rtLocalPointer, rtLoopIdx >>
+
+readmem2(self) == /\ pc[self] = "readmem2"
+                  /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer[self]] = MemoryAccessCounter[pointer[self]] - 1]
+                  /\ pc' = [pc EXCEPT ![self] = Head(stack[self]).pc]
+                  /\ pointer' = [pointer EXCEPT ![self] = Head(stack[self]).pointer]
+                  /\ stack' = [stack EXCEPT ![self] = Tail(stack[self])]
+                  /\ UNCHANGED << Memory, NewPointer, MemoryRead, 
+                                  AtomicDataPointer, StorageDataPointer, 
+                                  Stopped, pointer_, expectedPointer, swapped, 
+                                  nonRTLoopIdx, rtLocalPointer, rtLoopIdx >>
+
+ReadMemory(self) == readmem1(self) \/ readmem2(self)
+
+non_rt_loop == /\ pc["NonRtThread"] = "non_rt_loop"
+               /\ IF (Stopped = FALSE)
                      THEN /\ nonRTLoopIdx' = nonRTLoopIdx + 1
                           /\ swapped' = FALSE
-                          /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_new"]
-                     ELSE /\ pc' = [pc EXCEPT !["NonRTThread"] = "Done"]
+                          /\ pc' = [pc EXCEPT !["NonRtThread"] = "non_rt_new"]
+                     ELSE /\ pc' = [pc EXCEPT !["NonRtThread"] = "Done"]
                           /\ UNCHANGED << swapped, nonRTLoopIdx >>
-               /\ UNCHANGED << Memory, OwnedPointer, AtomicPointer, Stopped,
-                               nonRTLocalDataPointer, expected,
-                               rtLocalDataPointer, rtLoopIdx >>
+               /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                               MemoryRead, AtomicDataPointer, 
+                               StorageDataPointer, Stopped, stack, pointer_, 
+                               pointer, expectedPointer, rtLocalPointer, 
+                               rtLoopIdx >>
 
-non_rt_new == /\ pc["NonRTThread"] = "non_rt_new"
-              /\ nonRTLocalDataPointer' = (CHOOSE i \in DOMAIN Memory : Memory[i] = Uninitialized)
-              /\ Memory' = [Memory EXCEPT ![nonRTLocalDataPointer'] = nonRTLocalDataPointer']
-              /\ Assert((pc["RTThread"] # "rt_proc" \/ nonRTLocalDataPointer' # rtLocalDataPointer),
-                        "Failure of assertion at line 52, column 9.")
-              /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_cas_loop"]
-              /\ UNCHANGED << OwnedPointer, AtomicPointer, Stopped, expected,
-                              swapped, nonRTLoopIdx, rtLocalDataPointer,
-                              rtLoopIdx >>
+non_rt_new == /\ pc["NonRtThread"] = "non_rt_new"
+              /\ stack' = [stack EXCEPT !["NonRtThread"] = << [ procedure |->  "Malloc",
+                                                                pc        |->  "non_rt_cas_loop" ] >>
+                                                            \o stack["NonRtThread"]]
+              /\ pc' = [pc EXCEPT !["NonRtThread"] = "malloc1"]
+              /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                              MemoryRead, AtomicDataPointer, 
+                              StorageDataPointer, Stopped, pointer_, pointer, 
+                              expectedPointer, swapped, nonRTLoopIdx, 
+                              rtLocalPointer, rtLoopIdx >>
 
-non_rt_cas_loop == /\ pc["NonRTThread"] = "non_rt_cas_loop"
+non_rt_cas_loop == /\ pc["NonRtThread"] = "non_rt_cas_loop"
                    /\ IF (swapped = FALSE)
-                         THEN /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_cas_step1"]
-                         ELSE /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_delete_data"]
-                   /\ UNCHANGED << Memory, OwnedPointer, AtomicPointer,
-                                   Stopped, nonRTLocalDataPointer, expected,
-                                   swapped, nonRTLoopIdx, rtLocalDataPointer,
+                         THEN /\ pc' = [pc EXCEPT !["NonRtThread"] = "non_rt_cas_read"]
+                         ELSE /\ pc' = [pc EXCEPT !["NonRtThread"] = "non_rt_delete"]
+                   /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                                   MemoryRead, AtomicDataPointer, 
+                                   StorageDataPointer, Stopped, stack, 
+                                   pointer_, pointer, expectedPointer, swapped, 
+                                   nonRTLoopIdx, rtLocalPointer, rtLoopIdx >>
+
+non_rt_cas_read == /\ pc["NonRtThread"] = "non_rt_cas_read"
+                   /\ expectedPointer' = StorageDataPointer
+                   /\ pc' = [pc EXCEPT !["NonRtThread"] = "non_rt_cas_cas"]
+                   /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                                   MemoryRead, AtomicDataPointer, 
+                                   StorageDataPointer, Stopped, stack, 
+                                   pointer_, pointer, swapped, nonRTLoopIdx, 
+                                   rtLocalPointer, rtLoopIdx >>
+
+non_rt_cas_cas == /\ pc["NonRtThread"] = "non_rt_cas_cas"
+                  /\ IF (AtomicDataPointer = expectedPointer)
+                        THEN /\ AtomicDataPointer' = NewPointer
+                             /\ swapped' = TRUE
+                        ELSE /\ swapped' = FALSE
+                             /\ UNCHANGED AtomicDataPointer
+                  /\ pc' = [pc EXCEPT !["NonRtThread"] = "non_rt_cas_loop"]
+                  /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                                  MemoryRead, StorageDataPointer, Stopped, 
+                                  stack, pointer_, pointer, expectedPointer, 
+                                  nonRTLoopIdx, rtLocalPointer, rtLoopIdx >>
+
+non_rt_delete == /\ pc["NonRtThread"] = "non_rt_delete"
+                 /\ /\ pointer_' = [pointer_ EXCEPT !["NonRtThread"] = StorageDataPointer]
+                    /\ stack' = [stack EXCEPT !["NonRtThread"] = << [ procedure |->  "Free",
+                                                                      pc        |->  "non_rt_move_ptr",
+                                                                      pointer_  |->  pointer_["NonRtThread"] ] >>
+                                                                  \o stack["NonRtThread"]]
+                 /\ pc' = [pc EXCEPT !["NonRtThread"] = "free1"]
+                 /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                                 MemoryRead, AtomicDataPointer, 
+                                 StorageDataPointer, Stopped, pointer, 
+                                 expectedPointer, swapped, nonRTLoopIdx, 
+                                 rtLocalPointer, rtLoopIdx >>
+
+non_rt_move_ptr == /\ pc["NonRtThread"] = "non_rt_move_ptr"
+                   /\ StorageDataPointer' = NewPointer
+                   /\ pc' = [pc EXCEPT !["NonRtThread"] = "non_rt_loop"]
+                   /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                                   MemoryRead, AtomicDataPointer, Stopped, 
+                                   stack, pointer_, pointer, expectedPointer, 
+                                   swapped, nonRTLoopIdx, rtLocalPointer, 
                                    rtLoopIdx >>
 
-non_rt_cas_step1 == /\ pc["NonRTThread"] = "non_rt_cas_step1"
-                    /\ expected' = OwnedPointer
-                    /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_cas_step2"]
-                    /\ UNCHANGED << Memory, OwnedPointer, AtomicPointer,
-                                    Stopped, nonRTLocalDataPointer, swapped,
-                                    nonRTLoopIdx, rtLocalDataPointer,
-                                    rtLoopIdx >>
+NonRtThread == non_rt_loop \/ non_rt_new \/ non_rt_cas_loop
+                  \/ non_rt_cas_read \/ non_rt_cas_cas \/ non_rt_delete
+                  \/ non_rt_move_ptr
 
-non_rt_cas_step2 == /\ pc["NonRTThread"] = "non_rt_cas_step2"
-                    /\ IF (AtomicPointer = expected)
-                          THEN /\ AtomicPointer' = nonRTLocalDataPointer
-                               /\ swapped' = TRUE
-                          ELSE /\ swapped' = FALSE
-                               /\ UNCHANGED AtomicPointer
-                    /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_cas_loop"]
-                    /\ UNCHANGED << Memory, OwnedPointer, Stopped,
-                                    nonRTLocalDataPointer, expected,
-                                    nonRTLoopIdx, rtLocalDataPointer,
-                                    rtLoopIdx >>
-
-non_rt_delete_data == /\ pc["NonRTThread"] = "non_rt_delete_data"
-                      /\ Memory' = [Memory EXCEPT ![OwnedPointer] = Uninitialized]
-                      /\ Assert((pc["RTThread"] # "rt_proc" \/ OwnedPointer # rtLocalDataPointer),
-                                "Failure of assertion at line 64, column 9.")
-                      /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_move_pointer"]
-                      /\ UNCHANGED << OwnedPointer, AtomicPointer, Stopped,
-                                      nonRTLocalDataPointer, expected, swapped,
-                                      nonRTLoopIdx, rtLocalDataPointer,
-                                      rtLoopIdx >>
-
-non_rt_move_pointer == /\ pc["NonRTThread"] = "non_rt_move_pointer"
-                       /\ OwnedPointer' = nonRTLocalDataPointer
-                       /\ pc' = [pc EXCEPT !["NonRTThread"] = "non_rt_loop"]
-                       /\ UNCHANGED << Memory, AtomicPointer, Stopped,
-                                       nonRTLocalDataPointer, expected,
-                                       swapped, nonRTLoopIdx,
-                                       rtLocalDataPointer, rtLoopIdx >>
-
-NonRTThread == non_rt_loop \/ non_rt_new \/ non_rt_cas_loop
-                  \/ non_rt_cas_step1 \/ non_rt_cas_step2
-                  \/ non_rt_delete_data \/ non_rt_move_pointer
-
-rt_loop == /\ pc["RTThread"] = "rt_loop"
-           /\ IF (rtLoopIdx < RTIterations)
+rt_loop == /\ pc["RtThread"] = "rt_loop"
+           /\ IF (rtLoopIdx < kNumOfRTIterations)
                  THEN /\ rtLoopIdx' = rtLoopIdx + 1
-                      /\ pc' = [pc EXCEPT !["RTThread"] = "rt_exchange"]
-                      /\ UNCHANGED Stopped
-                 ELSE /\ Stopped' = TRUE
-                      /\ pc' = [pc EXCEPT !["RTThread"] = "Done"]
+                      /\ pc' = [pc EXCEPT !["RtThread"] = "rt_exchange"]
+                 ELSE /\ pc' = [pc EXCEPT !["RtThread"] = "Done"]
                       /\ UNCHANGED rtLoopIdx
-           /\ UNCHANGED << Memory, OwnedPointer, AtomicPointer,
-                           nonRTLocalDataPointer, expected, swapped,
-                           nonRTLoopIdx, rtLocalDataPointer >>
+           /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, MemoryRead, 
+                           AtomicDataPointer, StorageDataPointer, Stopped, 
+                           stack, pointer_, pointer, expectedPointer, swapped, 
+                           nonRTLoopIdx, rtLocalPointer >>
 
-rt_exchange == /\ pc["RTThread"] = "rt_exchange"
-               /\ /\ AtomicPointer' = 0
-                  /\ rtLocalDataPointer' = AtomicPointer
-               /\ pc' = [pc EXCEPT !["RTThread"] = "rt_proc"]
-               /\ UNCHANGED << Memory, OwnedPointer, Stopped,
-                               nonRTLocalDataPointer, expected, swapped,
+rt_exchange == /\ pc["RtThread"] = "rt_exchange"
+               /\ /\ AtomicDataPointer' = 0
+                  /\ rtLocalPointer' = AtomicDataPointer
+               /\ pc' = [pc EXCEPT !["RtThread"] = "rt_use_data"]
+               /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                               MemoryRead, StorageDataPointer, Stopped, stack, 
+                               pointer_, pointer, expectedPointer, swapped, 
                                nonRTLoopIdx, rtLoopIdx >>
 
-rt_proc == /\ pc["RTThread"] = "rt_proc"
-           /\ TRUE
-           /\ pc' = [pc EXCEPT !["RTThread"] = "rt_set_back"]
-           /\ UNCHANGED << Memory, OwnedPointer, AtomicPointer, Stopped,
-                           nonRTLocalDataPointer, expected, swapped,
-                           nonRTLoopIdx, rtLocalDataPointer, rtLoopIdx >>
+rt_use_data == /\ pc["RtThread"] = "rt_use_data"
+               /\ /\ pointer' = [pointer EXCEPT !["RtThread"] = rtLocalPointer]
+                  /\ stack' = [stack EXCEPT !["RtThread"] = << [ procedure |->  "ReadMemory",
+                                                                 pc        |->  "rt_exchange_back",
+                                                                 pointer   |->  pointer["RtThread"] ] >>
+                                                             \o stack["RtThread"]]
+               /\ pc' = [pc EXCEPT !["RtThread"] = "readmem1"]
+               /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                               MemoryRead, AtomicDataPointer, 
+                               StorageDataPointer, Stopped, pointer_, 
+                               expectedPointer, swapped, nonRTLoopIdx, 
+                               rtLocalPointer, rtLoopIdx >>
 
-rt_set_back == /\ pc["RTThread"] = "rt_set_back"
-               /\ AtomicPointer' = rtLocalDataPointer
-               /\ pc' = [pc EXCEPT !["RTThread"] = "rt_loop"]
-               /\ UNCHANGED << Memory, OwnedPointer, Stopped,
-                               nonRTLocalDataPointer, expected, swapped,
-                               nonRTLoopIdx, rtLocalDataPointer, rtLoopIdx >>
+rt_exchange_back == /\ pc["RtThread"] = "rt_exchange_back"
+                    /\ AtomicDataPointer' = rtLocalPointer
+                    /\ pc' = [pc EXCEPT !["RtThread"] = "rt_loop"]
+                    /\ UNCHANGED << Memory, MemoryAccessCounter, NewPointer, 
+                                    MemoryRead, StorageDataPointer, Stopped, 
+                                    stack, pointer_, pointer, expectedPointer, 
+                                    swapped, nonRTLoopIdx, rtLocalPointer, 
+                                    rtLoopIdx >>
 
-RTThread == rt_loop \/ rt_exchange \/ rt_proc \/ rt_set_back
+RtThread == rt_loop \/ rt_exchange \/ rt_use_data \/ rt_exchange_back
 
 (* Allow infinite stuttering to prevent deadlock on termination. *)
 Terminating == /\ \A self \in ProcSet: pc[self] = "Done"
                /\ UNCHANGED vars
 
-Next == NonRTThread \/ RTThread
+Next == NonRtThread \/ RtThread
+           \/ (\E self \in ProcSet:  \/ Malloc(self) \/ Free(self)
+                                     \/ ReadMemory(self))
            \/ Terminating
 
 Spec == /\ Init /\ [][Next]_vars
-        /\ WF_vars(NonRTThread)
-        /\ WF_vars(RTThread)
+        /\ /\ WF_vars(NonRtThread)
+           /\ WF_vars(Malloc("NonRtThread"))
+           /\ WF_vars(Free("NonRtThread"))
+        /\ WF_vars(RtThread) /\ WF_vars(ReadMemory("RtThread"))
 
 Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
 \* END TRANSLATION
 
-MemoryUsage ==
-  Cardinality({i \in DOMAIN Memory : Memory[i] # Uninitialized})
+MemoryUsage == Cardinality({i \in DOMAIN Memory : Memory[i] # kUninitialized})
 
-\* An action constraint that constrains the NonRT thread from infinitely
-\* spinning. Currently hard coded so it cannot be 3 loop iterations ahead.
 ActionConstraintNonRTThreadDoesNotInfinitelySpin ==
   (nonRTLoopIdx - rtLoopIdx) < 3
 
-\* Invariants and temporal properties to check
-\* ===========================================
-\* - Invariants
-\*   - Ensure there are no access to uninitialized memory
-\*   - Ensure there are no memory leaks (memory usage remains bounded)
-\*   - Ensure there are no data races: when the RT thread has access to the
-\*     variable, make sure the non-RT thread cannot write to it.
-\*     - This is implemented as an assertion inline and seems a bit hacky. An o
-\*       invariant or temporal property would serve this much better.
-\* - Temporal properties
-\*   - Ensure that the RT thread actually reads the data in "some cases".
-\*     - This is not well-defined enough to write as a property.
-\*   - Ensure that the RT thread eventually reads the "latest" data and not a past data.
-\*     - Also badly defined so it cannot be written as a property for now.
+(*************************************
+ Invariants and temporal conditions
+ ==================================
 
-\* Makes sure the RT thread never accesses uninitialized memory.
-InvariantNoUninitializedMemoryAccess ==
-  (pc["RTThread"] = "rt_proc") => (Memory[rtLocalDataPointer] # Uninitialized)
+ Invariants
 
-\* Makes sure we don't use an infinite amount of memory
-InvariantNoMemoryLeak ==
-  MemoryUsage <= 2
+ - Ensure no access to uninitialized memory
+ - Ensure no memory leak (memory usage remains bounded)
+ - Ensure no data race on Memory
+   - AtomicDataPointer cannot have a data race because it is an atomic type in implementation?
+   - StorageDataPointer cannot have a data race because only the non-RT loop read and write to it.
+   - Memory can have data race on access and on malloc/free.
 
-\* TODO: need a temporary property to ensure that the RT loop eventually read the data?
+ Temporal conditions
+
+ - Ensure that data is eventually swapped and the data is eventually read.
+ - Ensure that past data is not read
+
+ *************************************)
+
+InvariantNoUninitializedMemoryAccess == MemoryRead # kUninitialized
+InvariantNoMemoryLeak == MemoryUsage <= 2
+InvariantNoDataRaceOnMemory == \A i \in DOMAIN MemoryAccessCounter: MemoryAccessCounter[i] <= 1
 
 
-====
+=============================================================================
+\* Modification History
+\* Last modified Mon May 30 20:37:51 EDT 2022 by shuhao
+\* Created Fri May 27 15:43:27 EDT 2022 by shuhao

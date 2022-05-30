@@ -2,34 +2,32 @@
 <launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
     <stringAttribute key="configurationName" value="Model"/>
     <intAttribute key="distributedFPSetCount" value="0"/>
-    <stringAttribute key="distributedNetworkInterface" value="172.17.0.1"/>
+    <stringAttribute key="distributedNetworkInterface" value="192.0.2.2"/>
     <intAttribute key="distributedNodesCount" value="1"/>
     <stringAttribute key="distributedTLC" value="off"/>
-    <intAttribute key="fpIndex" value="46"/>
+    <intAttribute key="fpIndex" value="45"/>
     <intAttribute key="maxHeapSize" value="25"/>
     <stringAttribute key="modelBehaviorInit" value=""/>
     <stringAttribute key="modelBehaviorNext" value=""/>
     <stringAttribute key="modelBehaviorSpec" value="Spec"/>
     <intAttribute key="modelBehaviorSpecType" value="1"/>
-    <stringAttribute key="modelBehaviorVars" value="Memory, NewPointer, StorageDataPointer, pointer, pc, Stopped, MemoryAccessCounter, swapped, rtLocalPointer, nonRTLoopIdx, pointer_, expectedPointer, AtomicDataPointer, MemoryRead, rtLoopIdx, stack"/>
+    <stringAttribute key="modelBehaviorVars" value="OwnedPointer, expected, Memory, nonRTLocalDataPointer, AtomicPointer, pc, Stopped, swapped, nonRTLoopIdx, rtLoopIdx, rtLocalDataPointer"/>
     <stringAttribute key="modelComments" value=""/>
     <booleanAttribute key="modelCorrectnessCheckDeadlock" value="true"/>
     <listAttribute key="modelCorrectnessInvariants">
         <listEntry value="1InvariantNoUninitializedMemoryAccess"/>
         <listEntry value="1InvariantNoMemoryLeak"/>
-        <listEntry value="1InvariantNoDataRaceOnMemory"/>
     </listAttribute>
     <listAttribute key="modelCorrectnessProperties">
         <listEntry value="1Termination"/>
     </listAttribute>
     <intAttribute key="modelEditorOpenTabs" value="10"/>
-    <stringAttribute key="modelExpressionEval" value=""/>
     <stringAttribute key="modelParameterActionConstraint" value="ActionConstraintNonRTThreadDoesNotInfinitelySpin"/>
     <listAttribute key="modelParameterConstants">
-        <listEntry value="kMemoryCapacity;;4;0;0"/>
-        <listEntry value="kUninitialized;;kUninitialized;1;0"/>
         <listEntry value="defaultInitValue;;defaultInitValue;1;0"/>
-        <listEntry value="kNumOfRTIterations;;4;0;0"/>
+        <listEntry value="RTIterations;;4;0;0"/>
+        <listEntry value="MemoryCapacity;;5;0;0"/>
+        <listEntry value="Uninitialized;;Uninitialized;1;0"/>
     </listAttribute>
     <stringAttribute key="modelParameterContraint" value=""/>
     <listAttribute key="modelParameterDefinitions"/>
