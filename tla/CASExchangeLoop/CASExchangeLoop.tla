@@ -25,9 +25,11 @@ variables
   \* The CASExchange algorithm is all about swapping pointers in real life. In
   \* TLA+, this is represented via indices.
   Memory = [i \in 1..kMemoryCapacity |-> IF i = 1 THEN 1 ELSE kUninitialized],
-  \* Used as a workaround to detect data race.
-  \* TODO: give links to the mailing list post.
-  MemoryAccessCounter = [i \in 1..kMemoryCapacity |-> 0],
+  \* Used as a workaround to detect data race. Data race is only checked on the
+  \* Memory variable as all other variables do not have problems with data
+  \* races.
+  \* See this thread for details: http://discuss.tlapl.us/msg04894.html
+  MemoryAccessCounter = [i \in 1..kMemoryCapacity |-> [reads |-> 0, writes |-> 0]],
   \* PlusCal procedures cannot directly return variables. A global variable is needed.
   \* Since we only call Malloc/Read from a single thread, we can get away with a
   \* single variable, otherwise we would need a function with the domain = ProcSet.
@@ -71,27 +73,27 @@ procedure Malloc() begin
     \* recognize it as a valid object.
     Memory[NewPointer] := NewPointer;
 
-    MemoryAccessCounter[NewPointer] := MemoryAccessCounter[NewPointer] + 1;
+    MemoryAccessCounter[NewPointer].writes := MemoryAccessCounter[NewPointer].writes + 1;
   malloc2:
-    MemoryAccessCounter[NewPointer] := MemoryAccessCounter[NewPointer] - 1;
+    MemoryAccessCounter[NewPointer].writes := MemoryAccessCounter[NewPointer].writes - 1;
     return;
 end procedure;
 
 procedure Free(pointer) begin
   free1:
     Memory[pointer] := kUninitialized;
-    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] + 1;
+    MemoryAccessCounter[pointer].writes := MemoryAccessCounter[pointer].writes + 1;
   free2:
-    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] - 1;
+    MemoryAccessCounter[pointer].writes := MemoryAccessCounter[pointer].writes - 1;
     return;
 end procedure;
 
 procedure ReadMemory(pointer) begin
   readmem1:
     MemoryRead := Memory[pointer];
-    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] + 1;
+    MemoryAccessCounter[pointer].reads := MemoryAccessCounter[pointer].reads + 1;
   readmem2:
-    MemoryAccessCounter[pointer] := MemoryAccessCounter[pointer] - 1;
+    MemoryAccessCounter[pointer].reads := MemoryAccessCounter[pointer].reads - 1;
     return;
 end procedure;
 
@@ -158,8 +160,8 @@ begin
 end process;
 
 end algorithm*)
-\* BEGIN TRANSLATION (chksum(pcal) = "3356c69d" /\ chksum(tla) = "d971d4e")
-\* Parameter pointer of procedure Free at line 78 col 16 changed to pointer_
+\* BEGIN TRANSLATION (chksum(pcal) = "a29d5d6b" /\ chksum(tla) = "cc482faf")
+\* Parameter pointer of procedure Free at line 82 col 16 changed to pointer_
 CONSTANT defaultInitValue
 VARIABLES Memory, MemoryAccessCounter, NewPointer, MemoryRead, 
           AtomicDataPointer, StorageDataPointer, Stopped, pc, stack, pointer_, 
@@ -175,7 +177,7 @@ ProcSet == {"NonRtThread"} \cup {"RtThread"}
 
 Init == (* Global variables *)
         /\ Memory = [i \in 1..kMemoryCapacity |-> IF i = 1 THEN 1 ELSE kUninitialized]
-        /\ MemoryAccessCounter = [i \in 1..kMemoryCapacity |-> 0]
+        /\ MemoryAccessCounter = [i \in 1..kMemoryCapacity |-> [reads |-> 0, writes |-> 0]]
         /\ NewPointer = defaultInitValue
         /\ MemoryRead = 0
         /\ AtomicDataPointer = 1
@@ -199,7 +201,7 @@ Init == (* Global variables *)
 malloc1(self) == /\ pc[self] = "malloc1"
                  /\ NewPointer' = (CHOOSE i \in DOMAIN Memory : Memory[i] = kUninitialized)
                  /\ Memory' = [Memory EXCEPT ![NewPointer'] = NewPointer']
-                 /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![NewPointer'] = MemoryAccessCounter[NewPointer'] + 1]
+                 /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![NewPointer'].writes = MemoryAccessCounter[NewPointer'].writes + 1]
                  /\ pc' = [pc EXCEPT ![self] = "malloc2"]
                  /\ UNCHANGED << MemoryRead, AtomicDataPointer, 
                                  StorageDataPointer, Stopped, stack, pointer_, 
@@ -207,7 +209,7 @@ malloc1(self) == /\ pc[self] = "malloc1"
                                  nonRTLoopIdx, rtLocalPointer, rtLoopIdx >>
 
 malloc2(self) == /\ pc[self] = "malloc2"
-                 /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![NewPointer] = MemoryAccessCounter[NewPointer] - 1]
+                 /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![NewPointer].writes = MemoryAccessCounter[NewPointer].writes - 1]
                  /\ pc' = [pc EXCEPT ![self] = Head(stack[self]).pc]
                  /\ stack' = [stack EXCEPT ![self] = Tail(stack[self])]
                  /\ UNCHANGED << Memory, NewPointer, MemoryRead, 
@@ -220,7 +222,7 @@ Malloc(self) == malloc1(self) \/ malloc2(self)
 
 free1(self) == /\ pc[self] = "free1"
                /\ Memory' = [Memory EXCEPT ![pointer_[self]] = kUninitialized]
-               /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer_[self]] = MemoryAccessCounter[pointer_[self]] + 1]
+               /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer_[self]].writes = MemoryAccessCounter[pointer_[self]].writes + 1]
                /\ pc' = [pc EXCEPT ![self] = "free2"]
                /\ UNCHANGED << NewPointer, MemoryRead, AtomicDataPointer, 
                                StorageDataPointer, Stopped, stack, pointer_, 
@@ -228,7 +230,7 @@ free1(self) == /\ pc[self] = "free1"
                                rtLocalPointer, rtLoopIdx >>
 
 free2(self) == /\ pc[self] = "free2"
-               /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer_[self]] = MemoryAccessCounter[pointer_[self]] - 1]
+               /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer_[self]].writes = MemoryAccessCounter[pointer_[self]].writes - 1]
                /\ pc' = [pc EXCEPT ![self] = Head(stack[self]).pc]
                /\ pointer_' = [pointer_ EXCEPT ![self] = Head(stack[self]).pointer_]
                /\ stack' = [stack EXCEPT ![self] = Tail(stack[self])]
@@ -241,7 +243,7 @@ Free(self) == free1(self) \/ free2(self)
 
 readmem1(self) == /\ pc[self] = "readmem1"
                   /\ MemoryRead' = Memory[pointer[self]]
-                  /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer[self]] = MemoryAccessCounter[pointer[self]] + 1]
+                  /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer[self]].reads = MemoryAccessCounter[pointer[self]].reads + 1]
                   /\ pc' = [pc EXCEPT ![self] = "readmem2"]
                   /\ UNCHANGED << Memory, NewPointer, AtomicDataPointer, 
                                   StorageDataPointer, Stopped, stack, pointer_, 
@@ -249,7 +251,7 @@ readmem1(self) == /\ pc[self] = "readmem1"
                                   nonRTLoopIdx, rtLocalPointer, rtLoopIdx >>
 
 readmem2(self) == /\ pc[self] = "readmem2"
-                  /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer[self]] = MemoryAccessCounter[pointer[self]] - 1]
+                  /\ MemoryAccessCounter' = [MemoryAccessCounter EXCEPT ![pointer[self]].reads = MemoryAccessCounter[pointer[self]].reads - 1]
                   /\ pc' = [pc EXCEPT ![self] = Head(stack[self]).pc]
                   /\ pointer' = [pointer EXCEPT ![self] = Head(stack[self]).pointer]
                   /\ stack' = [stack EXCEPT ![self] = Tail(stack[self])]
@@ -429,12 +431,16 @@ ActionConstraintNonRTThreadDoesNotInfinitelySpin ==
 
  *************************************)
 
+WriteDataRace == \E i \in DOMAIN MemoryAccessCounter: MemoryAccessCounter[i].writes > 1
+ReadDataRace == \E i \in DOMAIN MemoryAccessCounter: MemoryAccessCounter[i].writes >= 1 /\ MemoryAccessCounter[i].reads >= 1
+
 InvariantNoUninitializedMemoryAccess == MemoryRead # kUninitialized
 InvariantNoMemoryLeak == MemoryUsage <= 2
-InvariantNoDataRaceOnMemory == \A i \in DOMAIN MemoryAccessCounter: MemoryAccessCounter[i] <= 1
+InvariantNoWriteDataRace == ~WriteDataRace
+InvariantNoReadDataRace == ~ReadDataRace
 
 
 =============================================================================
 \* Modification History
-\* Last modified Mon May 30 20:37:51 EDT 2022 by shuhao
+\* Last modified Sat Jun 04 18:21:31 EDT 2022 by shuhao
 \* Created Fri May 27 15:43:27 EDT 2022 by shuhao
