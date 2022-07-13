@@ -46,12 +46,12 @@ class App {
    * Locks memory via mlockall and configure malloc to not give up memory nor
    * use mmap.
    */
-  void LockMemory();
+  void LockMemory() const;
 
   /**
    * Reserve the heap based on the heap_size_.
    */
-  void ReserveHeap();
+  void ReserveHeap() const;
 };
 }  // namespace rt
 

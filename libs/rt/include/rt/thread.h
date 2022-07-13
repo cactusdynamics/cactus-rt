@@ -74,7 +74,7 @@ class Thread {
    *
    * @returns the return value of pthread_join
    */
-  int Join();
+  int Join() const;
 
   /**
    * The name of the thread.

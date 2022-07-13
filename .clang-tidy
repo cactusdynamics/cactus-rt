@@ -1,0 +1,7 @@
+---
+Checks: 'corecppguidelines-*,misc-*,modernize-*,readability-*,bugprone-*,cert-*,-readability-magic-numbers,-readability-identifier-length,-modernize-use-trailing-return-type,-clang-diagnostic-unused-parameter,-bugprone-easily-swappable-parameters,-modernize-pass-by-value,-readability-convert-member-functions-to-static,-bugprone-narrowing-conversions'
+# https://github.com/isocpp/CppCoreGuidelines/issues/1589
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+FormatStyle: none
+

@@ -7,7 +7,7 @@
 
 namespace rt {
 void* Thread::RunThread(void* data) {
-  Thread* thread = static_cast<Thread*>(data);
+  auto* thread = static_cast<Thread*>(data);
 
   thread->BeforeRun();
 
@@ -43,7 +43,7 @@ void* Thread::RunThread(void* data) {
 
   thread->AfterRun();
 
-  return NULL;
+  return nullptr;
 }
 
 void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) {
@@ -54,7 +54,7 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
 
   // Initialize the pthread attribute
   int ret = pthread_attr_init(&attr);
-  if (ret) {
+  if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_attr_init: ") + std::strerror(ret));
   }
 
@@ -67,13 +67,13 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
   // anyway, as the compiler optimizer may realize that buffer is never used
   // and thus will simply optimize it out.
   ret = pthread_attr_setstacksize(&attr, stack_size_);
-  if (ret) {
+  if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_attr_setstacksize: ") + std::strerror(ret));
   }
 
   // Set the scheduler policy
   ret = pthread_attr_setschedpolicy(&attr, policy_);
-  if (ret) {
+  if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_attr_setschedpolicy: ") + std::strerror(ret));
   }
 
@@ -81,18 +81,18 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
   struct sched_param param;
   param.sched_priority = priority_;
   ret = pthread_attr_setschedparam(&attr, &param);
-  if (ret) {
+  if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_attr_setschedparam: ") + std::strerror(ret));
   }
 
   // Make sure threads created using the thread_attr_ takes the value from the attribute instead of inherit from the parent thread.
   ret = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  if (ret) {
+  if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_attr_setinheritsched: ") + std::strerror(ret));
   }
 
   // Setting CPU mask
-  if (cpu_affinity_.size() > 0) {
+  if (!cpu_affinity_.empty()) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     for (auto cpu : cpu_affinity_) {
@@ -100,19 +100,19 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
     }
 
     ret = pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
-    if (ret) {
+    if (ret != 0) {
       throw std::runtime_error(std::string("error in pthread_attr_setaffinity_np: ") + std::strerror(ret));
     }
   }
 
   ret = pthread_create(&thread_, &attr, &Thread::RunThread, this);
-  if (ret) {
+  if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_create: ") + std::strerror(ret));
   }
 }
 
-int Thread::Join() {
-  return pthread_join(thread_, NULL);
+int Thread::Join() const {
+  return pthread_join(thread_, nullptr);
 }
 
 }  // namespace rt

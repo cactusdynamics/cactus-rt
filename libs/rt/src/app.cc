@@ -18,14 +18,14 @@ void App::Start() {
   start_wall_time_ns_ = WallNowNs();
 }
 
-void App::ReserveHeap() {
+void App::ReserveHeap() const {
   if (heap_size_ == 0) {
     // Don't reserve anything
     return;
   }
 
   void* buf = malloc(heap_size_);
-  if (!buf) {
+  if (buf == nullptr) {
     SPDLOG_ERROR("cannot malloc: {}", std::strerror(errno));
     throw std::runtime_error{"cannot malloc"};
   }
@@ -38,7 +38,7 @@ void App::ReserveHeap() {
   free(buf);
 }
 
-void App::LockMemory() {
+void App::LockMemory() const {
   // See https://lwn.net/Articles/837019/
 
   // From the man page:
@@ -59,7 +59,7 @@ void App::LockMemory() {
   //             new pages required by a growing heap and stack as well as new
   //             memory mapped files and shared memory regions.
   int ret = mlockall(MCL_CURRENT | MCL_FUTURE);
-  if (ret) {
+  if (ret != 0) {
     SPDLOG_ERROR("mlockall failed: {}", std::strerror(errno));
     throw std::runtime_error{"mlockall failed"};
   }
