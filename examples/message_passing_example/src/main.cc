@@ -9,7 +9,7 @@ class RTApp : public rt::App {
   RtThread   rt_thread_;
 
  public:
-  RTApp(const std::string& data_file_path)
+  RTApp(const std::string& data_file_path) noexcept
       : data_logger_(data_file_path),
         rt_thread_(data_logger_, 1'000'000, std::vector<size_t>(), 30'000) {
   }
@@ -35,9 +35,9 @@ class RTApp : public rt::App {
   }
 };
 
-RTApp app("data.csv");
-
 int main() {
+  RTApp app("data.csv");
+
   app.Start();
   app.Join();
   return 0;

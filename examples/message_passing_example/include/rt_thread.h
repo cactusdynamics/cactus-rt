@@ -24,7 +24,7 @@ class RtThread : public rt::CyclicFifoThread<> {
   }
 
  protected:
-  bool Loop(int64_t now) noexcept final;
+  bool Loop(int64_t ellapsed_ns) noexcept final;
 };
 
 #endif

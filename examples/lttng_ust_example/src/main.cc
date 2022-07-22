@@ -48,10 +48,10 @@ class RTApp : public rt::App {
   }
 };
 
-RTApp app;
-
 int main() {
   spdlog::set_level(spdlog::level::debug);
+
+  RTApp app;
 
   constexpr unsigned int time = 60;
   SPDLOG_INFO("Running for {}s", time);

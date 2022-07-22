@@ -8,7 +8,7 @@
 // A no-op thread that only serves to do nothing and measure the latency
 class CyclicThread : public rt::CyclicFifoThread<> {
  public:
-  CyclicThread(std::vector<size_t> cpu_affinity) : rt::CyclicFifoThread<>("CyclicThread", 1'000'000, 80, cpu_affinity, false) {}
+  CyclicThread(std::vector<size_t> cpu_affinity) : rt::CyclicFifoThread<>("CyclicThread", 1'000'000, 80, cpu_affinity) {}
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
@@ -39,10 +39,10 @@ class RTApp : public rt::App {
   }
 };
 
-RTApp app(std::vector<size_t>{2});
-
 int main() {
   spdlog::set_level(spdlog::level::debug);
+
+  RTApp app(std::vector<size_t>{2});
 
   constexpr unsigned int time = 60;
   SPDLOG_INFO("Testing latency for {}s", time);

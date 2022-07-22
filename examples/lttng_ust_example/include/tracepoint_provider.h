@@ -42,7 +42,7 @@ TRACEPOINT_EVENT(
   TP_FIELDS(
     ctf_float(double, loop_latency_us, loop_latency_us)))
 
-// NOLINTBEGIN
+// NOLINTEND
 
 #endif
 
