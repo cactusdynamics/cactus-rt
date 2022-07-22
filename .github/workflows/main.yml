@@ -1,0 +1,21 @@
+on: [push]
+
+name: rt-demo
+
+jobs:
+  build-and-test:
+    runs-on: [self-hosted, jammy]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check if clang format is necessary
+        run: clang-format --version && find . \( -iname '*.h' -o -iname '*.cc' -o -iname '*.c' -o -iname '*.hpp' -o -iname '*.cpp' \) -not \( -path './build/*' -prune \) -not \( -path './external/*' -prune \) | xargs clang-format --dry-run -Werror
+
+      - name: Setup dependencies
+        run: apt-get update && apt-get install -y libspdlog-dev liblttng-ust-dev libboost-dev
+
+      - name: Build library
+        run: cmake -Bbuild -DENABLE_CLANG_TIDY=ON && cmake --build build -j $(nproc)
+
+      # - name: Test
+      #   run: ctest --test-dir build
