@@ -7,7 +7,7 @@
 
 // DO NOT USE THIS CODE. DEMONSTRATION ONLY.
 // See https://shuhaowu.com/blog/2022/04-linux-rt-appdev-part4.html
-// Instead, use the rt::thread in libs/rt.
+// Instead, use cactus_rt::Thread instead.
 
 class Thread {
   int priority_;

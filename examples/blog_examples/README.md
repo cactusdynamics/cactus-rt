@@ -9,7 +9,7 @@ There are three examples:
 
 - `basic.cpp` which shows a simple RT thread.
 - `loop.cpp` which shows a simple RT thread that loops.
-- `mutex.cpp` which shows the usage of the ``rt::mutex``.
+- `mutex.cpp` which shows the usage of the ``cactus_rt::mutex``.
 
 For more complete and complex examples, see the `examples` directory of this
 repo, which uses the `rt` library.
