@@ -4,6 +4,6 @@ add_executable(rt_simple_example
 
 target_link_libraries(rt_simple_example
   PRIVATE
-  rt_app_lib
+  cactus_rt
 )
 

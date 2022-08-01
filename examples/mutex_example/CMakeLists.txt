@@ -11,6 +11,6 @@ target_include_directories(rt_mutex_example
 
 target_link_libraries(rt_mutex_example
   PRIVATE
-  rt_app_lib
+  cactus_rt
   spdlog::spdlog
 )

@@ -37,7 +37,34 @@ else()
   message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
 endif()
 
-add_subdirectory(libs/rt)
+# https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+find_package(spdlog REQUIRED)
+
+add_library(cactus_rt
+  STATIC
+  src/thread.cc
+  src/app.cc
+  src/latency_tracker.cc
+)
+
+target_compile_features(cactus_rt
+  PUBLIC
+  cxx_std_20
+)
+
+target_include_directories(cactus_rt
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(cactus_rt
+  PRIVATE
+  Threads::Threads
+  spdlog::spdlog
+)
 
 if (ENABLE_EXAMPLES)
   message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")

@@ -1,26 +1,26 @@
-================================
-Real-time app framework and demo
-================================
+==========================================
+cactus-rt: a Linux real-time app framework
+==========================================
 
 Relevant blog posts: `Part 1 <https://shuhaowu.com/blog/2022/01-linux-rt-appdev-part1.html>`__ | `Part 2 <https://shuhaowu.com/blog/2022/02-linux-rt-appdev-part2.html>`__ | `Part 3 <https://shuhaowu.com/blog/2022/03-linux-rt-appdev-part3.html>`__ | `Part 4 <https://shuhaowu.com/blog/2022/04-linux-rt-appdev-part4.html>`__
 
---------------
-``rt`` library
---------------
+---------------------
+``cactus_rt`` library
+---------------------
 
 This is a library that refactors a lot of the boilerplate code needed for
 writing a real-time Linux application. Some key features are:
 
-* ``rt::App``: Implements logic for memory locking, memory reservation, and
+* ``cactus_rt::App``: Implements logic for memory locking, memory reservation, and
   ``malloc`` tuning.
 
   * The memory reservation and ``malloc`` tuning may not be needed if an O(1)
     allocator is not used. See `this discussion
     <https://github.com/ros-realtime/ros2-realtime-examples/issues/9>`__.
 
-* ``rt::Thread``: Implements a thread class that can be inherited to setup
+* ``cactus_rt::Thread``: Implements a thread class that can be inherited to setup
   both RT and non-RT threads.
-* ``rt::CyclicFifoThread``: Implements a RT thread with ``SCHED_FIFO`` with
+* ``cactus_rt::CyclicFifoThread``: Implements a RT thread with ``SCHED_FIFO`` with
   looping code builtin.
 
   * For applications with extra low-jitter requirements, it implements a busy
@@ -32,7 +32,7 @@ writing a real-time Linux application. Some key features are:
   * In the future: may implement built-in support for LTTNG-UST and/or USDT
     tracing.
 
-* ``rt::mutex``: A priority-inheriting mutex that is a drop-in replacement for
+* ``cactus_rt::mutex``: A priority-inheriting mutex that is a drop-in replacement for
   ``std::mutex``.
 
 * Some work in progress and future work:
@@ -41,7 +41,7 @@ writing a real-time Linux application. Some key features are:
     several lock-less message passing techniques to pass data from RT to non-RT
     and vice versa. Based on the `farbot <https://github.com/hogliux/farbot>`__
     project.
-  * Implementing ``rt::CyclicDeadlineThread``, which is RT looping with the
+  * Implementing ``cactus_rt::CyclicDeadlineThread``, which is RT looping with the
     ``SCHED_DEADLINE`` scheduler.
 
 --------
@@ -53,7 +53,7 @@ See each example's README for more details on what they do.
 * |simple_example|_: shows a no-op application with a single RT
   ``CyclicFifoThread``. Also shows how to pin the RT thread onto a CPU via
   ``cpu_affinity``.
-* |mutex_example|_: shows the usage of the ``rt::mutex``, which is a
+* |mutex_example|_: shows the usage of the ``cactus_rt::mutex``, which is a
   priority-inheriting mutex that conforms to the same interface as
   ``std::mutex``, which allows it to be used with ``std::scoped_lock``. A naive
   double buffer is implemented with this mutex.
@@ -120,5 +120,8 @@ To turn OFF building the examples (for embedding into other projects):
 LICENSE
 -------
 
-Defaults to `MPL 2.0 <https://www.mozilla.org/MPL/2.0/>`__. If you have
-concerns please contact me.
+Open source projects and some commercial projects can use `MPL 2.0
+<https://www.mozilla.org/MPL/2.0/>`__.
+
+If you need commercial, closed-sourced modifications, please obtain a license
+from `Cactus Dynamics <https://cactusdynamics.com>`__.

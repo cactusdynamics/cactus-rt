@@ -14,7 +14,7 @@ target_include_directories(rt_message_passing_example
 
 target_link_libraries(rt_message_passing_example
   PRIVATE
-  rt_app_lib
+  cactus_rt
   spdlog::spdlog
   stdc++fs
 )

@@ -13,7 +13,7 @@ target_include_directories(rt_lttng_ust_example
 
 target_link_libraries(rt_lttng_ust_example
   PRIVATE
-  rt_app_lib
+  cactus_rt
   spdlog::spdlog
   LTTng::UST
 )
