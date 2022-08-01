@@ -12,7 +12,7 @@ jobs:
         run: clang-format --version && find . \( -iname '*.h' -o -iname '*.cc' -o -iname '*.c' -o -iname '*.hpp' -o -iname '*.cpp' \) -not \( -path './build/*' -prune \) -not \( -path './external/*' -prune \) | xargs clang-format --dry-run -Werror
 
       - name: Setup dependencies
-        run: apt-get update && apt-get install -y libspdlog-dev liblttng-ust-dev libboost-dev
+        run: sudo apt-get update && sudo apt-get install -y libspdlog-dev liblttng-ust-dev libboost-dev
 
       - name: Build library
         run: cmake -Bbuild -DENABLE_CLANG_TIDY=ON && cmake --build build -j $(nproc)
