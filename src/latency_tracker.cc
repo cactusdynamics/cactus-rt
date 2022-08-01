@@ -1,7 +1,7 @@
 #include <rt/latency_tracker.h>
 #include <spdlog/spdlog.h>
 
-namespace rt {
+namespace cactus_rt {
 void LatencyTracker::RecordValue(double v) noexcept {
   if (v < min_) {
     min_ = v;
@@ -20,4 +20,4 @@ void LatencyTracker::RecordValue(double v) noexcept {
 void LatencyTracker::DumpToLogger() const {
   SPDLOG_DEBUG("min: {:.4f} | mean: {:.4f} | max: {:.4f} | count: {}", min_, mean_, max_, count_);
 }
-}  // namespace rt
+}  // namespace cactus_rt

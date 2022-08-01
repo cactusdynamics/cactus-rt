@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <ctime>
 
-namespace rt {
+namespace cactus_rt {
 inline int64_t NowNs() {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -33,6 +33,6 @@ inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
   return ts;
 }
 
-}  // namespace rt
+}  // namespace cactus_rt
 
 #endif

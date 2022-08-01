@@ -20,7 +20,7 @@ class NaiveDoubleBuffer {
   T      buf_[2];
   size_t write_idx_ = 0;
 
-  rt::mutex mutex_;
+  cactus_rt::mutex mutex_;
 
  public:
   void Write(const T& v) {

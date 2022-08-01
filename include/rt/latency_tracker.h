@@ -7,7 +7,7 @@
 
 using std::size_t;
 
-namespace rt {
+namespace cactus_rt {
 
 class LatencyTracker {
  public:
@@ -33,6 +33,6 @@ class LatencyTracker {
   void                 DumpToLogger() const;
 };
 
-}  // namespace rt
+}  // namespace cactus_rt
 
 #endif

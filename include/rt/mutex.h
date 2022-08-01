@@ -6,7 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace rt {
+namespace cactus_rt {
 /**
  * Implementation of an RT-safe mutex with pthread mutex with priority inheritance.
  *
@@ -73,6 +73,6 @@ class mutex {
     return &m_;
   };
 };
-}  // namespace rt
+}  // namespace cactus_rt
 
 #endif

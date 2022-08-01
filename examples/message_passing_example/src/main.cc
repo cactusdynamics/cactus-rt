@@ -4,7 +4,7 @@
 #include "data_logger.h"
 #include "rt_thread.h"
 
-class RTApp : public rt::App {
+class RTApp : public cactus_rt::App {
   DataLogger data_logger_;
   RtThread   rt_thread_;
 
@@ -15,9 +15,9 @@ class RTApp : public rt::App {
   }
 
   void Start() final {
-    rt::App::Start();
-    auto monotonic_now = rt::NowNs();
-    auto wall_now = rt::WallNowNs();
+    cactus_rt::App::Start();
+    auto monotonic_now = cactus_rt::NowNs();
+    auto wall_now = cactus_rt::WallNowNs();
     data_logger_.Start(monotonic_now, wall_now);
     rt_thread_.Start(monotonic_now, wall_now);
   }

@@ -18,7 +18,7 @@ struct Data {
   double v4 = 0.0;
 };
 
-class RTThread : public rt::CyclicFifoThread<> {
+class RTThread : public cactus_rt::CyclicFifoThread<> {
   NaiveDoubleBuffer<Data>& buf_;
 
  public:
@@ -43,7 +43,7 @@ class RTThread : public rt::CyclicFifoThread<> {
   }
 };
 
-class NonRTThread : public rt::Thread {
+class NonRTThread : public cactus_rt::Thread {
   NaiveDoubleBuffer<Data>& buf_;
   std::atomic_bool         should_stop_ = false;
 
@@ -68,7 +68,7 @@ class NonRTThread : public rt::Thread {
   }
 };
 
-class RTApp : public rt::App {
+class RTApp : public cactus_rt::App {
   NaiveDoubleBuffer<Data> buf_;
   RTThread                rt_thread_;
   NonRTThread             non_rt_thread_;
@@ -78,10 +78,10 @@ class RTApp : public rt::App {
   }
 
   void Start() final {
-    rt::App::Start();
+    cactus_rt::App::Start();
 
-    auto monotonic_now = rt::NowNs();
-    auto wall_now = rt::WallNowNs();
+    auto monotonic_now = cactus_rt::NowNs();
+    auto wall_now = cactus_rt::WallNowNs();
 
     rt_thread_.Start(monotonic_now, wall_now);
     non_rt_thread_.Start(monotonic_now, wall_now);

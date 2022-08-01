@@ -11,7 +11,7 @@
 // See https://shuhaowu.com/blog/2022/04-linux-rt-appdev-part4.html
 // Instead, use the rt::thread in libs/rt.
 
-namespace rt {
+namespace cactus_rt {
 class mutex {
   pthread_mutex_t m_;
 
@@ -63,9 +63,9 @@ class mutex {
     return &m_;
   };
 };
-}  // namespace rt
+}  // namespace cactus_rt
 
-rt::mutex          mut;
+cactus_rt::mutex   mut;
 std::array<int, 3> a;
 
 void Write(int v) {

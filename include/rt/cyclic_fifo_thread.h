@@ -10,7 +10,7 @@
 #include "rt/thread.h"
 #include "rt/utils.h"
 
-namespace rt {
+namespace cactus_rt {
 template <bool sleep_and_busy_wait = false, int64_t scheduling_latency_ns = 150'000>
 class CyclicFifoThread : public Thread {
   int64_t         period_ns_;
@@ -167,6 +167,6 @@ class CyclicFifoThread : public Thread {
 
   virtual void TraceLoopEnd(double /* loop_latency_us */) noexcept {}
 };
-}  // namespace rt
+}  // namespace cactus_rt
 
 #endif

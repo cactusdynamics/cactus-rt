@@ -5,7 +5,7 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace rt {
+namespace cactus_rt {
 void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
 
@@ -115,4 +115,4 @@ int Thread::Join() const {
   return pthread_join(thread_, nullptr);
 }
 
-}  // namespace rt
+}  // namespace cactus_rt

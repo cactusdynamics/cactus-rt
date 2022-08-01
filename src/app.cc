@@ -8,7 +8,7 @@
 
 #include "rt/utils.h"
 
-namespace rt {
+namespace cactus_rt {
 void App::Start() {
   SPDLOG_DEBUG("Starting application");
 
@@ -80,4 +80,4 @@ void App::LockMemory() const {
     throw std::runtime_error{"mallopt M_TRIM_THRESHOLD failed"};
   }
 }
-}  // namespace rt
+}  // namespace cactus_rt

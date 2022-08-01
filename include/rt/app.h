@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace rt {
+namespace cactus_rt {
 class App {
   size_t heap_size_;
 

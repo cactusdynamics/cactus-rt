@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace rt {
+namespace cactus_rt {
 
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
 
@@ -101,6 +101,6 @@ class Thread {
    */
   virtual void AfterRun() {}
 };
-}  // namespace rt
+}  // namespace cactus_rt
 
 #endif

@@ -18,7 +18,7 @@ struct OutputData {
   double  output_value;
 };
 
-class DataLogger : public rt::Thread {
+class DataLogger : public cactus_rt::Thread {
   constexpr static int kQueueCapacity = 8 * 1024;  // This is over 8 seconds of data. Should never be full.
 
   std::atomic_bool should_stop_;

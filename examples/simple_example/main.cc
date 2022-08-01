@@ -6,9 +6,9 @@
 #include "rt/utils.h"
 
 // A no-op thread that only serves to do nothing and measure the latency
-class CyclicThread : public rt::CyclicFifoThread<> {
+class CyclicThread : public cactus_rt::CyclicFifoThread<> {
  public:
-  CyclicThread(std::vector<size_t> cpu_affinity) : rt::CyclicFifoThread<>("CyclicThread", 1'000'000, 80, cpu_affinity) {}
+  CyclicThread(std::vector<size_t> cpu_affinity) : cactus_rt::CyclicFifoThread<>("CyclicThread", 1'000'000, 80, cpu_affinity) {}
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
@@ -16,16 +16,16 @@ class CyclicThread : public rt::CyclicFifoThread<> {
   }
 };
 
-class RTApp : public rt::App {
+class RTApp : public cactus_rt::App {
   CyclicThread cyclic_thread_;
 
  public:
   RTApp(std::vector<size_t> cpu_affinity) : cyclic_thread_(cpu_affinity) {}
 
   void Start() final {
-    rt::App::Start();
-    auto monotonic_now = rt::NowNs();
-    auto wall_now = rt::WallNowNs();
+    cactus_rt::App::Start();
+    auto monotonic_now = cactus_rt::NowNs();
+    auto wall_now = cactus_rt::WallNowNs();
     cyclic_thread_.Start(monotonic_now, wall_now);
   }
 

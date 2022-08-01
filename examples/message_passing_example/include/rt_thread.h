@@ -5,7 +5,7 @@
 
 #include "data_logger.h"
 
-class RtThread : public rt::CyclicFifoThread<> {
+class RtThread : public cactus_rt::CyclicFifoThread<> {
   DataLogger& data_logger_;
   size_t      max_iterations_;
   size_t      iterations_ = 0;

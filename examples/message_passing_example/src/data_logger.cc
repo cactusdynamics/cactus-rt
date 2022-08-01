@@ -36,12 +36,12 @@ bool DataLogger::LogData(const OutputData& data) noexcept {
 }
 
 void DataLogger::Run() noexcept {
-  auto last_data_write_time = rt::NowNs();
+  auto last_data_write_time = cactus_rt::NowNs();
 
   OutputData data;
 
   while (true) {
-    auto now = rt::NowNs();
+    auto now = cactus_rt::NowNs();
     if (static_cast<double>(now - last_data_write_time) / 1'000'000'000 > write_data_interval_seconds_) {
       WriteData();
       last_data_write_time = now;
