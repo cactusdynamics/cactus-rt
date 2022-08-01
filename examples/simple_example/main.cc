@@ -1,9 +1,8 @@
+#include <cactus_rt/app.h>
+#include <cactus_rt/cyclic_fifo_thread.h>
+#include <cactus_rt/utils.h>
 #include <spdlog/spdlog.h>
 #include <unistd.h>
-
-#include "rt/app.h"
-#include "rt/cyclic_fifo_thread.h"
-#include "rt/utils.h"
 
 // A no-op thread that only serves to do nothing and measure the latency
 class CyclicThread : public cactus_rt::CyclicFifoThread<> {

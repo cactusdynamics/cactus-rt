@@ -1,7 +1,7 @@
 #ifndef RT_DEMO_EXAMPLES_MESSAGE_PASSING_EXAMPLE_DATA_LOGGER_H_
 #define RT_DEMO_EXAMPLES_MESSAGE_PASSING_EXAMPLE_DATA_LOGGER_H_
 
-#include <rt/thread.h>
+#include <cactus_rt/thread.h>
 #include <spdlog/spdlog.h>
 
 #include <atomic>

@@ -6,9 +6,9 @@
 #include <atomic>
 #include <vector>
 
-#include "rt/latency_tracker.h"
-#include "rt/thread.h"
-#include "rt/utils.h"
+#include "cactus_rt/latency_tracker.h"
+#include "cactus_rt/thread.h"
+#include "cactus_rt/utils.h"
 
 namespace cactus_rt {
 template <bool sleep_and_busy_wait = false, int64_t scheduling_latency_ns = 150'000>

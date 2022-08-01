@@ -1,7 +1,7 @@
 #ifndef RT_DEMO_EXAMPLES_MESSAGE_PASSING_EXAMPLE_RT_THREAD_H_
 #define RT_DEMO_EXAMPLES_MESSAGE_PASSING_EXAMPLE_RT_THREAD_H_
 
-#include <rt/cyclic_fifo_thread.h>
+#include <cactus_rt/cyclic_fifo_thread.h>
 
 #include "data_logger.h"
 

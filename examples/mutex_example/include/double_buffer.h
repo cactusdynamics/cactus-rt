@@ -1,7 +1,7 @@
 #ifndef RT_DEMO_MUTEX_EXAMPLE_DOUBLE_BUFFER_H_
 #define RT_DEMO_MUTEX_EXAMPLE_DOUBLE_BUFFER_H_
 
-#include <rt/mutex.h>
+#include <cactus_rt/mutex.h>
 
 #include <cstdint>
 #include <mutex>

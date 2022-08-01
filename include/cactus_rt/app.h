@@ -53,6 +53,6 @@ class App {
    */
   void ReserveHeap() const;
 };
-}  // namespace rt
+}  // namespace cactus_rt
 
 #endif
