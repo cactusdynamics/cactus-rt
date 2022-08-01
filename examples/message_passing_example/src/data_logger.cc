@@ -35,7 +35,7 @@ bool DataLogger::LogData(const OutputData& data) noexcept {
   return success;
 }
 
-void DataLogger::Run() noexcept {
+void DataLogger::Run() {
   auto last_data_write_time = cactus_rt::NowNs();
 
   OutputData data;

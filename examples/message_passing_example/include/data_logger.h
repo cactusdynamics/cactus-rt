@@ -88,7 +88,7 @@ class DataLogger : public cactus_rt::Thread {
   }
 
  protected:
-  void Run() noexcept final;
+  void Run() final;
 
  private:
   void WriteData() noexcept;

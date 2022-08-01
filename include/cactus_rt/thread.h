@@ -89,7 +89,7 @@ class Thread {
    * Override this method to do work. If this is a real-time thread, once this
    * method is entered, the code in it should be RT-compatible.
    */
-  virtual void Run() noexcept = 0;
+  virtual void Run() = 0;
 
   /**
    * Called before Run gets called. Non-RT.

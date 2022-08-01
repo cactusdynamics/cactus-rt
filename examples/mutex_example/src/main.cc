@@ -27,6 +27,13 @@ class RTThread : public cactus_rt::CyclicFifoThread<> {
   }
 
  protected:
+  // NOLINTBEGIN(bugprone-exception-escape)
+  // TODO: The BasicLockable definition requires the lock() method to throw upon error.
+  // RT code shouldn't use exceptions.
+  //
+  // Not sure what the best course of action here is. One thing we can do is
+  // create a cactus_rt::scoped_lock that mimics the std::scoped_lock
+  // interface, but only works with cactus_rt::mutex.
   bool Loop(int64_t ellapsed_ns) noexcept final {
     constexpr double period = 5'000'000'000.0;  // 5 seconds period
     constexpr double amplitude = 1.0;
@@ -41,6 +48,7 @@ class RTThread : public cactus_rt::CyclicFifoThread<> {
 
     return false;
   }
+  // NOLINTEND(bugprone-exception-escape)
 };
 
 class NonRTThread : public cactus_rt::Thread {
@@ -57,7 +65,7 @@ class NonRTThread : public cactus_rt::Thread {
   }
 
  protected:
-  void Run() noexcept final {
+  void Run() final {
     while (!should_stop_) {
       auto data = buf_.SwapAndRead();
       cout << "\33[2K\r" << std::flush;
@@ -99,6 +107,7 @@ class RTApp : public cactus_rt::App {
   }
 };
 
+// NOLINTBEGIN(bugprone-exception-escape)
 void TrivialDemo() {
   // Trivial demonstration that the double buffer does work..
   NaiveDoubleBuffer<int> buf;
@@ -117,3 +126,4 @@ int main() {
 
   return 0;
 }
+// NOLINTEND(bugprone-exception-escape)
