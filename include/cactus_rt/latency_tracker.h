@@ -9,6 +9,7 @@ using std::size_t;
 
 namespace cactus_rt {
 
+// TODO: investigate replacing this with HDR histogram
 class LatencyTracker {
  public:
   using HistogramArray = std::array<size_t, 11>;
