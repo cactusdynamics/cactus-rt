@@ -14,3 +14,8 @@ target_link_libraries(rt_mutex_example
   cactus_rt
   spdlog::spdlog
 )
+
+install(
+  TARGETS rt_mutex_example
+  DESTINATION bin
+)

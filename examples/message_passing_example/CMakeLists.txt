@@ -18,3 +18,8 @@ target_link_libraries(rt_message_passing_example
   spdlog::spdlog
   stdc++fs
 )
+
+install(
+  TARGETS rt_message_passing_example
+  DESTINATION bin
+)

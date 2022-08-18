@@ -7,3 +7,7 @@ target_link_libraries(rt_simple_example
   cactus_rt
 )
 
+install(
+  TARGETS rt_simple_example
+  DESTINATION bin
+)

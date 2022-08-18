@@ -17,3 +17,8 @@ target_link_libraries(rt_lttng_ust_example
   spdlog::spdlog
   LTTng::UST
 )
+
+install(
+  TARGETS rt_lttng_ust_example
+  DESTINATION bin
+)
