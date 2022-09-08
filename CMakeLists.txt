@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(rt_demo)
+project(cactus_rt)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -31,7 +31,7 @@ add_compile_options(
 add_definitions(-DSPDLOG_ACTIVE_LEVEL=1) # debug level
 
 # Only enable clang-tidy and ctest if this is the main project and not being included further.
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   include(CTest)
 
   if (ENABLE_CLANG_TIDY)
@@ -80,6 +80,6 @@ if (ENABLE_EXAMPLES)
 endif()
 
 # Only enable test if this is the main project, or if force enabeld via CACTUS_RT_BUILD_TESTING
-if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR CACTUS_RT_BUILD_TESTING) AND BUILD_TESTING)
+if(((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME}) OR CACTUS_RT_BUILD_TESTING) AND BUILD_TESTING)
   add_subdirectory(tests)
 endif()
