@@ -71,7 +71,7 @@ target_link_libraries(cactus_rt
   spdlog::spdlog
 )
 
-if (ENABLE_EXAMPLES)
+if ((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME}) AND ENABLE_EXAMPLES)
   message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
   add_subdirectory(examples/simple_example)
   add_subdirectory(examples/message_passing_example)
