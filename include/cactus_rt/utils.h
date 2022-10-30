@@ -1,5 +1,5 @@
-#ifndef RT_DEMO_RT_UTILS_H_
-#define RT_DEMO_RT_UTILS_H_
+#ifndef CACTUS_RT_UTILS_H_
+#define CACTUS_RT_UTILS_H_
 
 #include <cstdint>
 #include <ctime>

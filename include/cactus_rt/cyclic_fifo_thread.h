@@ -1,5 +1,5 @@
-#ifndef RT_DEMO_RT_CYCLIC_FIFO_THREAD_H_
-#define RT_DEMO_RT_CYCLIC_FIFO_THREAD_H_
+#ifndef CACTUS_RT_CYCLIC_FIFO_THREAD_H_
+#define CACTUS_RT_CYCLIC_FIFO_THREAD_H_
 
 #include <spdlog/spdlog.h>
 

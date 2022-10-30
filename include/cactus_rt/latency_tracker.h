@@ -1,5 +1,5 @@
-#ifndef RT_DEMO_RT_LATENCY_TRACKING_H_
-#define RT_DEMO_RT_LATENCY_TRACKING_H_
+#ifndef CACTUS_RT_LATENCY_TRACKING_H_
+#define CACTUS_RT_LATENCY_TRACKING_H_
 
 #include <array>
 #include <cstdint>

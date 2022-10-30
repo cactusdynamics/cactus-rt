@@ -1,5 +1,5 @@
-#ifndef RT_DEMO_RT_THREAD_H_
-#define RT_DEMO_RT_THREAD_H_
+#ifndef CACTUS_RT_THREAD_H_
+#define CACTUS_RT_THREAD_H_
 
 #include <limits.h>  // For PTHREAD_STACK_MIN
 #include <pthread.h>

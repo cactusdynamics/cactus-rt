@@ -1,5 +1,5 @@
-#ifndef RT_DEMO_RT_APP_H_
-#define RT_DEMO_RT_APP_H_
+#ifndef CACTUS_RT_APP_H_
+#define CACTUS_RT_APP_H_
 
 #include <cstddef>
 #include <cstdint>
