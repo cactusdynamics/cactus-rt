@@ -36,7 +36,7 @@ class CyclicFifoThread : public Thread {
    */
   CyclicFifoThread(const std::string&  name,
                    int64_t             period_ns,
-                   int                 priority = 80,
+                   uint32_t            priority = 80,
                    std::vector<size_t> cpu_affinity = {},
                    size_t              stack_size = kDefaultStackSize)
       : Thread(name, priority, SCHED_FIFO, cpu_affinity, stack_size),

@@ -36,6 +36,7 @@ class RTApp : public cactus_rt::App {
 };
 
 int main() {
+  spdlog::set_level(spdlog::level::debug);
   RTApp app("data.csv");
 
   app.Start();

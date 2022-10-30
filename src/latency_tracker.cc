@@ -19,6 +19,7 @@ void LatencyTracker::RecordValue(double v) noexcept {
 }
 
 void LatencyTracker::DumpToLogger() const {
+  spdlog::set_level(spdlog::level::debug);
   SPDLOG_DEBUG("min: {:.4f} | mean: {:.4f} | max: {:.4f} | count: {}", min_, mean_, max_, count_);
 }
 }  // namespace cactus_rt

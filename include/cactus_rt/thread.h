@@ -11,14 +11,16 @@
 #include <string>
 #include <vector>
 
+#include "linux/sched_ext.h"
+
 namespace cactus_rt {
 
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
 
 class Thread {
   std::string         name_;
-  int                 priority_;
-  int                 policy_;
+  uint32_t            priority_;
+  uint32_t            policy_;
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
 
@@ -40,8 +42,8 @@ class Thread {
 
  public:
   Thread(const std::string&  name,
-         int                 priority,
-         int                 policy = SCHED_OTHER,
+         uint32_t            priority,
+         uint32_t            policy = SCHED_OTHER,
          std::vector<size_t> cpu_affinity = {},
          size_t              stack_size = kDefaultStackSize)
       : name_(name),

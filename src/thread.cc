@@ -9,12 +9,30 @@ namespace cactus_rt {
 void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
 
+  // Self scheduling attributes
+  sched_attr attr;
+  attr.size = sizeof(attr);
+  attr.sched_flags = 0;
+  attr.sched_nice = 0;
+  attr.sched_priority = thread->priority_;  // Set the scheduler priority
+  attr.sched_policy = thread->policy_;      // Set the scheduler policy
+
+  // TODO: attrs for SCHED_DEADLINE
+  // attr.sched_runtime = runtime_ns_;
+  // attr.sched_period = attr.sched_deadline = period_ns_;
+
+  auto ret = sched_setattr(0, &attr, 0);
+  if (ret < 0) {
+    SPDLOG_ERROR("unable to sched_setattr: {}", std::strerror(errno));
+    throw std::runtime_error{"failed to sched_setattr"};
+  }
+
   thread->BeforeRun();
 
   bool is_rt = thread->policy_ == SCHED_FIFO || thread->policy_ == SCHED_DEADLINE || thread->policy_ == SCHED_RR;
   if (is_rt) {
     SPDLOG_DEBUG("starting the RT thread {}", thread->Name());
-    int ret = getrusage(RUSAGE_THREAD, &thread->page_faults_at_start_);
+    ret = getrusage(RUSAGE_THREAD, &thread->page_faults_at_start_);
     if (ret != 0) {
       SPDLOG_ERROR("unable to getrusage: {}", std::strerror(errno));
       throw std::runtime_error{"failed to getrusage"};
@@ -26,7 +44,7 @@ void* Thread::RunThread(void* data) {
   if (is_rt) {
     struct rusage page_fault_at_end;
 
-    int ret = getrusage(RUSAGE_THREAD, &page_fault_at_end);
+    ret = getrusage(RUSAGE_THREAD, &page_fault_at_end);
     if (ret != 0) {
       SPDLOG_WARN("unable to getrusage at the end (skipping sanity check): {}", std::strerror(errno));
     } else {
@@ -69,20 +87,6 @@ void Thread::Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) 
   ret = pthread_attr_setstacksize(&attr, stack_size_);
   if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_attr_setstacksize: ") + std::strerror(ret));
-  }
-
-  // Set the scheduler policy
-  ret = pthread_attr_setschedpolicy(&attr, policy_);
-  if (ret != 0) {
-    throw std::runtime_error(std::string("error in pthread_attr_setschedpolicy: ") + std::strerror(ret));
-  }
-
-  // Set the scheduler priority
-  struct sched_param param;
-  param.sched_priority = priority_;
-  ret = pthread_attr_setschedparam(&attr, &param);
-  if (ret != 0) {
-    throw std::runtime_error(std::string("error in pthread_attr_setschedparam: ") + std::strerror(ret));
   }
 
   // Make sure threads created using the thread_attr_ takes the value from the attribute instead of inherit from the parent thread.
