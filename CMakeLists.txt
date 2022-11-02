@@ -1,32 +1,10 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.18)
 project(cactus_rt)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
-
-add_compile_options(
-  -Wall
-  -Wextra
-  -Wpedantic
-  -Wshadow
-  -Wnon-virtual-dtor
-  -Wpedantic
-  -Wold-style-cast
-  -Wcast-align
-  -Wunused
-  -Woverloaded-virtual
-  -Wsign-conversion
-  -Wmisleading-indentation
-  -Wduplicated-cond
-  -Wduplicated-branches
-  -Wnull-dereference
-  -Wuseless-cast
-  -Wdouble-promotion
-  -g
-  -O3
-)
 
 add_definitions(-DSPDLOG_ACTIVE_LEVEL=1) # debug level
 
@@ -57,6 +35,28 @@ target_link_libraries(cactus_rt
   PRIVATE
   Threads::Threads
   spdlog::spdlog
+)
+
+target_compile_options(cactus_rt
+  PUBLIC # TODO: This should affect all the example programs as well, not sure if it this is a good idea tho
+  -Wall
+  -Wextra
+  -Wpedantic
+  -Wshadow
+  -Wnon-virtual-dtor
+  -Wpedantic
+  -Wold-style-cast
+  -Wcast-align
+  -Wunused
+  -Woverloaded-virtual
+  -Wsign-conversion
+  -Wmisleading-indentation
+  -Wduplicated-cond
+  -Wduplicated-branches
+  -Wnull-dereference
+  -Wuseless-cast
+  -Wdouble-promotion
+  -g # TODO: release vs debug
 )
 
 # Only enable clang-tidy and ctest if this is the main project and not being included further.
