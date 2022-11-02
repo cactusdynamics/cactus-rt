@@ -5,18 +5,10 @@ set(FETCHCONTENT_QUIET FALSE)
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.1.0
+  GIT_TAG        v3.1.1
 )
 
 FetchContent_MakeAvailable(Catch2)
-
-# This is needed so clang-tidy doesn't run on the Catch2 compilation.
-# clang-tidy will normally run on all targets, and FetchContent simply adds
-# more targets to this project.
-# TODO: perhaps set it so that clang-tidy only run on the targets we build in
-# this project.
-set_target_properties(Catch2 PROPERTIES CXX_CLANG_TIDY "")
-set_target_properties(Catch2WithMain PROPERTIES CXX_CLANG_TIDY "")
 
 # This is needed to make sure that when building the tests, catch2's headers
 # are treated as system headers, as otherwise clang-tidy will run on them. This
