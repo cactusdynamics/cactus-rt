@@ -1,4 +1,3 @@
-find_package(spdlog REQUIRED)
 find_package(LTTngUST REQUIRED)
 
 add_executable(rt_lttng_ust_example
@@ -14,7 +13,6 @@ target_include_directories(rt_lttng_ust_example
 target_link_libraries(rt_lttng_ust_example
   PRIVATE
   cactus_rt
-  spdlog::spdlog
   LTTng::UST
 )
 
