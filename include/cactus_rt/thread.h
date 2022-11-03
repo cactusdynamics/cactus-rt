@@ -38,8 +38,6 @@ class Thread {
    */
   static void* RunThread(void* data);
 
-  static void ReserveStackForThread();
-
  public:
   Thread(const std::string&  name,
          uint32_t            priority,
