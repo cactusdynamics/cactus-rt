@@ -18,12 +18,12 @@ struct Data {
   double v4 = 0.0;
 };
 
-class RTThread : public cactus_rt::CyclicFifoThread<> {
+class RTThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo> {
   NaiveDoubleBuffer<Data>& buf_;
 
  public:
   RTThread(NaiveDoubleBuffer<Data>& buf)
-      : CyclicFifoThread<>("RTThread", 1'000'000), buf_(buf) {
+      : CyclicThread<cactus_rt::schedulers::Fifo>("RTThread", 1'000'000), buf_(buf) {
   }
 
  protected:
@@ -51,13 +51,13 @@ class RTThread : public cactus_rt::CyclicFifoThread<> {
   // NOLINTEND(bugprone-exception-escape)
 };
 
-class NonRTThread : public cactus_rt::Thread {
+class NonRTThread : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
   NaiveDoubleBuffer<Data>& buf_;
   std::atomic_bool         should_stop_ = false;
 
  public:
   NonRTThread(NaiveDoubleBuffer<Data>& buf)
-      : Thread("NonRTThread", 0, SCHED_OTHER), buf_(buf) {
+      : Thread<cactus_rt::schedulers::Other>("NonRTThread"), buf_(buf) {
   }
 
   void RequestStop() {

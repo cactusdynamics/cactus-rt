@@ -3,11 +3,9 @@
 
 #include <limits.h>  // For PTHREAD_STACK_MIN
 #include <pthread.h>
-#include <sched.h>
-#include <sys/resource.h>  // needed for getrusage
-#include <sys/time.h>      // needed for getrusage
 
-#include <cstdint>
+#include <cstring>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -17,37 +15,37 @@ namespace cactus_rt {
 
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
 
+// TODO: some docs
+template <typename SchedulerT>
 class Thread {
-  std::string         name_;
-  uint32_t            priority_;
-  uint32_t            policy_;
-  std::vector<size_t> cpu_affinity_;
-  size_t              stack_size_;
-
-  pthread_t thread_;
+  std::string                 name_;
+  typename SchedulerT::Config scheduler_config_;
+  pthread_t                   thread_;
+  std::vector<size_t>         cpu_affinity_;
+  size_t                      stack_size_;
 
   int64_t start_monotonic_time_ns_ = 0;
-
-  // Debug information
-  int64_t       start_wall_time_ns_ = 0;
-  struct rusage page_faults_at_start_;
+  int64_t start_wall_time_ns_ = 0;
 
   /**
    * A wrapper function that is passed to pthread. This starts the thread and
    * performs any necessary setup.
    */
-  static void* RunThread(void* data);
+  static void* RunThread(void* data) {
+    auto* thread = static_cast<Thread*>(data);
+    SchedulerT::SetThreadScheduling(thread->scheduler_config_);  // TODO: return error instead of throwing
+    thread->BeforeRun();
+    thread->Run();
+    thread->AfterRun();
+    return nullptr;
+  }
 
  public:
-  Thread(const std::string&  name,
-         uint32_t            priority,
-         uint32_t            policy = SCHED_OTHER,
-         std::vector<size_t> cpu_affinity = {},
-         size_t              stack_size = kDefaultStackSize)
-      : name_(name),
-        priority_(priority),
-        policy_(policy),
-        cpu_affinity_(cpu_affinity),
+  Thread(const std::string&                 name,
+         const typename SchedulerT::Config& config = {},
+         std::vector<size_t>                cpu_affinity = {},
+         size_t                             stack_size = kDefaultStackSize)
+      : name_(name), scheduler_config_(config), cpu_affinity_(cpu_affinity),
         // In case stack_size is 0...
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size){};
 
@@ -67,19 +65,60 @@ class Thread {
    * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
    * @param start_wall_time_ns should be the start time in nanoseconds for the realtime clock.
    */
-  void Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns);
+
+  void Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) {
+    start_monotonic_time_ns_ = start_monotonic_time_ns;
+    start_wall_time_ns_ = start_wall_time_ns;
+
+    pthread_attr_t attr;
+
+    // Initialize the pthread attribute
+    int ret = pthread_attr_init(&attr);
+    if (ret != 0) {
+      throw std::runtime_error(std::string("error in pthread_attr_init: ") + std::strerror(ret));
+    }
+
+    // Set a stack size
+    //
+    // Note the stack is prefaulted if mlockall(MCL_FUTURE | MCL_CURRENT) is
+    // called, which under this app framework should be.
+    //
+    // Not even sure if there is an optimizer-safe way to prefault the stack
+    // anyway, as the compiler optimizer may realize that buffer is never used
+    // and thus will simply optimize it out.
+    ret = pthread_attr_setstacksize(&attr, stack_size_);
+    if (ret != 0) {
+      throw std::runtime_error(std::string("error in pthread_attr_setstacksize: ") + std::strerror(ret));
+    }
+
+    // Setting CPU mask
+    if (!cpu_affinity_.empty()) {
+      cpu_set_t cpuset;
+      CPU_ZERO(&cpuset);
+      for (auto cpu : cpu_affinity_) {
+        CPU_SET(cpu, &cpuset);
+      }
+
+      ret = pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
+      if (ret != 0) {
+        throw std::runtime_error(std::string("error in pthread_attr_setaffinity_np: ") + std::strerror(ret));
+      }
+    }
+
+    ret = pthread_create(&thread_, &attr, &Thread<SchedulerT>::RunThread, this);
+    if (ret != 0) {
+      throw std::runtime_error(std::string("error in pthread_create: ") + std::strerror(ret));
+    }
+  }
 
   /**
    * Joins the thread.
    *
    * @returns the return value of pthread_join
    */
-  int Join() const;
-
-  /**
-   * The name of the thread.
-   */
-  const std::string& Name() const { return name_; }
+  int Join() const {
+    return pthread_join(thread_, nullptr);
+  }
 
  protected:
   int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }

@@ -3,12 +3,15 @@
 #include <unistd.h>
 
 // A no-op thread that only serves to do nothing and measure the latency
-class CyclicThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo> {
+class MyDeadlineThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Deadline> {
  public:
-  CyclicThread(std::vector<size_t> cpu_affinity)
-      : cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo>("CyclicThread", 1'000'000, /* Period */
-                                                             cactus_rt::schedulers::Fifo::Config{80 /* Priority */},
-                                                             cpu_affinity) {}
+  MyDeadlineThread()
+      : cactus_rt::CyclicThread<cactus_rt::schedulers::Deadline>("MyDeadlineThread",
+                                                                 1'000'000, /* Period */
+                                                                 cactus_rt::schedulers::Deadline::Config{
+                                                                   500'000,  /* Run time*/
+                                                                   1'000'000 /* Deadline */
+                                                                 }) {}
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
@@ -17,11 +20,9 @@ class CyclicThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo>
 };
 
 class RTApp : public cactus_rt::App {
-  CyclicThread cyclic_thread_;
+  MyDeadlineThread cyclic_thread_;
 
  public:
-  RTApp(std::vector<size_t> cpu_affinity) : cyclic_thread_(cpu_affinity) {}
-
   void Start() final {
     cactus_rt::App::Start();
     auto monotonic_now = cactus_rt::NowNs();
@@ -42,9 +43,9 @@ class RTApp : public cactus_rt::App {
 int main() {
   spdlog::set_level(spdlog::level::debug);
 
-  RTApp app(std::vector<size_t>{2});
+  RTApp app;
 
-  constexpr unsigned int time = 60;
+  constexpr unsigned int time = 6;
   SPDLOG_INFO("Testing latency for {}s", time);
   app.Start();
   sleep(time);

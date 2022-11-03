@@ -16,7 +16,6 @@ find_package(spdlog REQUIRED)
 
 add_library(cactus_rt
   STATIC
-  src/thread.cc
   src/app.cc
   src/latency_tracker.cc
 )
@@ -80,5 +79,6 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/message_passing_example)
     add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/lttng_ust_example)
+    add_subdirectory(examples/simple_deadline_example)
   endif()
 endif()

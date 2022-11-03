@@ -1,6 +1,4 @@
-#include <cactus_rt/app.h>
-#include <cactus_rt/cyclic_fifo_thread.h>
-#include <cactus_rt/utils.h>
+#include <cactus_rt/rt.h>
 #include <spdlog/spdlog.h>
 #include <unistd.h>
 
@@ -8,9 +6,11 @@
 #include "tracepoint_provider.h"
 
 // A no-op thread that only serves to do nothing and measure the latency
-class CyclicThread : public cactus_rt::CyclicFifoThread<> {
+class CyclicThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo> {
  public:
-  CyclicThread() : cactus_rt::CyclicFifoThread<>("CyclicThread", 1'000'000, 80) {}
+  CyclicThread()
+      : cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo>("CyclicThread", 1'000'000,
+                                                             cactus_rt::schedulers::Fifo::Config{80 /* priority */}) {}
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {

@@ -1,7 +1,7 @@
 #ifndef CACTUS_RT_EXAMPLES_MESSAGE_PASSING_EXAMPLE_DATA_LOGGER_H_
 #define CACTUS_RT_EXAMPLES_MESSAGE_PASSING_EXAMPLE_DATA_LOGGER_H_
 
-#include <cactus_rt/thread.h>
+#include <cactus_rt/rt.h>
 #include <spdlog/spdlog.h>
 
 #include <atomic>
@@ -18,7 +18,7 @@ struct OutputData {
   double  output_value;
 };
 
-class DataLogger : public cactus_rt::Thread {
+class DataLogger : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
   constexpr static int kQueueCapacity = 8 * 1024;  // This is over 8 seconds of data. Should never be full.
 
   std::atomic_bool should_stop_;
