@@ -9,6 +9,11 @@ Subscriber::Subscriber() : cactus_rt::Thread("Subscriber", 0) {
     options);
 
   data_buffer_.reserve(8000);  // big enough...
+
+  data_file_.open("data.csv");
+  if (!data_file_.is_open()) {
+    throw std::runtime_error{"failed to open data file"};
+  }
 }
 
 void Subscriber::Run() {
@@ -35,7 +40,7 @@ void Subscriber::Run() {
 
     if (data_buffer_.size() >= 1000) {
       for (const auto& data : data_buffer_) {
-        std::cout << data.t << ", " << data.counter << "\n";
+        data_file_ << data.time << ", " << data.last_publish_time_taken << "\n";
       }
 
       // don't think this is fast. Ideally we just start the buffer from beginning without necessarily zeroing out the data.

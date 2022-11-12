@@ -4,7 +4,8 @@
 #include <cstdint>
 
 struct Data {
-  int64_t t;
+  int64_t time;
+  int64_t last_publish_time_taken;
   int64_t counter = 0;
 };
 

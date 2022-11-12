@@ -3,6 +3,7 @@
 
 #include <cactus_rt/rt.h>
 
+#include <fstream>
 #include <iceoryx_posh/popo/subscriber.hpp>
 #include <memory>
 #include <vector>
@@ -12,6 +13,8 @@
 class Subscriber : public cactus_rt::Thread {
   std::unique_ptr<iox::popo::Subscriber<Data>> iceoryx_subscriber_;
   std::vector<Data>                            data_buffer_;
+
+  std::ofstream data_file_;
 
  public:
   Subscriber();

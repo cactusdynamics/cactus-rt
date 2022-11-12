@@ -85,11 +85,12 @@ Tested on Debian 10 and Ubuntu 20.04:
 
 .. code-block:: console
 
-   $ sudo apt install libspdlog-dev liblttng-ust-dev libboost-dev lttng-tools
+   $ sudo apt install libspdlog-dev liblttng-ust-dev libboost-dev lttng-tools libacl1-dev
 
 - ``liblttng-ust-dev`` is only used in ``lttng_ust_example``.
 - ``lttng-tools`` is used for tracing the ``lttng_ust_example``.
 - ``libboost-dev`` is only used for the lockfree queue in the ``message_passing_example``.
+- ``libacl1-dev`` is needed for iceoryx
 
 Of course you also need a C++ compiler and cmake.
 

@@ -10,6 +10,7 @@
 
 class Publisher : public cactus_rt::CyclicFifoThread<> {
   int64_t                                     counter_ = 0;
+  int64_t                                     last_publish_time_taken_ = 0;
   std::unique_ptr<iox::popo::Publisher<Data>> iceoryx_publisher_;
 
  public:
