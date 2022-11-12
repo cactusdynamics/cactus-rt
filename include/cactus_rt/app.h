@@ -8,6 +8,7 @@ namespace cactus_rt {
 class App {
   size_t heap_size_;
 
+ protected:
   /**
    * The start time of the application from the monotonic clock in nanoseconds.
    */

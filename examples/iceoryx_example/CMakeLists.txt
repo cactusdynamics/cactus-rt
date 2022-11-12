@@ -17,12 +17,16 @@ FetchContent_MakeAvailable(iceoryx)
 # is included from the tests, where as the above is for compiling catch2.
 #
 # After cmake 3.25, this shouldn't be needed anymore: https://gitlab.kitware.com/cmake/cmake/-/issues/18040
-# get_target_property(CATCH2_INC Catch2 INTERFACE_INCLUDE_DIRECTORIES)
-# set_target_properties(Catch2 PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${CATCH2_INC}")
-# set_target_properties(Catch2WithMain PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${CATCH2_INC}")
+get_target_property(ICEORYX_POSH_INC iceoryx_posh INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(iceoryx_posh PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${ICEORYX_POSH_INC}")
+get_target_property(ICEORYX_HOOFS_INC iceoryx_hoofs INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(iceoryx_hoofs PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${ICEORYX_HOOFS_INC}")
 
 add_executable(rt_iceoryx_example
   src/main.cc
+  src/app.cc
+  src/publisher.cc
+  src/subscriber.cc
 )
 
 target_include_directories(rt_iceoryx_example
@@ -35,6 +39,7 @@ target_link_libraries(rt_iceoryx_example
   cactus_rt
   iceoryx_hoofs
   iceoryx_posh
+  iceoryx_posh::iceoryx_posh_roudi
 )
 
 if (ENABLE_CLANG_TIDY)
