@@ -1,7 +1,6 @@
 Include(FetchContent)
 
 set(FETCHCONTENT_QUIET FALSE)
-
 FetchContent_Declare(
   iceoryx
   GIT_REPOSITORY https://github.com/eclipse-iceoryx/iceoryx.git
@@ -43,7 +42,7 @@ target_link_libraries(rt_iceoryx_example
 )
 
 if (ENABLE_CLANG_TIDY)
-  set_target_properties(rt_iceoryx_example PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
+  set_target_properties(rt_iceoryx_example PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY_PATH})
 endif()
 
 install(

@@ -1,6 +1,6 @@
 #include "app.h"
 
-App::App() : cactus_rt::App() {
+App::App() {
   SetupSingleProcessIceoryxRuntime();
 }
 
