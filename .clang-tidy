@@ -13,7 +13,9 @@ cert-*,
 -bugprone-easily-swappable-parameters,
 -modernize-pass-by-value,
 -readability-convert-member-functions-to-static,
--bugprone-narrowing-conversions'
+-bugprone-narrowing-conversions,
+-bugprone-exception-escape'
+# TODO: Re-enable bugprone-exception-escape when no longer throwing
 # https://github.com/isocpp/CppCoreGuidelines/issues/1589
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''

@@ -9,7 +9,7 @@
 DataLogger::DataLogger(const std::string& data_file_path,
                        int64_t            period_us,
                        double             write_data_interval_seconds)
-    : Thread("DataLogger", 0, SCHED_OTHER),
+    : Thread<cactus_rt::schedulers::Other>("DataLogger"),
       should_stop_(false),
       period_us_(period_us),
       write_data_interval_seconds_(write_data_interval_seconds),
