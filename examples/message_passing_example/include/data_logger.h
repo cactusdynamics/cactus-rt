@@ -21,9 +21,8 @@ struct OutputData {
 class DataLogger : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
   constexpr static int kQueueCapacity = 8 * 1024;  // This is over 8 seconds of data. Should never be full.
 
-  std::atomic_bool should_stop_;
-  int64_t          period_us_;
-  double           write_data_interval_seconds_;
+  int64_t period_us_;
+  double  write_data_interval_seconds_;
 
   // https://www.boost.org/doc/libs/1_56_0/doc/html/boost/lockfree/spsc_queue.html
   // When full: reject additional push with returning false. This might be OK.
@@ -69,13 +68,6 @@ class DataLogger : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
    * @returns success if the data is written into the buffer, false otherwise.
    */
   bool LogData(const OutputData& data) noexcept;
-
-  /**
-   * Requests the data logger to stop
-   */
-  void RequestStop() noexcept {
-    should_stop_.store(true);
-  }
 
   /**
    * Should only be called after the thread has joined, otherwise there's a

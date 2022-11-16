@@ -10,7 +10,6 @@ DataLogger::DataLogger(const std::string& data_file_path,
                        int64_t            period_us,
                        double             write_data_interval_seconds)
     : Thread<cactus_rt::schedulers::Other>("DataLogger"),
-      should_stop_(false),
       period_us_(period_us),
       write_data_interval_seconds_(write_data_interval_seconds),
       data_fifo_push_failed_count_(0, 0) {
@@ -56,7 +55,7 @@ void DataLogger::Run() {
     // If there is data, we keep popping from the queue.
     if (no_data) {
       // If there is no data, then we can check if we should stop
-      if (should_stop_) {
+      if (this->StopRequested()) {
         break;
       }
 

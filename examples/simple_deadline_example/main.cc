@@ -23,15 +23,8 @@ class RTApp : public cactus_rt::App {
   MyDeadlineThread cyclic_thread_;
 
  public:
-  void Start() final {
-    cactus_rt::App::Start();
-    auto monotonic_now = cactus_rt::NowNs();
-    auto wall_now = cactus_rt::WallNowNs();
-    cyclic_thread_.Start(monotonic_now, wall_now);
-  }
-
-  void Join() {
-    cyclic_thread_.Join();
+  RTApp() {
+    RegisterThread(cyclic_thread_);
   }
 
   void Stop() {

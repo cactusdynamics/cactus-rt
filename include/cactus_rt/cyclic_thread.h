@@ -18,7 +18,6 @@ class CyclicThread : public Thread<SchedulerT> {
   int64_t                     period_ns_;
   struct timespec             next_wakeup_time_;
   typename SchedulerT::Config scheduler_config_;
-  std::atomic_bool            should_stop_ = false;
 
   // Debug information
   LatencyTracker wakeup_latency_tracker_;
@@ -42,10 +41,6 @@ class CyclicThread : public Thread<SchedulerT> {
 
   virtual ~CyclicThread() = default;
 
-  void RequestStop() noexcept {
-    should_stop_.store(true);
-  }
-
  protected:
   void Run() noexcept final {
     clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
@@ -53,7 +48,7 @@ class CyclicThread : public Thread<SchedulerT> {
 
     int64_t wakeup_latency, loop_latency, busy_wait_latency;
 
-    while (!should_stop_.load()) {
+    while (!this->StopRequested()) {
       should_have_woken_up_at = next_wakeup_time_.tv_sec * 1'000'000'000 + next_wakeup_time_.tv_nsec;
       loop_start = NowNs();
 
