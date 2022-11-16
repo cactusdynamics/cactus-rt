@@ -10,17 +10,20 @@
 
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
 
+// Earliest Deadline First scheduler. More information on this can be found here:
+// https://docs.kernel.org/scheduler/sched-deadline.html
+
 namespace cactus_rt {
 namespace schedulers {
 class Deadline {
  public:
   struct Config {
-    Config(uint64_t runtime, uint64_t deadline)
-        : sched_runtime(runtime),
-          sched_deadline(deadline) {}
-    uint64_t sched_runtime;
-    uint64_t sched_deadline;
-    uint64_t sched_period = 0;  // User setting of sched_period for cyclic threads is not supported.
+    Config(uint64_t runtime_ns, uint64_t deadline_ns)
+        : sched_runtime_ns(runtime_ns),
+          sched_deadline_ns(deadline_ns) {}
+    uint64_t sched_runtime_ns;
+    uint64_t sched_deadline_ns;
+    uint64_t sched_period_ns = 0;  // User setting of sched_period for cyclic threads is not supported.
   };
 
   inline static void SetThreadScheduling(const Config& config) {
@@ -32,9 +35,9 @@ class Deadline {
     attr.sched_priority = 0;
 
     attr.sched_policy = SCHED_DEADLINE;  // Set the scheduler policy
-    attr.sched_runtime = config.sched_runtime;
-    attr.sched_deadline = config.sched_deadline;
-    attr.sched_period = config.sched_period;
+    attr.sched_runtime = config.sched_runtime_ns;
+    attr.sched_deadline = config.sched_deadline_ns;
+    attr.sched_period = config.sched_period_ns;
 
     auto ret = sched_setattr(0, &attr, 0);
     if (ret < 0) {
@@ -53,7 +56,7 @@ class Deadline {
 
 // Deadline needs access to the cyclic thread's period
 // This template specialization avoids needing to pass the thread into a Deadline::SetThreadScheduling by
-// manually overriding the period in the constructor. User setting of sched_period_ for cyclic threads is
+// manually overriding the period of Deadline::Config in the template-specialized constructor. User setting of sched_period directly on the Deadline::Config object for cyclic threads is
 // not supported.
 template <>
 inline CyclicThread<schedulers::Deadline>::CyclicThread(const std::string&                  name,
@@ -64,7 +67,7 @@ inline CyclicThread<schedulers::Deadline>::CyclicThread(const std::string&      
     : Thread<schedulers::Deadline>(name, config, cpu_affinity, stack_size),
       period_ns_(period_ns),
       scheduler_config_(config) {
-  scheduler_config_.sched_period = static_cast<uint64_t>(period_ns);
+  scheduler_config_.sched_period_ns = static_cast<uint64_t>(period_ns);
 }
 
 }  // namespace cactus_rt

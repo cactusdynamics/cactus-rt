@@ -51,13 +51,13 @@ class CyclicThread : public Thread<SchedulerT> {
     clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
     int64_t loop_start, loop_end, should_have_woken_up_at;
 
-    double wakeup_latency, loop_latency, busy_wait_latency;
+    int64_t wakeup_latency, loop_latency, busy_wait_latency;
 
     while (!should_stop_.load()) {
       should_have_woken_up_at = next_wakeup_time_.tv_sec * 1'000'000'000 + next_wakeup_time_.tv_nsec;
       loop_start = NowNs();
 
-      wakeup_latency = static_cast<double>(loop_start - should_have_woken_up_at);
+      wakeup_latency = loop_start - should_have_woken_up_at;
 
       TraceLoopStart(wakeup_latency);
 
