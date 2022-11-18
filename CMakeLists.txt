@@ -62,15 +62,15 @@ target_compile_options(cactus_rt
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   include(CTest)
 
-  if (BUILD_TESTING)
-    add_subdirectory(tests)
-  endif()
-
   if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY clang-tidy clang-tidy-14 clang-tidy-13 clang-tidy-12 clang-tidy-11)
-    set_target_properties(cactus_rt PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
+    find_program(CLANG_TIDY_PATH clang-tidy clang-tidy-14 clang-tidy-13 clang-tidy-12 clang-tidy-11)
+    set_target_properties(cactus_rt PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY_PATH})
   else()
     message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
+  endif()
+
+  if (BUILD_TESTING)
+    add_subdirectory(tests)
   endif()
 
   if (ENABLE_EXAMPLES)
@@ -80,5 +80,6 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/lttng_ust_example)
     add_subdirectory(examples/simple_deadline_example)
+    add_subdirectory(examples/iceoryx_example)
   endif()
 endif()

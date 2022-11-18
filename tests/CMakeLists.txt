@@ -35,6 +35,10 @@ target_link_libraries(cactus_rt_tests
   Catch2::Catch2WithMain
 )
 
+if (ENABLE_CLANG_TIDY)
+  set_target_properties(cactus_rt_tests PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY_PATH})
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(CTest)
 include(Catch)

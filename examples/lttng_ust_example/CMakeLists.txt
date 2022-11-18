@@ -17,7 +17,7 @@ target_link_libraries(rt_lttng_ust_example
 )
 
 if (ENABLE_CLANG_TIDY)
-  set_target_properties(rt_lttng_ust_example PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
+  set_target_properties(rt_lttng_ust_example PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY_PATH})
 endif()
 
 install(
