@@ -24,6 +24,8 @@ set_target_properties(iceoryx_hoofs PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTOR
 
 add_executable(rt_iceoryx_example
   src/main.cc
+  src/publisher.cc
+  src/subscriber.cc
 )
 
 target_include_directories(rt_iceoryx_example
