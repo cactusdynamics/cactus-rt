@@ -9,13 +9,35 @@
 #include "cactus_rt/utils.h"
 
 namespace cactus_rt {
+void App::RegisterThread(BaseThread& thread) {
+  threads_.push_back(&thread);
+}
+
 void App::Start() {
   SPDLOG_DEBUG("Starting application");
 
   LockMemory();
   ReserveHeap();
-  start_monotonic_time_ns_ = NowNs();
-  start_wall_time_ns_ = WallNowNs();
+
+  // The start time for the threads must all be the same, even tho they are
+  // technically started in slightly different moments. This allows for better
+  // synchronization of events later.
+  //
+  // Also, the wall start time and monotonic start time may be slightly
+  // different from each other. Unless the kernel gives an API call that
+  // returns both of these at the same time, they won't be perfectly the same.
+  auto start_monotonic_time_ns = NowNs();
+  auto start_wall_time_ns = WallNowNs();
+
+  for (auto* thread : threads_) {
+    thread->Start(start_monotonic_time_ns, start_wall_time_ns);
+  }
+}
+
+void App::Join() {
+  for (auto* thread : threads_) {
+    thread->Join();
+  }
 }
 
 void App::ReserveHeap() const {
@@ -34,7 +56,6 @@ void App::ReserveHeap() const {
   // is actually allocated, because mlockall effectively turns off demand
   // paging. See mlockall(2) and "demand paging" on Wikipedia. Also see:
   // https://github.com/ros2-realtime-demo/pendulum/issues/90#issuecomment-1105844726
-
   free(buf);
 }
 

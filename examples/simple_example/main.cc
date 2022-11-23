@@ -17,25 +17,16 @@ class CyclicThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo>
 };
 
 class RTApp : public cactus_rt::App {
-  CyclicThread cyclic_thread_;
+  CyclicThread thread_;
 
  public:
-  RTApp(std::vector<size_t> cpu_affinity) : cyclic_thread_(cpu_affinity) {}
-
-  void Start() final {
-    cactus_rt::App::Start();
-    auto monotonic_now = cactus_rt::NowNs();
-    auto wall_now = cactus_rt::WallNowNs();
-    cyclic_thread_.Start(monotonic_now, wall_now);
-  }
-
-  void Join() {
-    cyclic_thread_.Join();
+  RTApp(std::vector<size_t> cpu_affinity) : thread_(cpu_affinity) {
+    RegisterThread(thread_);
   }
 
   void Stop() {
-    cyclic_thread_.RequestStop();
-    Join();
+    thread_.RequestStop();
+    thread_.Join();
   }
 };
 
@@ -44,7 +35,7 @@ int main() {
 
   RTApp app(std::vector<size_t>{2});
 
-  constexpr unsigned int time = 60;
+  constexpr unsigned int time = 5;
   SPDLOG_INFO("Testing latency for {}s", time);
   app.Start();
   sleep(time);

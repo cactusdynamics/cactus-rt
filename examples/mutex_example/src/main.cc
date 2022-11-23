@@ -53,20 +53,15 @@ class RTThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo> {
 
 class NonRTThread : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
   NaiveDoubleBuffer<Data>& buf_;
-  std::atomic_bool         should_stop_ = false;
 
  public:
   NonRTThread(NaiveDoubleBuffer<Data>& buf)
       : Thread<cactus_rt::schedulers::Other>("NonRTThread"), buf_(buf) {
   }
 
-  void RequestStop() {
-    should_stop_ = true;
-  }
-
  protected:
   void Run() final {
-    while (!should_stop_) {
+    while (!this->StopRequested()) {
       auto data = buf_.SwapAndRead();
       cout << "\33[2K\r" << std::flush;
       cout << std::showpos << std::setw(10) << data.v1 << " " << data.v2 << " " << data.v3 << " " << data.v4 << std::flush;
@@ -82,28 +77,11 @@ class RTApp : public cactus_rt::App {
   NonRTThread             non_rt_thread_;
 
  public:
-  RTApp() : App(0), rt_thread_(buf_), non_rt_thread_(buf_) {  // disable heap allocation
-  }
-
-  void Start() final {
-    cactus_rt::App::Start();
-
-    auto monotonic_now = cactus_rt::NowNs();
-    auto wall_now = cactus_rt::WallNowNs();
-
-    rt_thread_.Start(monotonic_now, wall_now);
-    non_rt_thread_.Start(monotonic_now, wall_now);
-  }
-
-  void Join() {
-    rt_thread_.Join();
-    non_rt_thread_.Join();
-  }
-
-  void Stop() {
-    rt_thread_.RequestStop();
-    non_rt_thread_.RequestStop();
-    Join();
+  RTApp() : App(0),  // the 0 disables heap reservation behavior of App
+            rt_thread_(buf_),
+            non_rt_thread_(buf_) {
+    RegisterThread(rt_thread_);
+    RegisterThread(non_rt_thread_);
   }
 };
 

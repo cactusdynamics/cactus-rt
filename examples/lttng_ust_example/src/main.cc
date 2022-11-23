@@ -30,15 +30,8 @@ class RTApp : public cactus_rt::App {
   CyclicThread cyclic_thread_;
 
  public:
-  void Start() final {
-    cactus_rt::App::Start();
-    auto monotonic_now = cactus_rt::NowNs();
-    auto wall_now = cactus_rt::WallNowNs();
-    cyclic_thread_.Start(monotonic_now, wall_now);
-  }
-
-  void Join() {
-    cyclic_thread_.Join();
+  RTApp() {
+    RegisterThread(cyclic_thread_);
   }
 
   void Stop() {
@@ -52,7 +45,7 @@ int main() {
 
   RTApp app;
 
-  constexpr unsigned int time = 60;
+  constexpr unsigned int time = 30;
   SPDLOG_INFO("Running for {}s", time);
   app.Start();
   sleep(time);
