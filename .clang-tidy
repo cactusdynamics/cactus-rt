@@ -6,18 +6,19 @@ modernize-*,
 readability-*,
 bugprone-*,
 cert-*,
--readability-magic-numbers,
--readability-identifier-length,
--modernize-use-trailing-return-type,
--clang-diagnostic-unused-parameter,
 -bugprone-easily-swappable-parameters,
+-bugprone-exception-escape,
+-bugprone-implicit-widening-of-multiplication-result,
+-bugprone-narrowing-conversions,
+-clang-diagnostic-unused-parameter,
 -misc-non-private-member-variables-in-classes,
 -modernize-pass-by-value,
 -modernize-use-nodiscard,
+-modernize-use-trailing-return-type,
 -readability-convert-member-functions-to-static,
--bugprone-narrowing-conversions,
--bugprone-exception-escape,
--readability-isolate-declaration'
+-readability-identifier-length,
+-readability-isolate-declaration,
+-readability-magic-numbers'
 # TODO: Re-enable bugprone-exception-escape when no longer throwing
 # https://github.com/isocpp/CppCoreGuidelines/issues/1589
 WarningsAsErrors: '*'

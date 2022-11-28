@@ -116,6 +116,12 @@ To turn OFF building the examples (for embedding into other projects):
    $ cmake -Bbuild -DENABLE_EXAMPLES=OFF
    $ cmake --build build -j $(nproc)
 
+For testing like CI, you need docker installed and then you can use:
+
+.. code-block:: console
+
+   $ scripts/test-in-docker
+
 -------
 LICENSE
 -------

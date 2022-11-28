@@ -1,21 +1,23 @@
 on: [push]
 
-name: rt-demo
+name: cactus-rt
 
 jobs:
   build-and-test:
     runs-on: [self-hosted, jammy]
+    env:
+      CACTUS_RT_BUILD_DIR: build
     steps:
       - uses: actions/checkout@v3
 
       - name: Check if clang format is necessary
-        run: clang-format --version && find . \( -iname '*.h' -o -iname '*.cc' -o -iname '*.c' -o -iname '*.hpp' -o -iname '*.cpp' \) -not \( -path './build/*' -prune \) -not \( -path './external/*' -prune \) | xargs clang-format --dry-run -Werror
+        run: docker/scripts/00-format.sh
 
       - name: Setup dependencies
         run: sudo apt-get update && sudo apt-get install -y libspdlog-dev liblttng-ust-dev libboost-dev
 
       - name: Build library
-        run: cmake -Bbuild -DENABLE_CLANG_TIDY=ON && cmake --build build -j $(nproc)
+        run: docker/scripts/01-build.sh
 
-      # - name: Test
-      #   run: ctest --test-dir build
+      - name: Test
+        run: docker/scripts/02-test.sh

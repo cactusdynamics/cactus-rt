@@ -1,0 +1,2 @@
+This docker setup is mainly meant for testing as opposed to any sort of
+production use, as we need to use the latest version of clang-tidy and g++.

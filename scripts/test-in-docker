@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -xe
+
+cd docker
+docker build . -t cactus-rt-test
+cd ..
+docker run --rm -it -v $(pwd):/cactus-rt/source cactus-rt-test

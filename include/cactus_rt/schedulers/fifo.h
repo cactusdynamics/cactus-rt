@@ -9,10 +9,7 @@
 
 #include "cactus_rt/linux/sched_ext.h"
 
-int a;
-
-namespace cactus_rt {
-namespace schedulers {
+namespace cactus_rt::schedulers {
 class Fifo {
  public:
   struct Config {
@@ -42,6 +39,5 @@ class Fifo {
     return 0.0;
   }
 };
-}  // namespace schedulers
-}  // namespace cactus_rt
+}  // namespace cactus_rt::schedulers
 #endif
