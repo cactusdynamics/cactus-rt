@@ -18,6 +18,7 @@ add_library(cactus_rt
   STATIC
   src/app.cc
   src/latency_tracker.cc
+  src/lint_helper.cc
 )
 
 target_compile_features(cactus_rt

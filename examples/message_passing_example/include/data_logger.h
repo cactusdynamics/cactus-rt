@@ -56,7 +56,7 @@ class DataLogger : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
              int64_t            period_us = 10'000,
              double             write_data_interval_seconds = 1.0);
 
-  virtual ~DataLogger() {
+  ~DataLogger() override {
     data_file_.close();
   }
 

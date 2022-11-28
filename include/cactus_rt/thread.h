@@ -1,10 +1,10 @@
 #ifndef CACTUS_RT_THREAD_H_
 #define CACTUS_RT_THREAD_H_
 
-#include <limits.h>  // For PTHREAD_STACK_MIN
 #include <pthread.h>
 
 #include <atomic>
+#include <climits>  // For PTHREAD_STACK_MIN
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -39,9 +39,9 @@ class BaseThread {
   BaseThread(const BaseThread&) = delete;
   BaseThread& operator=(const BaseThread&) = delete;
 
-  // Move constructors is allowed
-  BaseThread(BaseThread&&) noexcept = default;
-  BaseThread& operator=(BaseThread&&) noexcept = default;
+  // Move constructors is not allowed because of the atomic_bool
+  BaseThread(BaseThread&&) noexcept = delete;
+  BaseThread& operator=(BaseThread&&) noexcept = delete;
 
  protected:
   /**
