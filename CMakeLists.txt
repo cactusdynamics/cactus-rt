@@ -38,6 +38,7 @@ target_link_libraries(cactus_rt
 
 target_compile_options(cactus_rt
   PUBLIC # TODO: This should affect all the example programs as well, not sure if it this is a good idea tho
+  -fconcepts
   -Wall
   -Wextra
   -Wpedantic

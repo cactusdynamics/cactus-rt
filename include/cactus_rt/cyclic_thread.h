@@ -13,7 +13,7 @@
 namespace cactus_rt {
 
 // TODO: Type assertion / concept to restrict SchedulerT to viable
-template <typename SchedulerT>
+template <Scheduler SchedulerT>
 class CyclicThread : public Thread<SchedulerT> {
   int64_t                     period_ns_;
   struct timespec             next_wakeup_time_;

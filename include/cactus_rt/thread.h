@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <cstring>
+#include <ctime>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -62,7 +63,12 @@ class BaseThread {
 };
 
 // TODO: some docs
-template <typename SchedulerT>
+template <typename T>
+concept Scheduler = requires(T scheduler, const typename T::Config& config, const struct timespec& ts) {
+  { T::SetThreadScheduling(config) } -> void;
+  { T::Sleep(ts) } -> double;
+};
+template <Scheduler SchedulerT>
 class Thread : public BaseThread {
   std::string                 name_;
   typename SchedulerT::Config scheduler_config_;
