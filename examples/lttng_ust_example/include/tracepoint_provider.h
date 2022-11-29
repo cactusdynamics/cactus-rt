@@ -1,3 +1,4 @@
+// NOLINTBEGIN
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER rt_lttng_ust_example
 
@@ -8,8 +9,6 @@
 #define _RT_LTTNG_UST_EXAMPLE_H_
 
 #include <lttng/tracepoint.h>
-
-// NOLINTBEGIN
 
 // Note the args is what's used by the application code.
 // The fields are actually what's emitted in the ring buffer. The last argument
@@ -42,8 +41,8 @@ TRACEPOINT_EVENT(
   TP_FIELDS(
     ctf_float(double, loop_latency_us, loop_latency_us)))
 
-// NOLINTEND
-
 #endif
 
 #include <lttng/tracepoint-event.h>
+
+// NOLINTEND
