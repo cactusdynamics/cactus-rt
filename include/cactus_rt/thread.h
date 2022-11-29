@@ -35,11 +35,13 @@ class BaseThread {
   BaseThread() = default;
   virtual ~BaseThread() = default;
 
-  // Copy constructors is not allowed
+  // Copy constructors are not allowed
   BaseThread(const BaseThread&) = delete;
   BaseThread& operator=(const BaseThread&) = delete;
 
-  // Move constructors is not allowed because of the atomic_bool
+  // Should the thread be moveable? std::thread is moveable
+  // TODO: investigate moving the stop_requested_ flag somewhere else
+  // Move constructors are not allowed because of the atomic_bool
   BaseThread(BaseThread&&) noexcept = delete;
   BaseThread& operator=(BaseThread&&) noexcept = delete;
 
