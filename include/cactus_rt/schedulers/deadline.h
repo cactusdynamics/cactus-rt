@@ -1,10 +1,11 @@
 #ifndef CACTUS_RT_DEADLINE_H_
 #define CACTUS_RT_DEADLINE_H_
 
-#include <errno.h>
 #include <sched.h>
 #include <spdlog/spdlog.h>
-#include <time.h>
+
+#include <cerrno>
+#include <ctime>
 
 #include "cactus_rt/linux/sched_ext.h"
 

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <mutex>
 
+// NOLINTBEGIN
 /**
  * A naive double buffer implementation with priority inheritance.
  *
@@ -34,5 +35,6 @@ class NaiveDoubleBuffer {
     return buf_[!write_idx_];
   }
 };
+// NOLINTEND
 
 #endif

@@ -39,8 +39,6 @@ class CyclicThread : public Thread<SchedulerT> {
         scheduler_config_(config) {
   }
 
-  virtual ~CyclicThread() = default;
-
  protected:
   void Run() noexcept final {
     clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);

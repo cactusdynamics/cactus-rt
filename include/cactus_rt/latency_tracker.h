@@ -30,8 +30,8 @@ class LatencyTracker {
   double Max() const noexcept { return max_; }
   size_t Count() const noexcept { return count_; }
 
-  const HistogramArray Histogram() const noexcept { return histogram_; }
-  void                 DumpToLogger() const;
+  const HistogramArray& Histogram() const noexcept { return histogram_; }
+  void                  DumpToLogger() const;
 };
 
 }  // namespace cactus_rt

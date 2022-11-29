@@ -1,15 +1,15 @@
 #ifndef CACTUS_RT_OTHER_H_
 #define CACTUS_RT_OTHER_H_
 
-#include <errno.h>
 #include <sched.h>
 #include <spdlog/spdlog.h>
-#include <time.h>
+
+#include <cerrno>
+#include <ctime>
 
 #include "cactus_rt/linux/sched_ext.h"
 
-namespace cactus_rt {
-namespace schedulers {
+namespace cactus_rt::schedulers {
 class Other {
  public:
   struct Config {
@@ -35,10 +35,9 @@ class Other {
   inline static double Sleep(const struct timespec& next_wakeup_time) noexcept {
     // TODO: check for errors?
     // TODO: can there be remainders?
-    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, NULL);
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr);
     return 0.0;
   }
 };
-}  // namespace schedulers
-}  // namespace cactus_rt
+}  // namespace cactus_rt::schedulers
 #endif
