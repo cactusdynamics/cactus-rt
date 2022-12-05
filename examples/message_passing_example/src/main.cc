@@ -11,7 +11,7 @@ class RTApp : public cactus_rt::App {
  public:
   RTApp(const std::string& data_file_path) noexcept
       : data_logger_(data_file_path),
-        rt_thread_(data_logger_, 1'000'000, std::vector<size_t>(), 30'000) {
+        rt_thread_(data_logger_, 1'000'000, std::vector<size_t>(), 300'000) {
     RegisterThread(data_logger_);
     RegisterThread(rt_thread_);
   }

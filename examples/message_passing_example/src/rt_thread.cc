@@ -6,7 +6,7 @@ bool RtThread::Loop(int64_t ellapsed_ns) noexcept {
   double period = 1000.0;
   double amplitude = 1.0;
 
-  OutputData data{ellapsed_ns, amplitude * cos(2 * M_PI / period * ellapsed_ms)};
+  OutputData data{ellapsed_ns};
 
   data_logger_.LogData(data);
 

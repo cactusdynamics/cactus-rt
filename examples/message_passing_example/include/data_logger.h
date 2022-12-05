@@ -15,8 +15,7 @@ using boost::lockfree::spsc_queue;
 
 struct OutputData {
   int64_t timestamp;
-  double  output_value;
-  int64_t write_dt;
+  int64_t write_dt = -1;
 };
 
 class DataLogger : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
@@ -24,7 +23,7 @@ class DataLogger : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
 
   int64_t period_us_;
   double  write_data_interval_seconds_;
-  int64_t write_dt_ = 0;
+  int64_t write_dt_ = -1;
 
   // https://www.boost.org/doc/libs/1_56_0/doc/html/boost/lockfree/spsc_queue.html
   // When full: reject additional push with returning false. This might be OK.
@@ -69,7 +68,7 @@ class DataLogger : public cactus_rt::Thread<cactus_rt::schedulers::Other> {
    * @param data The data to be logged.
    * @returns success if the data is written into the buffer, false otherwise.
    */
-  bool LogData(const OutputData& data) noexcept;
+  bool LogData(OutputData data) noexcept;
 
   /**
    * Should only be called after the thread has joined, otherwise there's a

@@ -23,7 +23,7 @@ DataLogger::DataLogger(const std::string& data_file_path,
   data_buffer_.reserve(kQueueCapacity);
 }
 
-bool DataLogger::LogData(const OutputData& data) noexcept {
+bool DataLogger::LogData(OutputData data) noexcept {
   data.write_dt = write_dt_;
 
   auto start = cactus_rt::NowNs();
@@ -80,7 +80,7 @@ void DataLogger::WriteData() noexcept {
   spdlog::debug("writing {} data entries to file...", data_buffer_.size());
   for (const auto& data : data_buffer_) {
     // Log in microseconds
-    data_file_ << std::setprecision(4) << std::fixed << (static_cast<double>(data.timestamp) / 1'000.0) << ", " << data.output_value << "\n";
+    data_file_ << std::setprecision(4) << std::fixed << (static_cast<double>(data.timestamp) / 1'000.0) << ", " << data.write_dt << "\n";
   }
 
   data_buffer_.clear();
