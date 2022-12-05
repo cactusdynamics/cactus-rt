@@ -24,7 +24,12 @@ DataLogger::DataLogger(const std::string& data_file_path,
 }
 
 bool DataLogger::LogData(const OutputData& data) noexcept {
+  data.write_dt = write_dt_;
+
+  auto start = cactus_rt::NowNs();
   auto success = data_fifo_.push(data);
+  auto end = cactus_rt::NowNs();
+  write_dt_ = end - start;
 
   if (!success) {
     ++data_fifo_push_failed_count_.first;
