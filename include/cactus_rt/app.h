@@ -71,6 +71,8 @@ class App {
    * Reserve the heap based on the heap_size_.
    */
   void ReserveHeap() const;
+
+  void StartRegisteredThreads(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns);
 };
 }  // namespace cactus_rt
 

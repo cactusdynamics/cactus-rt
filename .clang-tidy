@@ -16,6 +16,7 @@ cert-*,
 -modernize-use-nodiscard,
 -modernize-use-trailing-return-type,
 -readability-convert-member-functions-to-static,
+-readability-function-cognitive-complexity,
 -readability-identifier-length,
 -readability-isolate-declaration,
 -readability-magic-numbers'

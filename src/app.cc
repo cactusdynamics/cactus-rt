@@ -29,6 +29,10 @@ void App::Start() {
   auto start_monotonic_time_ns = NowNs();
   auto start_wall_time_ns = WallNowNs();
 
+  StartRegisteredThreads(start_monotonic_time_ns, start_wall_time_ns);
+}
+
+void App::StartRegisteredThreads(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) {
   for (auto* thread : threads_) {
     thread->Start(start_monotonic_time_ns, start_wall_time_ns);
   }
