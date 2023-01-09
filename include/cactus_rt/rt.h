@@ -5,5 +5,6 @@
 #include "schedulers/deadline.h"
 #include "schedulers/fifo.h"
 #include "schedulers/other.h"
+#include "signal_handler.h"
 #include "thread.h"
 #include "utils.h"
