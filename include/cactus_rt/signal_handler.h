@@ -11,10 +11,10 @@
 namespace cactus_rt {
 /**
  * @brief Sets up termination signal handlers which enables the calling of
- * App::OnTerminationSignal when used with WaitUntilTerminationSignal. Without
+ * App::OnTerminationSignal when used with WaitForAndHandleTerminationSignal. Without
  * calling this method, signals will not be caught.
  *
- * To use this, you must also use cactus_rt::WaitUntilTerminationSignal(app)
+ * To use this, you must also use cactus_rt::WaitForAndHandleTerminationSignal(app)
  * following app.Start(). For example (see signal_handler_example for more
  * details):
  *
@@ -61,7 +61,7 @@ void SetUpTerminationSignalHandler(std::vector<int> signals = {SIGINT, SIGTERM})
  *
  * @param app The application object
  */
-void WaitUntilTerminationSignal(App& app);
+void WaitForAndHandleTerminationSignal(App& app);
 }  // namespace cactus_rt
 
 #endif

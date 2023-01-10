@@ -53,7 +53,7 @@ int main() {
   // which in this cases causes the RT thread to gracefully exit.
   //
   // This function returns when app.OnTerminationSignal() finishes.
-  cactus_rt::WaitUntilTerminationSignal(app);
+  cactus_rt::WaitForAndHandleTerminationSignal(app);
 
   SPDLOG_DEBUG("main() exiting gracefully!");
   return 0;

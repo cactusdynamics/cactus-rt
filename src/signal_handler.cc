@@ -38,7 +38,7 @@ void SetUpTerminationSignalHandler(std::vector<int> signals) {
   }
 }
 
-void WaitUntilTerminationSignal(App& app) {
+void WaitForAndHandleTerminationSignal(App& app) {
   // This function is not a part of the real signal handler. The real signal
   // handler (HandleSignal) posts to the semaphore, which unblocks this
   // function. This function then calls app.OnTerminationSignal() to allow for

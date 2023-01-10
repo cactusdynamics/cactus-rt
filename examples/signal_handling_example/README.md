@@ -8,6 +8,6 @@ setup something like this with the built-in signal handling system.
 Hints:
 
 - You can ignore the signals if you simply ignore calling
-  `cactus_rt::WaitUntilTerminationSignal`. However, if still want to run the
-  application indefinitely, you will need to ensure the main thread is alive
+  `cactus_rt::WaitForAndHandleTerminationSignal`. However, if still want to run
+  the application indefinitely, you will need to ensure the main thread is alive
   yourself.
