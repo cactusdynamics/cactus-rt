@@ -20,8 +20,8 @@ class App {
 
  public:
   /**
-   * Creates an instance of the RT app. The app should always be created before
-   * the threads as there are some global setup that can take place.
+   * @brief Creates an instance of the RT app. The app should always be created
+   * before the threads as some global setup that can take place.
    *
    * @param heap_size The heap size to reserve in bytes. Defaults to 512MB.
    */
@@ -47,18 +47,29 @@ class App {
   void RegisterThread(BaseThread& thread);
 
   /**
-   * Starts the app by locking the memory and reserving the memory. Also start
-   * all the threads in registration order.
+   * @brief Starts the app by locking the memory and reserving the memory. Also
+   * start all the threads in registration order.
    */
   virtual void Start();
 
   /**
-   * Joins all the threads in registration order.
+   * @brief Joins all the threads in registration order.
    *
    * Override this if you want a different order of operation, or if you want to
    * request stop on a thread after another one is done.
    */
   virtual void Join();
+
+  /**
+   * @brief Executes when termination signal (SIGINT, SIGTERM by default) is
+   * sent. If signal handler is set up (via cactus_rt::SetUpTerminationSignalHandler),
+   * this function will be called during cactus_rt::WaitforTerminationSignal(app).
+   *
+   * See cactus_rt::SetUpTerminationSignalHandler,
+   * cactus_rt::WaitforTerminationSignal, and signal_handler_example for
+   * details.
+   */
+  virtual void OnTerminationSignal(){};
 
  protected:
   /**

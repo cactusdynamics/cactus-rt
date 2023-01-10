@@ -18,6 +18,7 @@ add_library(cactus_rt
   STATIC
   src/app.cc
   src/latency_tracker.cc
+  src/signal_handler.cc
 )
 
 target_compile_features(cactus_rt
@@ -77,6 +78,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
     add_subdirectory(examples/simple_example)
     add_subdirectory(examples/message_passing_example)
+    add_subdirectory(examples/signal_handling_example)
     add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/lttng_ust_example)
     add_subdirectory(examples/simple_deadline_example)
