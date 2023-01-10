@@ -5,6 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
+option(BUILD_DOCS "Build documentations" OFF)
 
 add_definitions(-DSPDLOG_ACTIVE_LEVEL=1) # debug level
 
@@ -82,5 +83,20 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/lttng_ust_example)
     add_subdirectory(examples/simple_deadline_example)
+  endif()
+
+  if (BUILD_DOCS)
+    message(STATUS "Building documentations. Turn it off via BUILD_DOCS=OFF")
+    find_package(Doxygen REQUIRED)
+
+    set(DOXYGEN_FILE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${DOXYGEN_FILE} @ONLY)
+
+    add_custom_target(
+      docs ALL
+      COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_FILE}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      VERBATIM
+    )
   endif()
 endif()
