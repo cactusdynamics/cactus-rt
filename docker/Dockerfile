@@ -13,6 +13,8 @@ RUN set -xe; \
       liblttng-ust-dev \
       libboost-dev \
       lttng-tools \
+      doxygen \
+      graphviz \
     ; \
     mkdir /cactus-rt
 
