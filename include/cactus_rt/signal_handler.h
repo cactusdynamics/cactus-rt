@@ -20,7 +20,7 @@ namespace cactus_rt {
  *
  *     class MyApp : public cactus_rt::App { ... };
  *     int main() {
- *       cactus_rt::SetupTerminationSignalHandler();
+ *       cactus_rt::SetUpTerminationSignalHandler();
  *
  *       MyApp app;
  *       app.Start();
@@ -29,24 +29,24 @@ namespace cactus_rt {
  *       return 0;
  *     }
  *
- * When a signal listed in signals is sent, cactus_rt::WaitforTerminationSignal
+ * When a signal listed in `signals` is sent, cactus_rt::WaitforTerminationSignal
  * is unblocked and it calls app.OnTerminationSignal(). OnTerminationSignal is
- * an user-defined on MyApp that should graceful shutdown the application.
+ * an user-defined method on MyApp that should graceful shutdown the application.
  *
  * Readers familiar with signal handler safety (man 7 signal-safety) should note
  * that OnTerminationSignal is not a signal handler function, but rather a
- * function can call any function without restrictions. This should be obvious
+ * function that can call any function without restrictions. This should be obvious
  * as it is called from WaitForTerminationSignal on the main thread (in the
  * above case). This is implemented via a semaphore, which is an
  * async-signal-safe method as listed in signal-safety(7).
  *
  * @param signals A vector of signals to catch. Default: SIGINT and SIGTERM.
  */
-void SetupTerminationSignalHandler(std::vector<int> signals = {SIGINT, SIGTERM});
+void SetUpTerminationSignalHandler(std::vector<int> signals = {SIGINT, SIGTERM});
 
 /**
  * @brief Wait until a termination signal as setup via
- * SetupTerminationSignalHandler is sent, then runs app.OnTerminationSignal().
+ * SetUpTerminationSignalHandler is sent, then runs app.OnTerminationSignal().
  * This function returns when app.OnTerminationSignal() returns.
  *
  * Calling this function effectively causes the application to run indefinitely
@@ -56,7 +56,7 @@ void SetupTerminationSignalHandler(std::vector<int> signals = {SIGINT, SIGTERM})
  * is called from multiple threads, it may block one of the threads
  * indefinitely.
  *
- * If this function is never called after calling SetupTerminationSignalHandler,
+ * If this function is never called after calling SetUpTerminationSignalHandler,
  * the signal caught by this application will be ignored.
  *
  * @param app The application object

@@ -43,7 +43,7 @@ int main() {
   SPDLOG_DEBUG("signal handler example runs infinitely. press CTRL+C to interrupt and gracefully terminate");
 
   // Sets up the signal handlers for SIGINT and SIGTERM (by default).
-  cactus_rt::SetupTerminationSignalHandler();
+  cactus_rt::SetUpTerminationSignalHandler();
 
   // Create and start the application
   RTApp app;

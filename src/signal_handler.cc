@@ -24,7 +24,7 @@ void HandleSignal(int /*sig*/) {
   }
 }
 
-void SetupTerminationSignalHandler(std::vector<int> signals) {
+void SetUpTerminationSignalHandler(std::vector<int> signals) {
   int ret = sem_init(&signal_semaphore, 0, 0);
   if (ret != 0) {
     throw std::runtime_error{std::string("cannot initialize semaphore: ") + std::strerror(errno)};

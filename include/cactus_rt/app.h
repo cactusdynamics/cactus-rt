@@ -21,7 +21,7 @@ class App {
  public:
   /**
    * @brief Creates an instance of the RT app. The app should always be created
-   * before the threads as there are some global setup that can take place.
+   * before the threads as some global setup that can take place.
    *
    * @param heap_size The heap size to reserve in bytes. Defaults to 512MB.
    */
@@ -62,10 +62,10 @@ class App {
 
   /**
    * @brief Executes when termination signal (SIGINT, SIGTERM by default) is
-   * sent. If signal handler is setup (via cactus_rt::SetupTerminationSignalHandler),
+   * sent. If signal handler is set up (via cactus_rt::SetUpTerminationSignalHandler),
    * this function will be called during cactus_rt::WaitforTerminationSignal(app).
    *
-   * See cactus_rt::SetupTerminationSignalHandler,
+   * See cactus_rt::SetUpTerminationSignalHandler,
    * cactus_rt::WaitforTerminationSignal, and signal_handler_example for
    * details.
    */
