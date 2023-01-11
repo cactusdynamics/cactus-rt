@@ -19,7 +19,7 @@ constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
 // Needed because the App needs to hold a list of threads that it can start them
 // automatically.  Have a templated thread won't work with that system.
 class BaseThread {
-  std::atomic_bool stop_requested_;
+  std::atomic_bool stop_requested_ = false;
 
  public:
   virtual const std::string& Name() = 0;
