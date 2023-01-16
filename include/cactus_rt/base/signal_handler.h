@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_SIGNAL_HANDLER_H_
-#define CACTUS_RT_SIGNAL_HANDLER_H_
+#ifndef CACTUS_RT_BASE_SIGNAL_HANDLER_H_
+#define CACTUS_RT_BASE_SIGNAL_HANDLER_H_
 
 #include <semaphore.h>
 

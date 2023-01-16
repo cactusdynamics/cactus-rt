@@ -17,9 +17,9 @@ find_package(spdlog REQUIRED)
 
 add_library(cactus_rt
   STATIC
-  src/app.cc
-  src/latency_tracker.cc
-  src/signal_handler.cc
+  src/base/app.cc
+  src/base/latency_tracker.cc
+  src/base/signal_handler.cc
 )
 
 target_compile_features(cactus_rt

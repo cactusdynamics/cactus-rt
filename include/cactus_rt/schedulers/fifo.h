@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_FIFO_H_
-#define CACTUS_RT_FIFO_H_
+#ifndef CACTUS_RT_SCHEDULERS_FIFO_H_
+#define CACTUS_RT_SCHEDULERS_FIFO_H_
 
 #include <sched.h>
 #include <spdlog/spdlog.h>

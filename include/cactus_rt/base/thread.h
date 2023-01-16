@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_THREAD_H_
-#define CACTUS_RT_THREAD_H_
+#ifndef CACTUS_RT_BASE_THREAD_H_
+#define CACTUS_RT_BASE_THREAD_H_
 
 #include <pthread.h>
 
@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "linux/sched_ext.h"
+#include "../linux/sched_ext.h"
 
 namespace cactus_rt {
 

@@ -1,14 +1,14 @@
-#ifndef CACTUS_RT_CYCLIC_THREAD_H_
-#define CACTUS_RT_CYCLIC_THREAD_H_
+#ifndef CACTUS_RT_BASE_CYCLIC_THREAD_H_
+#define CACTUS_RT_BASE_CYCLIC_THREAD_H_
 
 #include <spdlog/spdlog.h>
 
 #include <atomic>
 #include <vector>
 
-#include "cactus_rt/latency_tracker.h"
-#include "cactus_rt/thread.h"
-#include "cactus_rt/utils.h"
+#include "latency_tracker.h"
+#include "thread.h"
+#include "utils.h"
 
 namespace cactus_rt {
 

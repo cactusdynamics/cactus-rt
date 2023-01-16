@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_APP2_H_
-#define CACTUS_RT_APP2_H_
+#ifndef CACTUS_RT_BASE_APP_H_
+#define CACTUS_RT_BASE_APP_H_
 
 #include <cstddef>
 #include <cstdint>

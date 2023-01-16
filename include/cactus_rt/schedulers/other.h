@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_OTHER_H_
-#define CACTUS_RT_OTHER_H_
+#ifndef CACTUS_RT_SCHEDULERS_OTHER_H_
+#define CACTUS_RT_SCHEDULERS_OTHER_H_
 
 #include <sched.h>
 #include <spdlog/spdlog.h>

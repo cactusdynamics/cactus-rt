@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_DEADLINE_H_
-#define CACTUS_RT_DEADLINE_H_
+#ifndef CACTUS_RT_SCHEDULERS_DEADLINE_H_
+#define CACTUS_RT_SCHEDULERS_DEADLINE_H_
 
 #include <sched.h>
 #include <spdlog/spdlog.h>

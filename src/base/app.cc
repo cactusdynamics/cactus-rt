@@ -1,4 +1,4 @@
-#include "cactus_rt/app.h"
+#include "cactus_rt/base/app.h"
 
 #include <malloc.h>
 #include <spdlog/spdlog.h>
@@ -6,7 +6,7 @@
 
 #include <stdexcept>
 
-#include "cactus_rt/utils.h"
+#include "cactus_rt/base/utils.h"
 
 namespace cactus_rt {
 void App::RegisterThread(BaseThread& thread) {
