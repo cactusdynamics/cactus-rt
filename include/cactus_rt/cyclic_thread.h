@@ -58,7 +58,7 @@ class CyclicThread : public Thread<SchedulerT> {
       TraceLoopStart(wakeup_latency);
 
       {
-        TRACE_EVENT("cactus_rt", "CyclicThread::Loop");
+        TRACE_EVENT(kTracingCategory, "CyclicThread::Loop");
         if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
           break;
         }
@@ -75,7 +75,7 @@ class CyclicThread : public Thread<SchedulerT> {
       loop_latency_tracker_.RecordValue(loop_latency);
 
       {
-        TRACE_EVENT("cactus_rt", "CyclicThread::Sleep");
+        TRACE_EVENT(kTracingCategory, "CyclicThread::Sleep");
         next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
         busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_);
       }

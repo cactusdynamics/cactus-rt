@@ -70,7 +70,7 @@ if (ENABLE_TRACING)
   FetchContent_Declare(
     perfetto
     GIT_REPOSITORY https://android.googlesource.com/platform/external/perfetto
-    GIT_TAG        v31.0
+    GIT_TAG        v31.0 # Once v32 is released, change this v32.
     CONFIGURE_COMMAND ""
     BUILD_COMMAND     ""
   )
@@ -116,12 +116,13 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 
   if (ENABLE_EXAMPLES)
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
-    add_subdirectory(examples/simple_example)
-    add_subdirectory(examples/message_passing_example)
-    add_subdirectory(examples/signal_handling_example)
-    add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/lttng_ust_example)
+    add_subdirectory(examples/message_passing_example)
+    add_subdirectory(examples/mutex_example)
+    add_subdirectory(examples/signal_handling_example)
     add_subdirectory(examples/simple_deadline_example)
+    add_subdirectory(examples/simple_example)
+    add_subdirectory(examples/tracing_example)
   endif()
 
   if (BUILD_DOCS)

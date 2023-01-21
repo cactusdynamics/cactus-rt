@@ -21,6 +21,10 @@ TracerParameters TracerParameters::FromEnv() {
 #ifdef ENABLE_TRACING
 
 // NOLINTBEGIN
+// TODO: we should switch to PERFETTO_DEFINE_CATEGORIES_IN_NAMESPACE for Perfetto v32
+PERFETTO_DEFINE_CATEGORIES(
+  perfetto::Category(cactus_rt::kTracingCategory).SetDescription("Events from the cactus-rt framework"));
+
 PERFETTO_TRACK_EVENT_STATIC_STORAGE();
 // NOLINTEND
 
@@ -33,7 +37,7 @@ InProcessTracer::InProcessTracer(const char* filename, const TracerParameters& p
   // args.backends |= perfetto::kSystemBackend;
 
   perfetto::Tracing::Initialize(args);
-  perfetto::TrackEvent::Register();
+  PERFETTO_TRACK_EVENT_NAMESPACE::TrackEvent::Register();
 
   log_file_fd_ = open(filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
   if (log_file_fd_ == -1) {

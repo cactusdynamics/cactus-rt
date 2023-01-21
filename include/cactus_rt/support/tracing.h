@@ -28,18 +28,19 @@ struct TracerParameters {
   static TracerParameters FromEnv();
 };
 
+constexpr const char* kTracingCategory = "cactus_rt";
+
 }  // namespace cactus_rt
 
 #ifdef ENABLE_TRACING
+
+#ifndef PERFETTO_TRACK_EVENT_NAMESPACE
+#define PERFETTO_TRACK_EVENT_NAMESPACE cactus_rt_perfetto
+#endif
+
 #include <perfetto.h>
 
 #include <memory>
-
-// NOLINTBEGIN
-// TODO: should we switch to PERFETTO_DEFINE_CATEGORIES_IN_NAMESPACE for Perfetto v32?
-PERFETTO_DEFINE_CATEGORIES(
-  perfetto::Category("cactus_rt"));
-// NOLINTEND
 
 namespace cactus_rt {
 class InProcessTracer : public Tracer {
