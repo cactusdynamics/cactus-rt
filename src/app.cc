@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <sys/mman.h>
 
+#include <cstdlib>
 #include <stdexcept>
 
 #include "cactus_rt/utils.h"
@@ -15,6 +16,8 @@ void App::RegisterThread(BaseThread& thread) {
 
 void App::Start() {
   SPDLOG_DEBUG("Starting application");
+
+  StartTracing();
 
   LockMemory();
   ReserveHeap();
@@ -34,10 +37,45 @@ void App::Start() {
   }
 }
 
+void App::RequestStop() {
+  for (auto* thread : threads_) {
+    thread->RequestStop();
+  }
+}
+
 void App::Join() {
   for (auto* thread : threads_) {
     thread->Join();
   }
+
+  StopTracing();
+}
+
+TracerParameters App::GetTracerParameters() const {
+  return TracerParameters::FromEnv();
+}
+
+void App::SetupTracer() {
+#ifdef ENABLE_TRACING
+  const char* filename = std::getenv("CACTUS_RT_TRACE_LOG_FILE");
+  if (filename == nullptr) {
+    filename = "run.perfetto-trace";
+  }
+
+  tracer_ = std::make_unique<InProcessTracer>(filename, GetTracerParameters());
+#endif
+}
+
+void App::StartTracing() {
+#ifdef ENABLE_TRACING
+  tracer_->Start();
+#endif
+}
+
+void App::StopTracing() {
+#ifdef ENABLE_TRACING
+  tracer_->Stop();
+#endif
 }
 
 void App::ReserveHeap() const {

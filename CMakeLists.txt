@@ -7,6 +7,9 @@ option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
 option(BUILD_DOCS "Build documentations" OFF)
 
+# TODO: make this only build in debug version? Maybe?
+option(ENABLE_TRACING "Build with Perfetto-based tracing enabled" ON)
+
 add_definitions(-DSPDLOG_ACTIVE_LEVEL=1) # debug level
 
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
@@ -20,6 +23,7 @@ add_library(cactus_rt
   src/app.cc
   src/latency_tracker.cc
   src/signal_handler.cc
+  src/support/tracing.cc
 )
 
 target_compile_features(cactus_rt
@@ -59,6 +63,41 @@ target_compile_options(cactus_rt
   -Wdouble-promotion
   -g # TODO: release vs debug
 )
+
+if (ENABLE_TRACING)
+  include(FetchContent)
+
+  FetchContent_Declare(
+    perfetto
+    GIT_REPOSITORY https://android.googlesource.com/platform/external/perfetto
+    GIT_TAG        v31.0
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND     ""
+  )
+
+  FetchContent_MakeAvailable(perfetto)
+
+  add_library(perfetto_sdk
+    STATIC
+    ${perfetto_SOURCE_DIR}/sdk/perfetto.cc
+  )
+
+  # TODO: should these be public?
+  target_include_directories(cactus_rt
+    SYSTEM PUBLIC
+    ${perfetto_SOURCE_DIR}/sdk
+  )
+
+  target_link_libraries(cactus_rt
+    PUBLIC
+    perfetto_sdk
+  )
+
+  target_compile_definitions(cactus_rt
+    PUBLIC
+    ENABLE_TRACING=1
+  )
+endif()
 
 # Only enable clang-tidy and ctest if this is the main project and not being included further.
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})

@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 
+#include "support/tracing.h"
 #include "thread.h"
 
 namespace cactus_rt {
@@ -18,6 +19,8 @@ class App {
   // Non-owning references to threads just to help with starting and joining the thrad.
   std::vector<BaseThread*> threads_;
 
+  std::unique_ptr<Tracer> tracer_;
+
  public:
   /**
    * @brief Creates an instance of the RT app. The app should always be created
@@ -25,7 +28,9 @@ class App {
    *
    * @param heap_size The heap size to reserve in bytes. Defaults to 512MB.
    */
-  explicit App(size_t heap_size = 512 * 1024 * 1024) : heap_size_(heap_size) {}
+  explicit App(size_t heap_size = 512 * 1024 * 1024) : heap_size_(heap_size) {
+    SetupTracer();
+  }
   virtual ~App() = default;
 
   // Copy constructors
@@ -53,10 +58,19 @@ class App {
   virtual void Start();
 
   /**
+   * @brief Requests all the threads to stop.
+   *
+   * Call App::Join to ensure that all threads are stopped before quitting.
+   */
+  virtual void RequestStop();
+
+  /**
    * @brief Joins all the threads in registration order.
    *
    * Override this if you want a different order of operation, or if you want to
-   * request stop on a thread after another one is done.
+   * request stop on a thread after another one is done. If this is overridden,
+   * ensure that you call App::StopTracing in it as otherwise the trace won't be
+   * written out.
    */
   virtual void Join();
 
@@ -72,6 +86,14 @@ class App {
   virtual void OnTerminationSignal(){};
 
  protected:
+  virtual TracerParameters GetTracerParameters() const;
+
+  void SetupTracer();
+
+  void StartTracing();
+
+  void StopTracing();
+
   /**
    * Locks memory via mlockall and configure malloc to not give up memory nor
    * use mmap.
