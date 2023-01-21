@@ -7,7 +7,7 @@
 #include <cerrno>
 #include <ctime>
 
-#include "cactus_rt/linux/sched_ext.h"
+#include "../linux/sched_ext.h"
 
 namespace cactus_rt::schedulers {
 class Other {

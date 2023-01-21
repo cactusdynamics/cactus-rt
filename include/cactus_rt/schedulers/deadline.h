@@ -7,7 +7,8 @@
 #include <cerrno>
 #include <ctime>
 
-#include "cactus_rt/linux/sched_ext.h"
+#include "../cyclic_thread.h"
+#include "../linux/sched_ext.h"
 
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
 

@@ -18,6 +18,7 @@ find_package(spdlog REQUIRED)
 add_library(cactus_rt
   STATIC
   src/app.cc
+  src/cyclic_thread.cc
   src/latency_tracker.cc
   src/signal_handler.cc
 )

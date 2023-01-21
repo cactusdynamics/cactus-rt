@@ -1,8 +1,6 @@
 #ifndef CACTUS_RT_CYCLIC_THREAD_H_
 #define CACTUS_RT_CYCLIC_THREAD_H_
 
-#include <spdlog/spdlog.h>
-
 #include <atomic>
 #include <vector>
 
@@ -40,64 +38,12 @@ class CyclicThread : public Thread<SchedulerT> {
   }
 
  protected:
-  void Run() noexcept final {
-    clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
-    int64_t loop_start, loop_end, should_have_woken_up_at;
-
-    int64_t wakeup_latency, loop_latency, busy_wait_latency;
-
-    while (!this->StopRequested()) {
-      should_have_woken_up_at = next_wakeup_time_.tv_sec * 1'000'000'000 + next_wakeup_time_.tv_nsec;
-      loop_start = NowNs();
-
-      wakeup_latency = loop_start - should_have_woken_up_at;
-
-      TraceLoopStart(wakeup_latency);
-
-      if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
-        break;
-      }
-
-      loop_end = NowNs();
-      loop_latency = static_cast<double>(loop_end - loop_start);
-
-      TraceLoopEnd(loop_latency);
-
-      TrackLatency(wakeup_latency, loop_latency);
-
-      wakeup_latency_tracker_.RecordValue(wakeup_latency);
-      loop_latency_tracker_.RecordValue(loop_latency);
-
-      next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
-      busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_);
-
-      busy_wait_latency_tracker_.RecordValue(busy_wait_latency);
-    }
-  }
-
+  void         Run() noexcept final;
+  void         AfterRun() override;
   virtual bool Loop(int64_t ellapsed_ns) noexcept = 0;
-
-  /**
-   * Track the latency wakeup and loop latency. The default behavior is to track them in histograms that updates online.
-   * @param wakeup_latency the latency of wakeup (scheduling latency) in us.
-   * @param loop_latency the latency of Loop() call in us.
-   */
-  virtual void TrackLatency(double /*wakeup_latency*/, double /*loop_latency*/) noexcept {}
-
-  void AfterRun() override {
-    SPDLOG_DEBUG("wakeup_latency:");
-    wakeup_latency_tracker_.DumpToLogger();
-
-    SPDLOG_DEBUG("loop_latency:");
-    loop_latency_tracker_.DumpToLogger();
-
-    SPDLOG_DEBUG("busy_wait_latency:");
-    busy_wait_latency_tracker_.DumpToLogger();
-  };
 
  private:
   virtual void TraceLoopStart(double /* wakeup_latency_us */) noexcept {}
-
   virtual void TraceLoopEnd(double /* loop_latency_us */) noexcept {}
 };
 }  // namespace cactus_rt
