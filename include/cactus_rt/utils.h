@@ -33,6 +33,15 @@ inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
   return ts;
 }
 
+inline const char* GetEnv(const char* envname, const char* default_value = "") {
+  const char* value = std::getenv(envname);
+  if (value == nullptr) {
+    value = default_value;
+  }
+
+  return value;
+}
+
 }  // namespace cactus_rt
 
 #endif

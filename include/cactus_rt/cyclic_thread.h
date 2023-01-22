@@ -43,6 +43,9 @@ class CyclicThread : public Thread<SchedulerT> {
   virtual bool Loop(int64_t ellapsed_ns) noexcept = 0;
 
  private:
+  // TODO: move this method to BaseThread either by explicit instantiation of
+  // Thread or move to Perfetto v32.
+  void         SetupTracingThreadTrack() const;
   virtual void TraceLoopStart(double /* wakeup_latency_us */) noexcept {}
   virtual void TraceLoopEnd(double /* loop_latency_us */) noexcept {}
 };

@@ -7,14 +7,22 @@
 #include <stdexcept>
 
 #include "cactus_rt/utils.h"
+#include "support/tracing_perfetto_internal.h"
 
 namespace cactus_rt {
+
+App::App(size_t heap_size) : heap_size_(heap_size) {
+  SetupTracer();
+}
+
 void App::RegisterThread(BaseThread& thread) {
   threads_.push_back(&thread);
 }
 
 void App::Start() {
   SPDLOG_DEBUG("Starting application");
+
+  StartTracing();
 
   LockMemory();
   ReserveHeap();
@@ -34,10 +42,18 @@ void App::Start() {
   }
 }
 
+void App::RequestStop() {
+  for (auto* thread : threads_) {
+    thread->RequestStop();
+  }
+}
+
 void App::Join() {
   for (auto* thread : threads_) {
     thread->Join();
   }
+
+  StopTracing();
 }
 
 void App::ReserveHeap() const {
@@ -100,5 +116,25 @@ void App::LockMemory() const {
   if (ret == 0) {
     throw std::runtime_error{"mallopt M_TRIM_THRESHOLD failed"};
   }
+}
+
+void App::SetupTracer() {
+#ifdef ENABLE_TRACING
+  // TODO: refactor the filename into TracerParameters.
+  const char* filename = GetEnv("CACTUS_RT_TRACE_LOG_FILE", "run.perfetto-trace");
+  tracer_ = std::make_unique<InProcessTracer>(filename, GetTracerParameters());
+#endif
+}
+
+void App::StartTracing() {
+#ifdef ENABLE_TRACING
+  tracer_->Start();
+#endif
+}
+
+void App::StopTracing() {
+#ifdef ENABLE_TRACING
+  tracer_->Stop();
+#endif
 }
 }  // namespace cactus_rt

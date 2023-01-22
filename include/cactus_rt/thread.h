@@ -22,7 +22,7 @@ class BaseThread {
   std::atomic_bool stop_requested_ = false;
 
  public:
-  virtual const std::string& Name() = 0;
+  virtual const std::string& Name() const = 0;
   virtual void               Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) = 0;
   virtual int                Join() = 0;
 
@@ -97,7 +97,7 @@ class Thread : public BaseThread {
         // In case stack_size is 0...
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size){};
 
-  const std::string& Name() override {
+  const std::string& Name() const override {
     return name_;
   }
 

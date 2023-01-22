@@ -3,6 +3,7 @@ build/
 data/
 .ipynb_checkpoints
 *.svg
+*.perfetto-trace
 
 .vscode/settings.json
 

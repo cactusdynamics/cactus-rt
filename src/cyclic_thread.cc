@@ -5,11 +5,14 @@
 #include "cactus_rt/schedulers/deadline.h"
 #include "cactus_rt/schedulers/fifo.h"
 #include "cactus_rt/schedulers/other.h"
+#include "support/tracing_perfetto_internal.h"
 
 namespace cactus_rt {
 
 template <typename SchedulerT>
 void CyclicThread<SchedulerT>::Run() noexcept {
+  SetupTracingThreadTrack();
+
   clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
   int64_t loop_start, loop_end, should_have_woken_up_at;
 
@@ -23,8 +26,11 @@ void CyclicThread<SchedulerT>::Run() noexcept {
 
     TraceLoopStart(wakeup_latency);
 
-    if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
-      break;
+    {
+      TRACE_EVENT(kTracingCategory, "CyclicThread::Loop");
+      if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
+        break;
+      }
     }
 
     loop_end = NowNs();
@@ -35,11 +41,24 @@ void CyclicThread<SchedulerT>::Run() noexcept {
     wakeup_latency_tracker_.RecordValue(wakeup_latency);
     loop_latency_tracker_.RecordValue(loop_latency);
 
-    next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
-    busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_);
+    {
+      TRACE_EVENT(kTracingCategory, "CyclicThread::Sleep");
+      next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
+      busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_);
+    }
 
     busy_wait_latency_tracker_.RecordValue(busy_wait_latency);
   }
+}
+
+template <typename SchedulerT>
+void CyclicThread<SchedulerT>::SetupTracingThreadTrack() const {
+#ifdef ENABLE_TRACING
+  // Ensures the thread track is labeled with the thread's name
+  auto desc = perfetto::ThreadTrack::Current().Serialize();
+  desc.mutable_thread()->set_thread_name(this->Name());
+  perfetto::TrackEvent::SetTrackDescriptor(perfetto::ThreadTrack::Current(), desc);
+#endif
 }
 
 template <typename SchedulerT>
