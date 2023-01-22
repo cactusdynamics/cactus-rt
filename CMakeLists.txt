@@ -7,6 +7,23 @@ option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
 option(BUILD_DOCS "Build documentations" OFF)
 
+# This is technically not right because build type could be a build-type
+# variable due to multi-configuration generator. That said, ENABLE_TRACING is a
+# configuration time variable so this is the right thing to do. It just means we
+# can't easily build with ninja and visual studio, which is probably fine.
+#
+# See: https://mesos.apache.org/documentation/latest/cmake-examples/#building-debug-or-release-configurations
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(ENABLE_TRACING_DEFAULT ON)
+else()
+  set(ENABLE_TRACING_DEFAULT OFF)
+endif()
+
+option(ENABLE_TRACING
+  "Build with Perfetto-based tracing enabled"
+  ${ENABLE_TRACING_DEFAULT}
+)
+
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
@@ -61,6 +78,43 @@ target_compile_definitions(cactus_rt
   PUBLIC
   "$<IF:$<CONFIG:Debug>,SPDLOG_ACTIVE_LEVEL=1,>"
 )
+
+if (ENABLE_TRACING)
+  include(FetchContent)
+
+  message(WARNING "Tracing with Perfetto is enabled as ENABLE_TRACING=${ENABLE_TRACING}. This is enabled by default in debug builds. However, this is not a real-time-safe configuration for production use and is for debug only!!! Change to a release build to ensure this is not turned on.")
+
+  FetchContent_Declare(
+    perfetto
+    GIT_REPOSITORY https://android.googlesource.com/platform/external/perfetto
+    GIT_TAG        v31.0 # Once v32 is released, change this v32.
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND     ""
+  )
+
+  FetchContent_MakeAvailable(perfetto)
+
+  add_library(perfetto_sdk
+    STATIC
+    ${perfetto_SOURCE_DIR}/sdk/perfetto.cc
+  )
+
+  # TODO: should these be public?
+  target_include_directories(cactus_rt
+    SYSTEM PUBLIC
+    ${perfetto_SOURCE_DIR}/sdk
+  )
+
+  target_link_libraries(cactus_rt
+    PUBLIC
+    perfetto_sdk
+  )
+
+  target_compile_definitions(cactus_rt
+    PUBLIC
+    ENABLE_TRACING=1
+  )
+endif()
 
 # Only enable clang-tidy and ctest if this is the main project and not being included further.
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
