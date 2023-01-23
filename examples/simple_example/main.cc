@@ -23,11 +23,6 @@ class RTApp : public cactus_rt::App {
   RTApp(std::vector<size_t> cpu_affinity) : thread_(cpu_affinity) {
     RegisterThread(thread_);
   }
-
-  void Stop() {
-    thread_.RequestStop();
-    thread_.Join();
-  }
 };
 
 int main() {
@@ -39,6 +34,7 @@ int main() {
   SPDLOG_INFO("Testing latency for {}s", time);
   app.Start();
   sleep(time);
-  app.Stop();
+  app.RequestStop();
+  app.Join();
   return 0;
 }

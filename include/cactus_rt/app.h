@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 
+#include "support/tracing.h"
 #include "thread.h"
 
 namespace cactus_rt {
@@ -18,6 +19,8 @@ class App {
   // Non-owning references to threads just to help with starting and joining the thread.
   std::vector<BaseThread*> threads_;
 
+  std::unique_ptr<Tracer> tracer_;
+
  public:
   /**
    * @brief Creates an instance of the RT app. The app should always be created
@@ -25,7 +28,7 @@ class App {
    *
    * @param heap_size The heap size to reserve in bytes. Defaults to 0 which means no heap memory will be reserved.
    */
-  explicit App(size_t heap_size = 0) : heap_size_(heap_size) {}
+  explicit App(size_t heap_size = 0);
   virtual ~App() = default;
 
   // Copy constructors
@@ -51,6 +54,13 @@ class App {
    * start all the threads in registration order.
    */
   virtual void Start();
+
+  /**
+   * @brief Requests all the threads to stop.
+   *
+   * Call App::Join to ensure that all threads are stopped before quitting.
+   */
+  virtual void RequestStop();
 
   /**
    * @brief Joins all the threads in registration order.
@@ -82,6 +92,22 @@ class App {
    * Reserve the heap based on the heap_size_.
    */
   void ReserveHeap() const;
+
+  /**
+   * @brief Get the Tracer Parameters object for this app. By default, this is
+   * constructed from environment variables as follows:
+   *
+   * - TODO: list environment variables
+   *
+   * @return TracerParameters A constructed TraceParameter object with all values.
+   */
+  virtual TracerParameters GetTracerParameters() const {
+    return TracerParameters::FromEnv();
+  };
+
+  void SetupTracer();
+  void StartTracing();
+  void StopTracing();
 };
 }  // namespace cactus_rt
 

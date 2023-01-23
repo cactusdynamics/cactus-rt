@@ -41,6 +41,8 @@ class CyclicThread : public Thread<SchedulerT> {
 
  protected:
   void Run() noexcept final {
+    SetupTracingThreadTrack();
+
     clock_gettime(CLOCK_MONOTONIC, &next_wakeup_time_);
     int64_t loop_start, loop_end, should_have_woken_up_at;
 
@@ -54,8 +56,11 @@ class CyclicThread : public Thread<SchedulerT> {
 
       TraceLoopStart(wakeup_latency);
 
-      if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
-        break;
+      {
+        TRACE_EVENT(kTracingCategoryInternal, "CyclicThread::Loop");
+        if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
+          break;
+        }
       }
 
       loop_end = NowNs();
@@ -68,8 +73,11 @@ class CyclicThread : public Thread<SchedulerT> {
       wakeup_latency_tracker_.RecordValue(wakeup_latency);
       loop_latency_tracker_.RecordValue(loop_latency);
 
-      next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
-      busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_);
+      {
+        TRACE_EVENT(kTracingCategoryInternal, "CyclicThread::Sleep");
+        next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
+        busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_);
+      }
 
       busy_wait_latency_tracker_.RecordValue(busy_wait_latency);
     }
@@ -96,6 +104,16 @@ class CyclicThread : public Thread<SchedulerT> {
   };
 
  private:
+  // TODO: move this method to BaseThread.
+  void SetupTracingThreadTrack() const {
+#ifdef ENABLE_TRACING
+    // Ensures the thread track is labeled with the thread's name
+    auto desc = perfetto::ThreadTrack::Current().Serialize();
+    desc.mutable_thread()->set_thread_name(this->Name());
+    perfetto::TrackEvent::SetTrackDescriptor(perfetto::ThreadTrack::Current(), desc);
+#endif
+  }
+
   virtual void TraceLoopStart(double /* wakeup_latency_us */) noexcept {}
 
   virtual void TraceLoopEnd(double /* loop_latency_us */) noexcept {}

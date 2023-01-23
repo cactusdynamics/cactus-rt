@@ -35,6 +35,7 @@ add_library(cactus_rt
   src/app.cc
   src/latency_tracker.cc
   src/signal_handler.cc
+  src/support/tracing.cc
 )
 
 target_compile_features(cactus_rt
