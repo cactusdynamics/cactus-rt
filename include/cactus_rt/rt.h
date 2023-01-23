@@ -6,5 +6,6 @@
 #include "schedulers/fifo.h"
 #include "schedulers/other.h"
 #include "signal_handler.h"
+#include "support/tracing.h"
 #include "thread.h"
 #include "utils.h"

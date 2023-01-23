@@ -2,6 +2,7 @@
 #define CACTUS_RT_UTILS_H_
 
 #include <cstdint>
+#include <cstdlib>
 #include <ctime>
 
 namespace cactus_rt {
@@ -34,7 +35,7 @@ inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
 }
 
 inline const char* GetEnv(const char* envname, const char* default_value = "") {
-  const char* value = std::getenv(envname);
+  const char* value = getenv(envname);
   if (value == nullptr) {
     value = default_value;
   }

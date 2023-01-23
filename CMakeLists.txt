@@ -140,6 +140,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/lttng_ust_example)
     add_subdirectory(examples/simple_deadline_example)
+    add_subdirectory(examples/tracing_example)
   endif()
 
   if (BUILD_DOCS)

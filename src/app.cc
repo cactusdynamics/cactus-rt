@@ -11,7 +11,6 @@
 namespace cactus_rt {
 
 App::App(size_t heap_size) : heap_size_(heap_size) {
-  SetupTracer();
 }
 
 void App::RegisterThread(BaseThread& thread) {
@@ -21,6 +20,7 @@ void App::RegisterThread(BaseThread& thread) {
 void App::Start() {
   SPDLOG_DEBUG("Starting application");
 
+  SetupTracer();
   StartTracing();
 
   LockMemory();
