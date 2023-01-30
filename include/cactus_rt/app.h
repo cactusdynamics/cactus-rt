@@ -23,9 +23,9 @@ class App {
    * @brief Creates an instance of the RT app. The app should always be created
    * before the threads as some global setup that can take place.
    *
-   * @param heap_size The heap size to reserve in bytes. Defaults to 512MB.
+   * @param heap_size The heap size to reserve in bytes. Defaults to 0 which means no heap memory will be reserved.
    */
-  explicit App(size_t heap_size = 512 * 1024 * 1024) : heap_size_(heap_size) {}
+  explicit App(size_t heap_size = 0) : heap_size_(heap_size) {}
   virtual ~App() = default;
 
   // Copy constructors

@@ -46,6 +46,8 @@ void App::ReserveHeap() const {
     return;
   }
 
+  SPDLOG_INFO("reserving {} bytes of heap memory", heap_size_);
+
   void* buf = malloc(heap_size_);
   if (buf == nullptr) {
     SPDLOG_ERROR("cannot malloc: {}", std::strerror(errno));
