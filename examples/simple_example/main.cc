@@ -2,13 +2,16 @@
 #include <spdlog/spdlog.h>
 #include <unistd.h>
 
+using FifoScheduler = cactus_rt::schedulers::Fifo;
+// using FifoScheduler = cactus_rt::schedulers::FifoBusyWait;
+
 // A no-op thread that only serves to do nothing and measure the latency
-class CyclicThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo> {
+class CyclicThread : public cactus_rt::CyclicThread<FifoScheduler> {
  public:
   CyclicThread(std::vector<size_t> cpu_affinity)
-      : cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo>("CyclicThread", 1'000'000, /* Period */
-                                                             cactus_rt::schedulers::Fifo::Config{80 /* Priority */},
-                                                             cpu_affinity) {}
+      : cactus_rt::CyclicThread<FifoScheduler>("CyclicThread", 1'000'000, /* Period */
+                                               FifoScheduler::Config{80 /* Priority */},
+                                               cpu_affinity) {}
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
