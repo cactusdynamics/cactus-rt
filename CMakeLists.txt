@@ -7,8 +7,6 @@ option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
 option(BUILD_DOCS "Build documentations" OFF)
 
-add_definitions(-DSPDLOG_ACTIVE_LEVEL=1) # debug level
-
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
@@ -57,7 +55,11 @@ target_compile_options(cactus_rt
   -Wnull-dereference
   -Wuseless-cast
   -Wdouble-promotion
-  -g # TODO: release vs debug
+)
+
+target_compile_definitions(cactus_rt
+  PUBLIC
+  "$<IF:$<CONFIG:Debug>,SPDLOG_ACTIVE_LEVEL=1,>"
 )
 
 # Only enable clang-tidy and ctest if this is the main project and not being included further.
