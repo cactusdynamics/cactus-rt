@@ -97,24 +97,61 @@ Of course you also need a C++ compiler and cmake.
 Build
 -----
 
+To build in debug mode:
+
 .. code-block:: console
 
-   $ cmake -Bbuild
-   $ cmake --build build -j $(nproc)
+   $ make debug
+
+To run an example:
+
+.. code-block:: console
+
+   $ sudo build/debug/examples/simple_example/rt_simple_example
 
 To turn on ``clang-tidy``:
 
 .. code-block:: console
 
-   $ cmake -Bbuild -DENABLE_CLANG_TIDY=ON
-   $ cmake --build build -j $(nproc)
+   $ make debug ENABLE_CLANG_TIDY=ON
 
-To turn OFF building the examples (for embedding into other projects):
+For compiling in release mode:
 
 .. code-block:: console
 
-   $ cmake -Bbuild -DENABLE_EXAMPLES=OFF
-   $ cmake --build build -j $(nproc)
+   $ make release
+
+All flags remain valid for both ``make debug`` and ``make release``. Consult
+the ``Makefile`` for details on how it works as it is just a convenience
+wrapper on cmake. The example binaries will be located in the folder
+``build/release`` instead of ``build/debug``.
+
+To turn OFF building the examples:
+
+.. code-block:: console
+
+   $ make debug ENABLE_EXAMPLES=OFF
+
+To build into other projects, simply use ``FetchContent`` in your
+``CMakeLists.txt`` file:
+
+.. code-block:: cmake
+
+   include(FetchContent)
+   FetchContent_Declare(
+     cactus_rt
+     GIT_REPOSITORY https://github.com/cactusdynamics/cactus-rt.git
+     GIT_TAG        ...
+   )
+   FetchContent_MakeAvailable(cactus_rt)
+
+   # ...
+
+   target_link_libraries(myapp PRIVATE cactus_rt)
+
+Note that if you compile your app in debug mode, cactus-rt will be compiled in
+debug mode due to how ``FetchContent`` works. To get cactus-rt in release mode,
+compile your app in release mode.
 
 For testing like CI, you need docker installed and then you can use:
 
