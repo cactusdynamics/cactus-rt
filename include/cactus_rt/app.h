@@ -15,7 +15,7 @@ class App {
    */
   size_t heap_size_;
 
-  // Non-owning references to threads just to help with starting and joining the thrad.
+  // Non-owning references to threads just to help with starting and joining the thread.
   std::vector<BaseThread*> threads_;
 
  public:
