@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "Linux (Debug)",
             "includePath": [
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/build/_deps/**"
@@ -11,7 +11,20 @@
             "cStandard": "gnu17",
             "cppStandard": "gnu++20",
             "intelliSenseMode": "linux-gcc-x64",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/build/debug/compile_commands.json"
+        },
+        {
+            "name": "Linux (Release)",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/build/_deps/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++20",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compileCommands": "${workspaceFolder}/build/release/compile_commands.json"
         }
     ],
     "version": 4
