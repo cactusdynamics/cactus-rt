@@ -69,7 +69,7 @@ class CyclicThread : public Thread<SchedulerT> {
       loop_latency_tracker_.RecordValue(loop_latency);
 
       next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
-      busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_);
+      busy_wait_latency = SchedulerT::Sleep(next_wakeup_time_, scheduler_config_);
 
       busy_wait_latency_tracker_.RecordValue(busy_wait_latency);
     }

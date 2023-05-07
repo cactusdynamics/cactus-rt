@@ -32,7 +32,7 @@ class Other {
   }
 
   // Kind of meaningless for SCHED_OTHER because there's no RT guarantees
-  inline static double Sleep(const struct timespec& next_wakeup_time) noexcept {
+  inline static double Sleep(const struct timespec& next_wakeup_time, const Config& /*config*/) noexcept {
     // TODO: check for errors?
     // TODO: can there be remainders?
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr);

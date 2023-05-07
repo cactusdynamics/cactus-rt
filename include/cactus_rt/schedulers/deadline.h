@@ -47,7 +47,7 @@ class Deadline {
     }
   }
 
-  inline static double Sleep(const struct timespec& /*next_wakeup_time */) noexcept {
+  inline static double Sleep(const struct timespec& /*next_wakeup_time*/, const Config& /*config*/) noexcept {
     // Ignoring error as man page says "In the Linux implementation, sched_yield() always succeeds."
     sched_yield();
     return 0.0;

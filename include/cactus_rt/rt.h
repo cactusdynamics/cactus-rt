@@ -4,6 +4,7 @@
 #include "mutex.h"
 #include "schedulers/deadline.h"
 #include "schedulers/fifo.h"
+#include "schedulers/fifo_busy_wait.h"
 #include "schedulers/other.h"
 #include "signal_handler.h"
 #include "thread.h"
