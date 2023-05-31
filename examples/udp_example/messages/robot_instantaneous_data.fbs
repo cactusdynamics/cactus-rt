@@ -1,0 +1,43 @@
+namespace cactus_rt.examples.udp_example;
+
+struct Joint1D {
+  px:double;
+  py:double;
+  pz:double;
+
+  qx:double;
+  qy:double;
+  qz:double;
+  qw:double;
+
+  vz:double;
+  az:double;
+}
+
+struct MotorData {
+  omega:double;
+  temp:double;
+  current:double;
+  brake:bool;
+}
+
+enum RobotState: byte {
+  Invalid = 0,
+  Standby = 1,
+  Running,
+  Errored,
+}
+
+table RobotInstantaneousData {
+  state:RobotState;
+
+  j1:Joint1D;
+  j2:Joint1D;
+  j3:Joint1D;
+
+  m1:MotorData;
+  m2:MotorData;
+  m3:MotorData;
+}
+
+root_type RobotInstantaneousData;

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 project(cactus_rt)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(GRAPHVIZ_CUSTOM_TARGETS TRUE)
 
 option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
@@ -85,6 +86,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/lttng_ust_example)
     add_subdirectory(examples/simple_deadline_example)
+    add_subdirectory(examples/udp_example)
   endif()
 
   if (BUILD_DOCS)
