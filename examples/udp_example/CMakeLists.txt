@@ -32,6 +32,9 @@ add_subdirectory(messages)
 add_subdirectory(oneshot)
 add_subdirectory(rtloop)
 
+add_subdirectory(flatudp)
+add_subdirectory(clientserver)
+
 if (ENABLE_CLANG_TIDY)
   set_target_properties(cactus_rt_simpleudp PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
 endif()
