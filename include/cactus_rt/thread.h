@@ -1,31 +1,53 @@
 #ifndef CACTUS_RT_THREAD_H_
 #define CACTUS_RT_THREAD_H_
 
-#include <pthread.h>
-
 #include <atomic>
 #include <climits>  // For PTHREAD_STACK_MIN
-#include <cstring>
-#include <stdexcept>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "linux/sched_ext.h"
+#include "schedulers/deadline.h"
+#include "schedulers/fifo.h"
+#include "schedulers/other.h"
 
 namespace cactus_rt {
 
-constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB
+constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack space should be plenty
 
-// Needed because the App needs to hold a list of threads that it can start them
-// automatically.  Have a templated thread won't work with that system.
+/**
+ * The base thread
+ */
 class BaseThread {
   std::atomic_bool stop_requested_ = false;
 
  public:
+  /**
+   * @brief Return the name of the thread. Mostly used for debug purpose.
+   *
+   * @returns a const renferece to the name string
+   */
   virtual const std::string& Name() = 0;
-  virtual void               Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) = 0;
-  virtual int                Join() = 0;
 
+  /**
+   * @brief Starts the thread.
+   *
+   * @param start_monotonic_time_ns The start time in the monotonic clock
+   */
+  virtual void Start(int64_t start_monotonic_time_ns) = 0;
+
+  /**
+   * @brief Joins the thread.
+   *
+   * @returns the return value of pthread_join.
+   */
+  virtual int Join() = 0;
+
+  /**
+   * Requests the thread to stop with an atomic.
+   */
   virtual void RequestStop() noexcept {
     stop_requested_ = true;
   }
@@ -41,7 +63,7 @@ class BaseThread {
 
   // Should the thread be moveable? std::thread is moveable
   // TODO: investigate moving the stop_requested_ flag somewhere else
-  // Move constructors are not allowed because of the atomic_bool
+  // Move constructors are not allowed because of the atomic_bool for now.
   BaseThread(BaseThread&&) noexcept = delete;
   BaseThread& operator=(BaseThread&&) noexcept = delete;
 
@@ -63,41 +85,48 @@ class BaseThread {
   }
 };
 
-// TODO: some docs
-template <typename SchedulerT>
+template <typename SchedulerT = schedulers::Other>
 class Thread : public BaseThread {
-  std::string                 name_;
-  typename SchedulerT::Config scheduler_config_;
-  pthread_t                   thread_;
-  std::vector<size_t>         cpu_affinity_;
-  size_t                      stack_size_;
+  std::string         name_;
+  std::vector<size_t> cpu_affinity_;
+  size_t              stack_size_;
 
-  int64_t start_monotonic_time_ns_ = 0;
-  int64_t start_wall_time_ns_ = 0;
+  pthread_t thread_;
+  int64_t   start_monotonic_time_ns_ = 0;
+
+  typename SchedulerT::Config scheduler_config_;
 
   /**
-   * A wrapper function that is passed to pthread. This starts the thread and
-   * performs any necessary setup.
+   * A wrapper function that is passed to pthreads which starts the thread and
+   * performs necessary setup for RT.
    */
-  static void* RunThread(void* data) {
-    auto* thread = static_cast<Thread*>(data);
-    SchedulerT::SetThreadScheduling(thread->scheduler_config_);  // TODO: return error instead of throwing
-    thread->BeforeRun();
-    thread->Run();
-    thread->AfterRun();
-    return nullptr;
-  }
+  static void* RunThread(void* data);
 
  public:
-  Thread(const std::string&                 name,
-         const typename SchedulerT::Config& config = {},
-         std::vector<size_t>                cpu_affinity = {},
-         size_t                             stack_size = kDefaultStackSize)
-      : name_(name), scheduler_config_(config), cpu_affinity_(cpu_affinity),
-        // In case stack_size is 0...
-        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size){};
+  /**
+   * Creates a new thread.
+   *
+   * @param name The name of the thread
+   * @param config The scheduler configuration for the scheduler class.
+   * @param cpu_affinity A vector of CPUs this thread should run on. If empty, no CPU restrictions are set.
+   * @param stack_size The size of the stack for this thread. Defaults to 8MB.
+   */
+  Thread(
+    std::string                 name,
+    typename SchedulerT::Config config = {},
+    std::vector<size_t>         cpu_affinity = {},
+    size_t                      stack_size = kDefaultStackSize
+  ) : name_(name),
+      cpu_affinity_(cpu_affinity),
+      stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size),
+      scheduler_config_(config) {}
 
-  const std::string& Name() override {
+  /**
+   * Returns the name of the thread
+   *
+   * @returns The name of the thread.
+   */
+  inline const std::string& Name() override {
     return name_;
   }
 
@@ -105,66 +134,21 @@ class Thread : public BaseThread {
    * Starts the thread in the background.
    *
    * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
-   * @param start_wall_time_ns should be the start time in nanoseconds for the realtime clock.
    */
-
-  void Start(int64_t start_monotonic_time_ns, int64_t start_wall_time_ns) override {
-    start_monotonic_time_ns_ = start_monotonic_time_ns;
-    start_wall_time_ns_ = start_wall_time_ns;
-
-    pthread_attr_t attr;
-
-    // Initialize the pthread attribute
-    int ret = pthread_attr_init(&attr);
-    if (ret != 0) {
-      throw std::runtime_error(std::string("error in pthread_attr_init: ") + std::strerror(ret));
-    }
-
-    // Set a stack size
-    //
-    // Note the stack is prefaulted if mlockall(MCL_FUTURE | MCL_CURRENT) is
-    // called, which under this app framework should be.
-    //
-    // Not even sure if there is an optimizer-safe way to prefault the stack
-    // anyway, as the compiler optimizer may realize that buffer is never used
-    // and thus will simply optimize it out.
-    ret = pthread_attr_setstacksize(&attr, stack_size_);
-    if (ret != 0) {
-      throw std::runtime_error(std::string("error in pthread_attr_setstacksize: ") + std::strerror(ret));
-    }
-
-    // Setting CPU mask
-    if (!cpu_affinity_.empty()) {
-      cpu_set_t cpuset;
-      CPU_ZERO(&cpuset);
-      for (auto cpu : cpu_affinity_) {
-        CPU_SET(cpu, &cpuset);
-      }
-
-      ret = pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
-      if (ret != 0) {
-        throw std::runtime_error(std::string("error in pthread_attr_setaffinity_np: ") + std::strerror(ret));
-      }
-    }
-
-    ret = pthread_create(&thread_, &attr, &Thread<SchedulerT>::RunThread, this);
-    if (ret != 0) {
-      throw std::runtime_error(std::string("error in pthread_create: ") + std::strerror(ret));
-    }
-  }
+  void Start(int64_t start_monotonic_time_ns) override;
 
   /**
    * Joins the thread.
    *
    * @returns the return value of pthread_join
    */
-  int Join() override {
-    return pthread_join(thread_, nullptr);
-  }
+  int Join() override;
 
  protected:
-  int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
-  int64_t StartWallTimeNs() const { return start_wall_time_ns_; }
+  inline typename SchedulerT::Config& SchedulerConfig() {
+    return scheduler_config_;
+  }
+  inline int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
 
   /**
    * Override this method to do work. If this is a real-time thread, once this
@@ -173,15 +157,21 @@ class Thread : public BaseThread {
   virtual void Run() = 0;
 
   /**
-   * Called before Run gets called. Non-RT.
+   * Called before Run gets called. If the thread is real-time, this is likely
+   * not a real-time section.
    */
   virtual void BeforeRun() {}
 
   /**
-   * Called after Run returns. Non-RT.
+   * Called after Run returns. If the thread is real-time, this is likely not a
+   * real-time section.
    */
   virtual void AfterRun() {}
 };
+
+template class Thread<schedulers::Other>;
+template class Thread<schedulers::Fifo>;
+template class Thread<schedulers::Deadline>;
 }  // namespace cactus_rt
 
 #endif
