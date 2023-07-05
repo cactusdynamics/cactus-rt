@@ -1,47 +1,55 @@
 #include <cactus_rt/rt.h>
-#include <spdlog/spdlog.h>
-#include <unistd.h>
 
-// A no-op thread that only serves to do nothing and measure the latency
-class MyDeadlineThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Deadline> {
+#include <iostream>
+
+using cactus_rt::App;
+using cactus_rt::CyclicThread;
+using cactus_rt::schedulers::Deadline;
+
+/**
+ * This is a no-op thread that does nothing at 1 kHz.
+ *
+ * Note that we are using the Deadline scheduler as opposed to leaving the
+ * template argument blank (which defaults to real-time).
+ */
+class ExampleDeadlineThread : public CyclicThread<Deadline> {
+  int64_t loop_counter_ = 0;
+
  public:
-  MyDeadlineThread()
-      : cactus_rt::CyclicThread<cactus_rt::schedulers::Deadline>("MyDeadlineThread",
-                                                                 1'000'000, /* Period */
-                                                                 cactus_rt::schedulers::Deadline::Config{
-                                                                   500'000,  /* Run time*/
-                                                                   1'000'000 /* Deadline */
-                                                                 }) {}
+  ExampleDeadlineThread() : CyclicThread<Deadline>(
+                              "ExampleRTThread",
+                              1'000'000,  // Period in ns
+                              Deadline::Config{
+                                500'000,  /* Run time in ns */
+                                1'000'000 /* Deadline in ns */
+                              }
+                            ) {}
+
+  int64_t GetLoopCounter() const {
+    return loop_counter_;
+  }
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
+    loop_counter_++;
     return false;
   }
 };
 
-class RTApp : public cactus_rt::App {
-  MyDeadlineThread cyclic_thread_;
-
- public:
-  RTApp() {
-    RegisterThread(cyclic_thread_);
-  }
-
-  void Stop() {
-    cyclic_thread_.RequestStop();
-    Join();
-  }
-};
-
 int main() {
-  spdlog::set_level(spdlog::level::debug);
+  auto thread = std::make_shared<ExampleDeadlineThread>();
+  App  app;
 
-  RTApp app;
+  app.RegisterThread(thread);
+  constexpr unsigned int time = 5;
 
-  constexpr unsigned int time = 6;
-  SPDLOG_INFO("Testing latency for {}s", time);
+  std::cout << "Testing RT loop for " << time << " seconds.\n";
+
   app.Start();
   sleep(time);
-  app.Stop();
+  app.RequestStop();
+  app.Join();
+
+  std::cout << "Number of loops executed: " << thread->GetLoopCounter() << "\n";
   return 0;
 }

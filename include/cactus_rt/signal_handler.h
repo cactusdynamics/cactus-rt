@@ -25,25 +25,18 @@ namespace cactus_rt {
  *     int main() {
  *       cactus_rt::SetUpTerminationSignalHandler();
  *
- *       MyApp app;
+ *       cactus_rt::App app;
+ *       app.RegisterThread(my_thread1);
+ *       app.RegisterThread(my_thread2);
  *       app.Start();
  *
- *       cactus_rt::WaitForAndHandleTerminationSignal(app);
+ *       cactus_rt::WaitForAndHandleTerminationSignal();
+ *       // Do my cleanup
  *       return 0;
  *     }
  *
  * When a signal listed in `signals` is sent,
- * cactus_rt::WaitForAndHandleTerminationSignal is unblocked and it calls
- * App::OnTerminationSignal. App::OnTerminationSignal is an user-defined method
- * on `MyApp` that should graceful shutdown the application.
- *
- * Readers familiar with signal handler safety (`man 7 signal-safety`) should
- * note that App::OnTerminationSignal is not a signal handler function, but
- * rather a function that can call any function without restrictions. This
- * should be obvious as it is called from
- * cactus_rt::WaitForAndHandleTerminationSignal on the main thread (in the above
- * case). This is implemented via a semaphore, which is an async-signal-safe
- * method as listed in `signal-safety(7)`.
+ * cactus_rt::WaitForAndHandleTerminationSignal is unblocked.
  *
  * @param signals A vector of signals to catch. Default: SIGINT and SIGTERM.
  */
@@ -62,12 +55,14 @@ void SetUpTerminationSignalHandler(std::vector<int> signals = {SIGINT, SIGTERM})
  * is called from multiple threads, it may block one of the threads
  * indefinitely.
  *
- * If this function is never called after calling cactus_rt::SetUpTerminationSignalHandler,
- * the signal caught by this application will be ignored.
+ * If this function is never called after calling
+ * cactus_rt::SetUpTerminationSignalHandler, the signal caught by this
+ * application will be ignored.
  *
- * @param app The application object
+ * This function is implemented via a semaphore, which is an async-signal-safe
+ * method as listed in signal-safety(7).
  */
-void WaitForAndHandleTerminationSignal(App& app);
+void WaitForAndHandleTerminationSignal();
 }  // namespace cactus_rt
 
 #endif

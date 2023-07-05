@@ -2,12 +2,13 @@
 #define CACTUS_RT_FIFO_H_
 
 #include <sched.h>
-#include <spdlog/spdlog.h>
 
 #include <cerrno>
+#include <cstring>
 #include <ctime>
+#include <stdexcept>
 
-#include "cactus_rt/linux/sched_ext.h"
+#include "../linux/sched_ext.h"
 
 namespace cactus_rt::schedulers {
 class Fifo {
@@ -27,16 +28,15 @@ class Fifo {
 
     auto ret = sched_setattr(0, &attr, 0);
     if (ret < 0) {
-      SPDLOG_ERROR("unable to sched_setattr: {}", std::strerror(errno));
-      throw std::runtime_error{"failed to sched_setattr"};
+      throw std::runtime_error{std::string("failed to sched_setattr: ") + std::strerror(errno)};
     }
   }
 
-  inline static double Sleep(const struct timespec& next_wakeup_time) noexcept {
+  inline static int64_t Sleep(const struct timespec& next_wakeup_time) noexcept {
     // TODO: check for errors?
     // TODO: can there be remainders?
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr);
-    return 0.0;
+    return 0;
   }
 };
 }  // namespace cactus_rt::schedulers
