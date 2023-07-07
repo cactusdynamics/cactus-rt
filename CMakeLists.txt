@@ -12,6 +12,29 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
+Include(FetchContent)
+
+# Use external fmt library instead of bundled
+set(QUILL_FMT_EXTERNAL TRUE)
+set(FETCHCONTENT_QUIET FALSE)
+
+FetchContent_Declare(
+  quill
+  GIT_REPOSITORY https://github.com/odygrd/quill.git
+  GIT_TAG        v2.9.1
+)
+
+FetchContent_MakeAvailable(quill)
+
+# This is needed to make sure that when building the tests, catch2's headers
+# are treated as system headers, as otherwise clang-tidy will run on them. This
+# is different from the above because clang-tidy will run on the headers which
+# is included from the tests, where as the above is for compiling catch2.
+#
+# After cmake 3.25, this shouldn't be needed anymore: https://gitlab.kitware.com/cmake/cmake/-/issues/18040
+get_target_property(QUILL_INC quill INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(quill PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${QUILL_INC}")
+
 add_library(cactus_rt
   STATIC
   src/app.cc
@@ -26,6 +49,8 @@ target_include_directories(cactus_rt
 )
 
 target_link_libraries(cactus_rt
+  PUBLIC
+  quill::quill
   PRIVATE
   Threads::Threads
 )

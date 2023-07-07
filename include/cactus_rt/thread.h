@@ -9,9 +9,12 @@
 #include <string>
 #include <vector>
 
+#include "bounded_quill.h"
 #include "schedulers/deadline.h"
 #include "schedulers/fifo.h"
 #include "schedulers/other.h"
+
+#define CACTUS_LOG_INFO(fmt, ...) LOG_WARNING(logger_, fmt, __VA_ARGS__)
 
 namespace cactus_rt {
 
@@ -119,7 +122,8 @@ class Thread : public BaseThread {
   ) : name_(name),
       cpu_affinity_(cpu_affinity),
       stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size),
-      scheduler_config_(config) {}
+      scheduler_config_(config),
+      logger_(quill::get_logger()) {}
 
   /**
    * Returns the name of the thread
@@ -144,7 +148,14 @@ class Thread : public BaseThread {
    */
   int Join() override;
 
+  /**
+   * Push a message to the logging thread.
+   */
+  void Log(const char* msg, ...);
+
  protected:
+  quill::Logger* logger_;
+
   inline typename SchedulerT::Config& SchedulerConfig() {
     return scheduler_config_;
   }

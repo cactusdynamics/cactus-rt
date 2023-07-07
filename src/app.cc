@@ -6,6 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 
+#include "cactus_rt/bounded_quill.h"
 #include "cactus_rt/utils.h"
 
 namespace cactus_rt {
@@ -17,6 +18,13 @@ void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
 void App::Start() {
   LockMemory();
   ReserveHeap();
+  quill::Config cfg;
+  // cfg.backend_thread_strict_log_timestamp_order
+  // cfg.backend_thread_cpu_affinity
+  // cfg.backend_thread_notification_handler -> this can throw!
+  cfg.enable_console_colours = true;
+  quill::configure(cfg);
+  quill::start();
 
   auto start_monotonic_time_ns = NowNs();
   for (auto& thread : threads_) {

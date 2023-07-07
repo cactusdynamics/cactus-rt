@@ -29,6 +29,9 @@ class ExampleRTThread : public CyclicThread<> {
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
     loop_counter_++;
+    if (loop_counter_ % 1000 == 0) {
+      CACTUS_LOG_INFO("Loop {}", loop_counter_);
+    }
     return false;
   }
 };
