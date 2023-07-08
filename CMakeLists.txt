@@ -56,7 +56,7 @@ target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY clang-tidy clang-tidy-16 clang-tidy-15 clang-tidy-14 clang-tidy-13 clang-tidy-12 clang-tidy-11)
+    find_program(CLANG_TIDY clang-tidy clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
   else()
     message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
   endif()
@@ -97,7 +97,11 @@ function(setup_cactus_rt_target_options target_name)
 
   if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     if (ENABLE_CLANG_TIDY)
-      set_target_properties(${target_name} PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
+      # Need the extra args because g++ on 22.04 is by default C++17 which
+      # means cmake won't generate the -std=gnu++17 flag, which causes
+      # clang-tidy-14 (also 22.04 default) to fail.
+      # Probably this issue: https://gitlab.kitware.com/cmake/cmake/-/issues/24238#note_1287978
+      set_target_properties(${target_name} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--extra-arg-before=-std=c++17")
     endif()
   endif()
 endfunction()
