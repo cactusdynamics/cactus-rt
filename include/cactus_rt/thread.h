@@ -147,11 +147,6 @@ class Thread : public BaseThread {
    */
   int Join() override;
 
-  /**
-   * Push a message to the logging thread.
-   */
-  void Log(const char* msg, ...);
-
  protected:
   inline quill::Logger*               Logger() const { return logger_; }
   inline typename SchedulerT::Config& SchedulerConfig() {
