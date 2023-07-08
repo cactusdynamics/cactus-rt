@@ -11,12 +11,8 @@ option(BUILD_DOCS "Build documentations" OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-find_package(fmt REQUIRED)
 
 Include(FetchContent)
-
-# Use external fmt library instead of bundled
-set(QUILL_FMT_EXTERNAL TRUE)
 
 FetchContent_Declare(
   quill
@@ -111,18 +107,20 @@ setup_cactus_rt_target_options(cactus_rt)
 # Build tests, examples, docs, only if this project is not embedded in another
 # project.
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  include(CTest)
+  # TODO: re-enable tests when we have some
+  # include(CTest)
 
-  if (BUILD_TESTING)
-    add_subdirectory(tests)
-  endif()
+  # if (BUILD_TESTING)
+  #   add_subdirectory(tests)
+  # endif()
 
   if (ENABLE_EXAMPLES)
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
     add_subdirectory(examples/logging_example)
-    add_subdirectory(examples/simple_example)
-    add_subdirectory(examples/simple_deadline_example)
+    add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/signal_handling_example)
+    add_subdirectory(examples/simple_deadline_example)
+    add_subdirectory(examples/simple_example)
   endif()
 
   if (BUILD_DOCS)

@@ -122,7 +122,7 @@ class Thread : public BaseThread {
       cpu_affinity_(cpu_affinity),
       stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size),
       scheduler_config_(config),
-      logger_(quill::create_logger(name_.c_str())) {}
+      logger_(quill::create_logger(name_)) {}
 
   /**
    * Returns the name of the thread

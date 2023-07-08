@@ -17,7 +17,7 @@ void HandleSignal(int /*sig*/) {
   //
   // However, the situation is more complex, see https://stackoverflow.com/questions/48584862/sem-post-signal-handlers-and-undefined-behavior.
   // That said, overall this should be a good pattern to use.
-  int ret = sem_post(&signal_semaphore);
+  const int ret = sem_post(&signal_semaphore);
   if (ret != 0) {
     write(STDERR_FILENO, "failed to post semaphore\n", 25);
     std::_Exit(EXIT_FAILURE);
@@ -25,7 +25,7 @@ void HandleSignal(int /*sig*/) {
 }
 
 void SetUpTerminationSignalHandler(std::vector<int> signals) {
-  int ret = sem_init(&signal_semaphore, 0, 0);
+  const int ret = sem_init(&signal_semaphore, 0, 0);
   if (ret != 0) {
     throw std::runtime_error{std::string("cannot initialize semaphore: ") + std::strerror(errno)};
   }

@@ -4,7 +4,7 @@
             "name": "Linux (Debug)",
             "includePath": [
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/build/_deps/**"
+                "${workspaceFolder}/build/debug/_deps/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
@@ -17,7 +17,7 @@
             "name": "Linux (Release)",
             "includePath": [
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/build/_deps/**"
+                "${workspaceFolder}/build/release/_deps/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

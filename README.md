@@ -36,6 +36,11 @@ See each example's README for more details on what they do.
 * [`signal_handling_example`](examples/signal_handling_example/): Same as
   `simple_example`, except the program respond to SIGTERM and SIGINT and quit
   upon receiving the signal.
+* [`logging_example`](examples/logging_example/): Demonstrates setting up custom
+  logging configuration via `cactus_rt::App`.
+* [`mutex_example`](examples/mutex_example/): Demonstrates the usage of
+  priority-inheritence mutex (`cactus_rt::mutex`) to pass data between real-time
+  and non-real-time threads.
 * [`simple_deadline_example`](examples/simple_deadline_example/): Same as
   `simple_example`, except it uses `SCHED_DEADLINE` as opposed to `SCHED_FIFO`.
   This is for a more advanced use case.
@@ -53,12 +58,13 @@ Installation instructions
     real-time support (with higher latency).
 * C++ compiler supporting C++ 17 and up.
 * CMake
-* TODO
+* [`fmt`](https://fmt.dev)
+* [Quill](https://github.com/odygrd/quill): this is included as a part of the CMake-based build process.
 
 For Debian/Ubuntu:
 
 ```bash
-$ sudo apt install build-essential cmake
+$ sudo apt install build-essential cmake libfmt-dev
 ```
 
 The examples are also dependent on:

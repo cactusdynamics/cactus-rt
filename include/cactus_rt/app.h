@@ -20,7 +20,7 @@ class App {
 
   void SetDefaultLogFormat(quill::Config& cfg) {
     // Create a handler of stdout
-    std::shared_ptr<quill::Handler> handler = quill::stdout_handler();
+    const std::shared_ptr<quill::Handler> handler = quill::stdout_handler();
 
     // Enable console colours on the handler
     static_cast<quill::ConsoleHandler*>(handler.get())->enable_console_colours();
