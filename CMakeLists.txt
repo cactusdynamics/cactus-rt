@@ -118,6 +118,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 
   if (ENABLE_EXAMPLES)
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
+    add_subdirectory(examples/logging_example)
     add_subdirectory(examples/simple_example)
     add_subdirectory(examples/simple_deadline_example)
     add_subdirectory(examples/signal_handling_example)

@@ -4,17 +4,54 @@
 #include <memory>
 #include <vector>
 
+#include "quill/Quill.h"
 #include "thread.h"
 
 namespace cactus_rt {
+
 class App {
+  // Configuration for quill logging
+  quill::Config logger_config_;
+
   // Size of heap to reserve in bytes at program startup.
   size_t heap_size_;
 
   std::vector<std::shared_ptr<BaseThread>> threads_;
 
+  void SetDefaultLogFormat(quill::Config& cfg) {
+    // Create a handler of stdout
+    std::shared_ptr<quill::Handler> handler = quill::stdout_handler();
+
+    // Enable console colours on the handler
+    static_cast<quill::ConsoleHandler*>(handler.get())->enable_console_colours();
+
+    // Set the default pattern
+    handler->set_pattern("[%(ascii_time)][%(level_id)][%(logger_name)][%(filename):%(lineno)] %(message)", "%Y-%m-%d %H:%M:%S.%Qns");
+    cfg.default_handlers.push_back(handler);
+  }
+
  public:
-  explicit App(size_t heap_size = 0) : heap_size_(heap_size) {}
+  explicit App(
+    size_t heap_size = 0
+  ) : heap_size_(heap_size) {
+    quill::Config default_config;
+
+    // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
+    // default_config.backend_thread_notification_handler
+
+    SetDefaultLogFormat(default_config);
+    logger_config_ = default_config;
+  }
+
+  App(
+    quill::Config logger_config,
+    size_t        heap_size = 0
+  ) : logger_config_(logger_config),
+      heap_size_(heap_size) {
+    if (logger_config_.default_handlers.empty()) {
+      SetDefaultLogFormat(logger_config_);
+    }
+  }
   virtual ~App() = default;
 
   // Copy constructors

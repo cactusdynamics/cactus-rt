@@ -18,7 +18,9 @@ class ExampleRTThread : public CyclicThread<> {
   ExampleRTThread() : CyclicThread<>(
                         "ExampleRTThread",
                         1'000'000,  // Period in ns
-                        Fifo::Config{80 /* Priority */},
+                        Fifo::Config{
+                          80 /* Priority */,
+                        },
                         std::vector<size_t>{2} /* CPU affinity */
                       ) {}
 
@@ -38,7 +40,17 @@ class ExampleRTThread : public CyclicThread<> {
 
 int main() {
   auto thread = std::make_shared<ExampleRTThread>();
-  App  app;
+
+  // Create a Quill logging config
+  quill::Config cfg;
+
+  // Disable strict timestamp order - this will be faster, but logs may appear out of order
+  cfg.backend_thread_strict_log_timestamp_order = false;
+
+  // Set the background logging thread CPU affinity
+  cfg.backend_thread_cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
+
+  App app(cfg);
 
   app.RegisterThread(thread);
   constexpr unsigned int time = 5;
