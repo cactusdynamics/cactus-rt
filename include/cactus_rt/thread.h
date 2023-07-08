@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "quill/Quill.h"
 #include "schedulers/deadline.h"
 #include "schedulers/fifo.h"
 #include "schedulers/other.h"
@@ -91,10 +92,11 @@ class Thread : public BaseThread {
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
 
+  typename SchedulerT::Config scheduler_config_;
+  quill::Logger*              logger_;
+
   pthread_t thread_;
   int64_t   start_monotonic_time_ns_ = 0;
-
-  typename SchedulerT::Config scheduler_config_;
 
   /**
    * A wrapper function that is passed to pthreads which starts the thread and
@@ -119,7 +121,8 @@ class Thread : public BaseThread {
   ) : name_(name),
       cpu_affinity_(cpu_affinity),
       stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size),
-      scheduler_config_(config) {}
+      scheduler_config_(config),
+      logger_(quill::create_logger(name_.c_str())) {}
 
   /**
    * Returns the name of the thread
@@ -145,6 +148,7 @@ class Thread : public BaseThread {
   int Join() override;
 
  protected:
+  inline quill::Logger*               Logger() const { return logger_; }
   inline typename SchedulerT::Config& SchedulerConfig() {
     return scheduler_config_;
   }
