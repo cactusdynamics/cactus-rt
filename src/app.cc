@@ -6,8 +6,8 @@
 #include <cstring>
 #include <stdexcept>
 
-#include "cactus_rt/bounded_quill.h"
 #include "cactus_rt/utils.h"
+#include "quill/Quill.h"
 
 namespace cactus_rt {
 

@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "bounded_quill.h"
+#include "quill/Quill.h"
 #include "schedulers/deadline.h"
 #include "schedulers/fifo.h"
 #include "schedulers/other.h"
