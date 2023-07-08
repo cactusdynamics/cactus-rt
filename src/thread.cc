@@ -1,7 +1,5 @@
 #include "cactus_rt/thread.h"
 
-#include <stdarg.h>
-
 #include <cstring>
 #include <stdexcept>
 

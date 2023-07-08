@@ -11,12 +11,12 @@ option(BUILD_DOCS "Build documentations" OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
+find_package(fmt REQUIRED)
 
 Include(FetchContent)
 
 # Use external fmt library instead of bundled
 set(QUILL_FMT_EXTERNAL TRUE)
-set(FETCHCONTENT_QUIET FALSE)
 
 FetchContent_Declare(
   quill
@@ -55,6 +55,7 @@ target_link_libraries(cactus_rt
   Threads::Threads
 )
 
+# Use a bounded queue
 target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})

@@ -15,12 +15,27 @@ void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
   threads_.push_back(thread);
 }
 
+App::App(size_t heap_size) : heap_size_(heap_size) {
+  quill::Config default_config;
+
+  // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
+  // default_config.backend_thread_notification_handler
+
+  SetDefaultLogFormat(default_config);
+  logger_config_ = default_config;
+}
+
+App::App(quill::Config logger_config, size_t heap_size) : logger_config_(logger_config),
+                                                          heap_size_(heap_size) {
+  if (logger_config_.default_handlers.empty()) {
+    SetDefaultLogFormat(logger_config_);
+  }
+}
+
 void App::Start() {
   LockMemory();
   ReserveHeap();
-  std::shared_ptr<quill::Handler> console_handler = quill::stdout_handler();
-  quill::configure(logger_config_);
-  quill::start();
+  StartQuill();
 
   auto start_monotonic_time_ns = NowNs();
   for (auto& thread : threads_) {
@@ -99,5 +114,10 @@ void App::ReserveHeap() const {
   // Wikipedia. Also see:
   // https://github.com/ros2-realtime-demo/pendulum/issues/90#issuecomment-1105844726
   free(buf);
+}
+
+void App::StartQuill() {
+  quill::configure(logger_config_);
+  quill::start();
 }
 }  // namespace cactus_rt

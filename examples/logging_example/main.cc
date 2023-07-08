@@ -9,7 +9,6 @@ using cactus_rt::schedulers::Fifo;
 /**
  * This is a no-op thread that does nothing at 1 kHz.
  *
- * TODO: it should demonstrate logging and tracing capabilities.
  */
 class ExampleRTThread : public CyclicThread<> {
   int64_t loop_counter_ = 0;

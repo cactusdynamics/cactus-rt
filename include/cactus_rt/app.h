@@ -31,27 +31,15 @@ class App {
   }
 
  public:
-  explicit App(
-    size_t heap_size = 0
-  ) : heap_size_(heap_size) {
-    quill::Config default_config;
+  explicit App(size_t heap_size = 0);
 
-    // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
-    // default_config.backend_thread_notification_handler
+  /**
+   * @brief Start the App with a custom logging configuration.
+   *
+   * @param logger_config The custom logging configuration.
+   */
+  App(quill::Config logger_config, size_t heap_size = 0);
 
-    SetDefaultLogFormat(default_config);
-    logger_config_ = default_config;
-  }
-
-  App(
-    quill::Config logger_config,
-    size_t        heap_size = 0
-  ) : logger_config_(logger_config),
-      heap_size_(heap_size) {
-    if (logger_config_.default_handlers.empty()) {
-      SetDefaultLogFormat(logger_config_);
-    }
-  }
   virtual ~App() = default;
 
   // Copy constructors
@@ -103,6 +91,11 @@ class App {
    * Reserve the heap based on the heap_size_.
    */
   void ReserveHeap() const;
+
+  /**
+   * Starts the Quill background logging thread.
+   */
+  void StartQuill();
 };
 }  // namespace cactus_rt
 
