@@ -5,12 +5,23 @@
 #include <ctime>
 
 namespace cactus_rt {
+
+/**
+ * @brief Get the current nanosecond in monotonic clock (not wall clock!)
+ *
+ * @return the current nanosecond in monotonic clock
+ */
 inline int64_t NowNs() {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
 }
 
+/**
+ * @brief Get the current nano second in wall clock
+ *
+ * @return the current nano second in wall clock
+ */
 inline int64_t WallNowNs() {
   struct timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);

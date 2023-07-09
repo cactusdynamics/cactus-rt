@@ -3,8 +3,10 @@
 #include <cstring>
 
 namespace cactus_rt {
+/// @private
 sem_t signal_semaphore;
 
+/// @private
 void HandleSignal(int /*sig*/) {
   // From the man page (sem_post(3)), it says:
   //

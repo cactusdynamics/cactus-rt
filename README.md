@@ -145,12 +145,9 @@ Note that if you compile your app in debug mode, cactus-rt will be compiled in
 debug mode due to how `FetchContent` works. To get cactus-rt in release mode,
 compile your app in release mode.
 
--------
 LICENSE
 -------
 
-Open source projects and some commercial projects can use `MPL 2.0
-<https://www.mozilla.org/MPL/2.0/>`__.
+Open source projects and some commercial projects can use [MPL 2.0](https://www.mozilla.org/MPL/2.0/).
 
-If you need commercial, closed-sourced modifications, please obtain a license
-from `Cactus Dynamics <https://cactusdynamics.com>`__.
+If you need commercial, closed-sourced modifications, please obtain a license from [Cactus Dynamics](https://cactusdynamics.com).

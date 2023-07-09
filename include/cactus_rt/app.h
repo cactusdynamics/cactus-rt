@@ -9,6 +9,9 @@
 
 namespace cactus_rt {
 
+/**
+ * @brief Creates a real-time application with multiple real-time and non-real-time threads.
+ */
 class App {
   // Configuration for quill logging
   quill::Config logger_config_;

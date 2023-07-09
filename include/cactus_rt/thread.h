@@ -16,6 +16,7 @@
 
 namespace cactus_rt {
 
+/// @private
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack space should be plenty
 
 /**
