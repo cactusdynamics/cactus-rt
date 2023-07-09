@@ -123,11 +123,11 @@ setup_cactus_rt_target_options(cactus_rt)
 # project.
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   # TODO: re-enable tests when we have some
-  # include(CTest)
+  include(CTest)
 
-  # if (BUILD_TESTING)
-  #   add_subdirectory(tests)
-  # endif()
+  if (BUILD_TESTING)
+    add_subdirectory(tests)
+  endif()
 
   if (ENABLE_EXAMPLES)
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")

@@ -14,6 +14,9 @@ release:
 	cmake -Bbuild/$@ -DCMAKE_BUILD_TYPE=RelWithDebInfo $(CMAKE_FLAGS)
 	cmake --build build/$@ -j $$(nproc)
 
+test: debug
+	ctest --test-dir build/debug
+
 clean:
 	test ! -d build/debug || cmake --build build/debug --target clean
 	test ! -d build/release || cmake --build build/release --target clean
