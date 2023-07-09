@@ -4,7 +4,8 @@
             "name": "Linux (Debug)",
             "includePath": [
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/build/debug/_deps/**"
+                "${workspaceFolder}/build/debug/_deps/**",
+                "${workspaceFolder}/build/debug/_deps/readerwriterqueue-src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
@@ -17,7 +18,8 @@
             "name": "Linux (Release)",
             "includePath": [
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/build/release/_deps/**"
+                "${workspaceFolder}/build/release/_deps/**",
+                "${workspaceFolder}/build/debug/_deps/readerwriterqueue-src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

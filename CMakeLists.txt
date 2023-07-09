@@ -31,6 +31,16 @@ FetchContent_MakeAvailable(quill)
 get_target_property(QUILL_INC quill INTERFACE_INCLUDE_DIRECTORIES)
 set_target_properties(quill PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${QUILL_INC}")
 
+FetchContent_Declare(
+  readerwriterqueue
+  GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue.git
+  GIT_TAG           v1.0.6
+)
+
+FetchContent_MakeAvailable(readerwriterqueue)
+get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
+
 add_library(cactus_rt
   STATIC
   src/app.cc
@@ -47,6 +57,7 @@ target_include_directories(cactus_rt
 target_link_libraries(cactus_rt
   PUBLIC
   quill::quill
+  readerwriterqueue
   PRIVATE
   Threads::Threads
 )
@@ -120,6 +131,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 
   if (ENABLE_EXAMPLES)
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
+    add_subdirectory(examples/message_passing_example)
     add_subdirectory(examples/logging_example)
     add_subdirectory(examples/mutex_example)
     add_subdirectory(examples/signal_handling_example)
