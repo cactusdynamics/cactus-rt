@@ -19,7 +19,7 @@
 // TODO: consider adding in the following fields;
 //
 // - sequence_flags, trace_packet_defaults, previous_packet_dropped, first_packet_on_sequence
-// - interned_data
+// - interned_data https://github.com/google/perfetto/issues/526
 
 syntax = "proto2";
 

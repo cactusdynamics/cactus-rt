@@ -6,7 +6,12 @@ add_subdirectory(protos)
 
 add_library(cactus_tracing
   STATIC
-  src/thread_tracer.cc
+  src/cactus_tracing/thread_tracer.cc
+)
+
+target_include_directories(cactus_tracing
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(cactus_tracing

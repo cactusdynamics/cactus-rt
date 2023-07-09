@@ -1,3 +1,5 @@
+#include <google/protobuf/util/delimited_message_util.h>
+
 #include <cstdint>
 #include <fstream>
 
@@ -6,6 +8,7 @@
 using cactus_tracing::vendor::perfetto::protos::ProcessDescriptor;
 using cactus_tracing::vendor::perfetto::protos::ThreadDescriptor;
 using cactus_tracing::vendor::perfetto::protos::Trace;
+using cactus_tracing::vendor::perfetto::protos::TracePacket;
 using cactus_tracing::vendor::perfetto::protos::TrackDescriptor;
 using cactus_tracing::vendor::perfetto::protos::TrackEvent;
 using cactus_tracing::vendor::perfetto::protos::TrackEvent_Type_TYPE_INSTANT;
@@ -27,10 +30,9 @@ int main() {
   // This should be per-thread. See https://github.com/google/perfetto/issues/124
   constexpr uint64_t trusted_packet_sequence_id = 3903809;
 
-  Trace trace;
-
   // Emit this packet once *before* you emit the first event for this process.
-  auto* packet1 = trace.add_packet();
+  Trace trace1;
+  auto* packet1 = trace1.add_packet();
   auto* process_track_descriptor = new TrackDescriptor();
   process_track_descriptor->set_uuid(process_uuid);
 
@@ -45,7 +47,8 @@ int main() {
   packet1->set_allocated_track_descriptor(process_track_descriptor);
 
   // Emit this packet once *before* you emit the first event for this thread.
-  auto* packet2 = trace.add_packet();
+  Trace trace2;
+  auto* packet2 = trace2.add_packet();
 
   auto* thread_track_descriptor = new TrackDescriptor();
   thread_track_descriptor->set_uuid(thread_uuid);
@@ -60,7 +63,8 @@ int main() {
   packet2->set_allocated_track_descriptor(thread_track_descriptor);
 
   // The events for this thread.
-  auto* packet3 = trace.add_packet();
+  Trace trace3;
+  auto* packet3 = trace3.add_packet();
   packet3->set_timestamp(200);
 
   auto* track_event1 = new TrackEvent();
@@ -71,7 +75,8 @@ int main() {
 
   packet3->set_trusted_packet_sequence_id(trusted_packet_sequence_id);
 
-  auto* packet4 = trace.add_packet();
+  Trace trace4;
+  auto* packet4 = trace4.add_packet();
   packet4->set_timestamp(250);
 
   auto* track_event2 = new TrackEvent();
@@ -82,7 +87,8 @@ int main() {
 
   packet4->set_trusted_packet_sequence_id(trusted_packet_sequence_id);
 
-  auto* packet5 = trace.add_packet();
+  Trace trace5;
+  auto* packet5 = trace5.add_packet();
   packet5->set_timestamp(285);
 
   auto* track_event3 = new TrackEvent();
@@ -93,7 +99,8 @@ int main() {
 
   packet5->set_trusted_packet_sequence_id(trusted_packet_sequence_id);
 
-  auto* packet6 = trace.add_packet();
+  Trace trace6;
+  auto* packet6 = trace6.add_packet();
   packet6->set_timestamp(290);
 
   auto* track_event4 = new TrackEvent();
@@ -103,7 +110,8 @@ int main() {
 
   packet6->set_trusted_packet_sequence_id(trusted_packet_sequence_id);
 
-  auto* packet7 = trace.add_packet();
+  Trace trace7;
+  auto* packet7 = trace7.add_packet();
   packet7->set_timestamp(300);
 
   auto* track_event5 = new TrackEvent();
@@ -117,9 +125,18 @@ int main() {
 
   {
     std::fstream output("build/direct_proto_serialization.perfetto-trace", std::ios::out | std::ios::trunc | std::ios::binary);
-    if (!trace.SerializeToOstream(&output)) {
-      std::cerr << "failed to write\n";
-      return 1;
+
+    std::array<Trace*, 7> traces{
+      &trace1,
+      &trace2,
+      &trace3,
+      &trace4,
+      &trace5,
+      &trace6,
+      &trace7};
+
+    for (const auto* trace : traces) {
+      trace->SerializeToOstream(&output);
     }
   }
 
