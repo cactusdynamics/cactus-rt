@@ -43,10 +43,10 @@ set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRE
 
 add_library(cactus_rt
   STATIC
-  src/app.cc
-  src/thread.cc
-  src/cyclic_thread.cc
-  src/signal_handler.cc
+  src/cactus_rt/app.cc
+  src/cactus_rt/thread.cc
+  src/cactus_rt/cyclic_thread.cc
+  src/cactus_rt/signal_handler.cc
 )
 
 target_include_directories(cactus_rt
