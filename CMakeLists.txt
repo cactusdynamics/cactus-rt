@@ -41,6 +41,8 @@ FetchContent_MakeAvailable(readerwriterqueue)
 get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
 set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
 
+add_subdirectory(cactus_tracing)
+
 add_library(cactus_rt
   STATIC
   src/cactus_rt/app.cc
