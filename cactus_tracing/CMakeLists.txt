@@ -2,29 +2,23 @@
 # cmake_minimum_required(VERSION 3.18)
 # project(cactus_tracing)
 
-find_package(Protobuf REQUIRED)
-
-protobuf_generate_cpp(
-  PROTO_GENERATED_SRCS
-  PROTO_GENERATED_HEADERS
-  protos/trace.proto
-  protos/trace_packet.proto
-  protos/track_descriptor.proto
-  protos/thread_descriptor.proto
-  protos/process_descriptor.proto
-  protos/counter_descriptor.proto
-  protos/track_event.proto
-  protos/source_location.proto
-)
+add_subdirectory(protos)
 
 add_library(cactus_tracing
   STATIC
   src/thread_tracer.cc
-  ${PROTO_GENERATED_SRCS}
 )
 
 target_link_libraries(cactus_tracing
   PRIVATE
-  ${Protobuf_LIBRARIES}
-  ${PROTO_GENERATED_HEADERS}
+  cactus_tracing_embedded_perfetto_protos
+)
+
+add_executable(cactus_tracing_direct_proto_serialization
+  src/utils/direct_proto_serialization.cc
+)
+
+target_link_libraries(cactus_tracing_direct_proto_serialization
+  PRIVATE
+  cactus_tracing_embedded_perfetto_protos
 )
