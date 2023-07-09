@@ -58,26 +58,18 @@ Installation instructions
     real-time support (with higher latency).
 * C++ compiler supporting C++ 17 and up.
 * CMake
-* [`fmt`](https://fmt.dev)
 * [Quill](https://github.com/odygrd/quill): this is included as a part of the CMake-based build process.
+* [`moodycamel::ReaderWriterQueue`](https://github.com/cameron314/readerwriterqueue): this is included as a part of the CMake-based build process.
 
 For Debian/Ubuntu:
 
 ```bash
-$ sudo apt install build-essential cmake libfmt-dev
+$ sudo apt install build-essential cmake
 ```
 
-The examples are also dependent on:
+For building documentations, we need: doxygen.
 
-- ``liblttng-ust-dev`` is only used in ``lttng_ust_example``.
-- ``lttng-tools`` is used for tracing the ``lttng_ust_example``.
-- ``libboost-dev`` is only used for the lockfree queue in the ``message_passing_example``.
-
-For Debian/Ubuntu:
-
-```bash
-$ sudo apt install liblttng-ust-dev libboost-dev lttng-tools
-```
+For testing, we need catch2, but this is fetched in CMake as well.
 
 ### Build
 
