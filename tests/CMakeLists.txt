@@ -1,7 +1,5 @@
 Include(FetchContent)
 
-set(FETCHCONTENT_QUIET FALSE)
-
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git

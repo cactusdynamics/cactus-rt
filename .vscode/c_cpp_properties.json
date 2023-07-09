@@ -4,12 +4,13 @@
             "name": "Linux (Debug)",
             "includePath": [
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/build/_deps/**"
+                "${workspaceFolder}/build/debug/_deps/**",
+                "${workspaceFolder}/build/debug/_deps/readerwriterqueue-src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",
-            "cppStandard": "gnu++20",
+            "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
             "compileCommands": "${workspaceFolder}/build/debug/compile_commands.json"
         },
@@ -17,12 +18,13 @@
             "name": "Linux (Release)",
             "includePath": [
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/build/_deps/**"
+                "${workspaceFolder}/build/release/_deps/**",
+                "${workspaceFolder}/build/debug/_deps/readerwriterqueue-src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",
-            "cppStandard": "gnu++20",
+            "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
             "compileCommands": "${workspaceFolder}/build/release/compile_commands.json"
         }

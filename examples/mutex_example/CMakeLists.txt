@@ -1,10 +1,5 @@
 add_executable(rt_mutex_example
-  src/main.cc
-)
-
-target_include_directories(rt_mutex_example
-  PRIVATE
-  include
+  main.cc
 )
 
 target_link_libraries(rt_mutex_example
@@ -12,11 +7,4 @@ target_link_libraries(rt_mutex_example
   cactus_rt
 )
 
-if (ENABLE_CLANG_TIDY)
-  set_target_properties(rt_mutex_example PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
-endif()
-
-install(
-  TARGETS rt_mutex_example
-  DESTINATION bin
-)
+setup_cactus_rt_target_options(rt_mutex_example)

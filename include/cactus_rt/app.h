@@ -1,31 +1,48 @@
-#ifndef CACTUS_RT_APP2_H_
-#define CACTUS_RT_APP2_H_
+#ifndef CACTUS_RT_APP_H_
+#define CACTUS_RT_APP_H_
 
-#include <cstddef>
-#include <cstdint>
-#include <map>
 #include <memory>
+#include <vector>
 
+#include "quill/Quill.h"
 #include "thread.h"
 
 namespace cactus_rt {
+
+/**
+ * @brief Creates a real-time application with multiple real-time and non-real-time threads.
+ */
 class App {
-  /**
-   * Size of the heap to reserve in bytes.
-   */
+  // Configuration for quill logging
+  quill::Config logger_config_;
+
+  // Size of heap to reserve in bytes at program startup.
   size_t heap_size_;
 
-  // Non-owning references to threads just to help with starting and joining the thread.
-  std::vector<BaseThread*> threads_;
+  std::vector<std::shared_ptr<BaseThread>> threads_;
+
+  void SetDefaultLogFormat(quill::Config& cfg) {
+    // Create a handler of stdout
+    const std::shared_ptr<quill::Handler> handler = quill::stdout_handler();
+
+    // Enable console colours on the handler
+    static_cast<quill::ConsoleHandler*>(handler.get())->enable_console_colours();
+
+    // Set the default pattern
+    handler->set_pattern("[%(ascii_time)][%(level_id)][%(logger_name)][%(filename):%(lineno)] %(message)", "%Y-%m-%d %H:%M:%S.%Qns");
+    cfg.default_handlers.push_back(handler);
+  }
 
  public:
+  explicit App(size_t heap_size = 0);
+
   /**
-   * @brief Creates an instance of the RT app. The app should always be created
-   * before the threads as some global setup that can take place.
+   * @brief Start the App with a custom logging configuration.
    *
-   * @param heap_size The heap size to reserve in bytes. Defaults to 0 which means no heap memory will be reserved.
+   * @param logger_config The custom logging configuration.
    */
-  explicit App(size_t heap_size = 0) : heap_size_(heap_size) {}
+  App(quill::Config logger_config, size_t heap_size = 0);
+
   virtual ~App() = default;
 
   // Copy constructors
@@ -40,11 +57,9 @@ class App {
    * @brief Registers a thread to be automatically started by the app. The start
    * order of the threads are in the order of registration.
    *
-   * @param thread A reference to the thread. Note that this function call does
-   * not assume ownership of the thread. Ensure the lifetime of the thread is at
-   * least as long as the lifetime of the App.
+   * @param thread A shared ptr to a thread.
    */
-  void RegisterThread(BaseThread& thread);
+  void RegisterThread(std::shared_ptr<BaseThread> thread);
 
   /**
    * @brief Starts the app by locking the memory and reserving the memory. Also
@@ -53,23 +68,20 @@ class App {
   virtual void Start();
 
   /**
-   * @brief Joins all the threads in registration order.
+   * @brief sends RequestStop to all threads in registration order.
    *
-   * Override this if you want a different order of operation, or if you want to
-   * request stop on a thread after another one is done.
+   * Provided for convenience only. If you want to stop in a different order,
+   * you can override this method or implement your own functions.
    */
-  virtual void Join();
+  virtual void RequestStop();
 
   /**
-   * @brief Executes when termination signal (SIGINT, SIGTERM by default) is
-   * sent. If signal handler is set up (via cactus_rt::SetUpTerminationSignalHandler),
-   * this function will be called during cactus_rt::WaitforTerminationSignal(app).
+   * @brief Joins all the threads in registration order.
    *
-   * See cactus_rt::SetUpTerminationSignalHandler,
-   * cactus_rt::WaitforTerminationSignal, and signal_handler_example for
-   * details.
+   * Provided for convenience only. If you want to join in a different order,
+   * you can override this method or implement your own functions.
    */
-  virtual void OnTerminationSignal(){};
+  virtual void Join();
 
  protected:
   /**
@@ -82,6 +94,11 @@ class App {
    * Reserve the heap based on the heap_size_.
    */
   void ReserveHeap() const;
+
+  /**
+   * Starts the Quill background logging thread.
+   */
+  void StartQuill();
 };
 }  // namespace cactus_rt
 

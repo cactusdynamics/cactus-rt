@@ -1,60 +1,55 @@
 #include <cactus_rt/rt.h>
-#include <spdlog/spdlog.h>
 
 #include <iostream>
 
-class CyclicThread : public cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo> {
+using cactus_rt::App;
+using cactus_rt::CyclicThread;
+using cactus_rt::schedulers::Fifo;
+
+/**
+ * This is a no-op thread that does nothing at 1 kHz.
+ */
+class ExampleRTThread : public CyclicThread<> {
+  int64_t loop_counter_ = 0;
+
  public:
-  CyclicThread()
-      : cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo>("CyclicThread", 1'000'000, /* Period */
-                                                             cactus_rt::schedulers::Fifo::Config{80 /* Priority */}) {}
+  ExampleRTThread() : CyclicThread<>(
+                        "ExampleRTThread",
+                        1'000'000,  // Period in ns
+                        Fifo::Config{80 /* Priority */},
+                        std::vector<size_t>{2}
+                      ) {}
+
+  int64_t GetLoopCounter() const {
+    return loop_counter_;
+  }
 
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
+    loop_counter_++;
     return false;
-  }
-
-  void AfterRun() final {
-    SPDLOG_DEBUG("real-time thread exiting gracefully!");
-    cactus_rt::CyclicThread<cactus_rt::schedulers::Fifo>::AfterRun();
-  }
-};
-
-class RTApp : public cactus_rt::App {
-  CyclicThread thread_;
-
- public:
-  RTApp() {
-    RegisterThread(thread_);
-  }
-
-  void Stop() {
-    thread_.RequestStop();
-    thread_.Join();
-  }
-
-  void OnTerminationSignal() final {
-    Stop();
   }
 };
 
 int main() {
-  spdlog::set_level(spdlog::level::debug);
-  SPDLOG_DEBUG("signal handler example runs infinitely. press CTRL+C to interrupt and gracefully terminate");
+  auto thread = std::make_shared<ExampleRTThread>();
+  App  app;
+
+  app.RegisterThread(thread);
 
   // Sets up the signal handlers for SIGINT and SIGTERM (by default).
   cactus_rt::SetUpTerminationSignalHandler();
 
-  // Create and start the application
-  RTApp app;
+  std::cout << "Testing RT loop for until CTRL+C\n";
+
   app.Start();
 
-  // Wait until signals are caught, and then execute app.OnTerminationSignal(),
-  // which in this cases causes the RT thread to gracefully exit.
-  //
-  // This function returns when app.OnTerminationSignal() finishes.
-  cactus_rt::WaitForAndHandleTerminationSignal(app);
+  // This function blocks until SIGINT or SIGTERM are received.
+  cactus_rt::WaitForAndHandleTerminationSignal();
 
-  SPDLOG_DEBUG("main() exiting gracefully!");
+  app.RequestStop();
+  app.Join();
+
+  std::cout << "Number of loops executed: " << thread->GetLoopCounter() << "\n";
   return 0;
 }

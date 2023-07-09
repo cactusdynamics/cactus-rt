@@ -11,18 +11,42 @@ option(BUILD_DOCS "Build documentations" OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-find_package(spdlog REQUIRED)
+
+Include(FetchContent)
+
+FetchContent_Declare(
+  quill
+  GIT_REPOSITORY https://github.com/odygrd/quill.git
+  GIT_TAG        v2.9.1
+)
+
+FetchContent_MakeAvailable(quill)
+
+# This is needed to make sure that when building the tests, catch2's headers
+# are treated as system headers, as otherwise clang-tidy will run on them. This
+# is different from the above because clang-tidy will run on the headers which
+# is included from the tests, where as the above is for compiling catch2.
+#
+# After cmake 3.25, this shouldn't be needed anymore: https://gitlab.kitware.com/cmake/cmake/-/issues/18040
+get_target_property(QUILL_INC quill INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(quill PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${QUILL_INC}")
+
+FetchContent_Declare(
+  readerwriterqueue
+  GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue.git
+  GIT_TAG           v1.0.6
+)
+
+FetchContent_MakeAvailable(readerwriterqueue)
+get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
 
 add_library(cactus_rt
   STATIC
   src/app.cc
-  src/latency_tracker.cc
+  src/thread.cc
+  src/cyclic_thread.cc
   src/signal_handler.cc
-)
-
-target_compile_features(cactus_rt
-  PUBLIC
-  cxx_std_20
 )
 
 target_include_directories(cactus_rt
@@ -31,60 +55,88 @@ target_include_directories(cactus_rt
 )
 
 target_link_libraries(cactus_rt
+  PUBLIC
+  quill::quill
+  readerwriterqueue
   PRIVATE
   Threads::Threads
-  spdlog::spdlog
 )
 
-target_compile_options(cactus_rt
-  PUBLIC # TODO: This should affect all the example programs as well, not sure if it this is a good idea tho
-  -Wall
-  -Wextra
-  -Wpedantic
-  -Wshadow
-  -Wnon-virtual-dtor
-  -Wpedantic
-  -Wold-style-cast
-  -Wcast-align
-  -Wunused
-  -Woverloaded-virtual
-  -Wsign-conversion
-  -Wmisleading-indentation
-  -Wduplicated-cond
-  -Wduplicated-branches
-  -Wnull-dereference
-  -Wuseless-cast
-  -Wdouble-promotion
-)
+# Use a bounded queue
+target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
-target_compile_definitions(cactus_rt
-  PUBLIC
-  "$<IF:$<CONFIG:Debug>,SPDLOG_ACTIVE_LEVEL=1,>"
-)
-
-# Only enable clang-tidy and ctest if this is the main project and not being included further.
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY clang-tidy clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
+  else()
+    message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
+  endif()
+endif()
+
+function(setup_cactus_rt_target_options target_name)
+  # https://github.com/cpp-best-practices/cppbestpractices/blob/b1629eb/02-Use_the_Tools_Available.md#gcc--clang
+  target_compile_options(${target_name}
+    PRIVATE
+    -Wall
+    -Wextra
+    -Wshadow
+    -Wnon-virtual-dtor
+    -pedantic
+
+    -Wold-style-cast
+    -Wcast-align
+    -Wunused
+    -Woverloaded-virtual
+    -Wpedantic
+    -Wconversion
+    -Wsign-conversion
+    -Wmisleading-indentation
+    -Wduplicated-cond
+    -Wduplicated-branches
+    -Wlogical-op
+    -Wnull-dereference
+    -Wuseless-cast
+    -Wdouble-promotion
+    -Wformat=2
+    -Wimplicit-fallthrough
+  )
+
+  target_compile_features(${target_name}
+    PRIVATE
+    cxx_std_17
+  )
+
+  if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    if (ENABLE_CLANG_TIDY)
+      # Need the extra args because g++ on 22.04 is by default C++17 which
+      # means cmake won't generate the -std=gnu++17 flag, which causes
+      # clang-tidy-14 (also 22.04 default) to fail.
+      # Probably this issue: https://gitlab.kitware.com/cmake/cmake/-/issues/24238#note_1287978
+      set_target_properties(${target_name} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY};--extra-arg-before=-std=c++17")
+    endif()
+  endif()
+endfunction()
+
+setup_cactus_rt_target_options(cactus_rt)
+
+# Build tests, examples, docs, only if this project is not embedded in another
+# project.
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  # TODO: re-enable tests when we have some
   include(CTest)
 
   if (BUILD_TESTING)
     add_subdirectory(tests)
   endif()
 
-  if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY clang-tidy clang-tidy-14 clang-tidy-13 clang-tidy-12 clang-tidy-11)
-    set_target_properties(cactus_rt PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
-  else()
-    message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
-  endif()
-
   if (ENABLE_EXAMPLES)
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
-    add_subdirectory(examples/simple_example)
     add_subdirectory(examples/message_passing_example)
-    add_subdirectory(examples/signal_handling_example)
+    add_subdirectory(examples/logging_example)
     add_subdirectory(examples/mutex_example)
-    add_subdirectory(examples/lttng_ust_example)
+    add_subdirectory(examples/signal_handling_example)
     add_subdirectory(examples/simple_deadline_example)
+    add_subdirectory(examples/simple_example)
   endif()
 
   if (BUILD_DOCS)

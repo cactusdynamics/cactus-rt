@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <mutex>
 
-// NOLINTBEGIN
 /**
  * A naive double buffer implementation with priority inheritance.
  *
@@ -18,23 +17,22 @@
  */
 template <typename T>
 class NaiveDoubleBuffer {
-  T      buf_[2];
+  T      buf_[2];  // NOLINT(modernize-avoid-c-arrays)
   size_t write_idx_ = 0;
 
   cactus_rt::mutex mutex_;
 
  public:
   void Write(const T& v) {
-    std::scoped_lock lock(mutex_);
+    const std::scoped_lock lock(mutex_);
     buf_[write_idx_] = v;
   }
 
   T SwapAndRead() {
-    std::scoped_lock lock(mutex_);
-    write_idx_ = !write_idx_;
-    return buf_[!write_idx_];
+    const std::scoped_lock lock(mutex_);
+    write_idx_ = !write_idx_;  // NOLINT(readability-implicit-bool-conversion)
+    return buf_[!write_idx_];  // NOLINT(readability-implicit-bool-conversion)
   }
 };
-// NOLINTEND
 
 #endif

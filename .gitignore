@@ -1,10 +1,2 @@
 build/
-.cache
-data/
-.ipynb_checkpoints
-*.svg
-
-.vscode/settings.json
-
-trace.txt
-data.csv
+.cache/
