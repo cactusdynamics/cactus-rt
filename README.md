@@ -60,11 +60,12 @@ Installation instructions
 * CMake
 * [Quill](https://github.com/odygrd/quill): this is included as a part of the CMake-based build process.
 * [`moodycamel::ReaderWriterQueue`](https://github.com/cameron314/readerwriterqueue): this is included as a part of the CMake-based build process.
+* Protobuf: for tracing
 
 For Debian/Ubuntu:
 
 ```bash
-$ sudo apt install build-essential cmake
+$ sudo apt install build-essential cmake protobuf-compiler
 ```
 
 For building documentations, we need: doxygen.

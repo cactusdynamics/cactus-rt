@@ -41,40 +41,6 @@ FetchContent_MakeAvailable(readerwriterqueue)
 get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
 set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
 
-add_subdirectory(cactus_tracing)
-
-add_library(cactus_rt
-  STATIC
-  src/cactus_rt/app.cc
-  src/cactus_rt/thread.cc
-  src/cactus_rt/cyclic_thread.cc
-  src/cactus_rt/signal_handler.cc
-)
-
-target_include_directories(cactus_rt
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_link_libraries(cactus_rt
-  PUBLIC
-  quill::quill
-  readerwriterqueue
-  PRIVATE
-  Threads::Threads
-)
-
-# Use a bounded queue
-target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
-
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY clang-tidy clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
-  else()
-    message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
-  endif()
-endif()
-
 function(setup_cactus_rt_target_options target_name)
   # https://github.com/cpp-best-practices/cppbestpractices/blob/b1629eb/02-Use_the_Tools_Available.md#gcc--clang
   target_compile_options(${target_name}
@@ -118,6 +84,40 @@ function(setup_cactus_rt_target_options target_name)
     endif()
   endif()
 endfunction()
+
+add_subdirectory(cactus_tracing)
+
+add_library(cactus_rt
+  STATIC
+  src/cactus_rt/app.cc
+  src/cactus_rt/thread.cc
+  src/cactus_rt/cyclic_thread.cc
+  src/cactus_rt/signal_handler.cc
+)
+
+target_include_directories(cactus_rt
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(cactus_rt
+  PUBLIC
+  quill::quill
+  readerwriterqueue
+  PRIVATE
+  Threads::Threads
+)
+
+# Use a bounded queue
+target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
+
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY clang-tidy clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
+  else()
+    message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
+  endif()
+endif()
 
 setup_cactus_rt_target_options(cactus_rt)
 

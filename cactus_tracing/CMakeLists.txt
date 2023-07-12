@@ -7,6 +7,7 @@ add_subdirectory(protos)
 add_library(cactus_tracing
   STATIC
   src/cactus_tracing/thread_tracer.cc
+  src/cactus_tracing/tracer.cc
 )
 
 target_include_directories(cactus_tracing
@@ -15,9 +16,12 @@ target_include_directories(cactus_tracing
 )
 
 target_link_libraries(cactus_tracing
-  PRIVATE
+  PUBLIC
+  readerwriterqueue
   cactus_tracing_embedded_perfetto_protos
 )
+
+setup_cactus_rt_target_options(cactus_tracing)
 
 add_executable(cactus_tracing_direct_proto_serialization
   src/utils/direct_proto_serialization.cc
@@ -27,3 +31,5 @@ target_link_libraries(cactus_tracing_direct_proto_serialization
   PRIVATE
   cactus_tracing_embedded_perfetto_protos
 )
+
+add_subdirectory(examples/simple_example)
