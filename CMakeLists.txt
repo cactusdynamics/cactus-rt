@@ -108,6 +108,7 @@ add_library(cactus_rt
   src/cactus_rt/thread.cc
   src/cactus_rt/cyclic_thread.cc
   src/cactus_rt/signal_handler.cc
+  src/cactus_rt/tracing/thread_tracer.cc
 )
 
 target_include_directories(cactus_rt
@@ -128,6 +129,10 @@ target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
 if (ENABLE_TRACING)
   target_compile_definitions(cactus_rt PUBLIC CACTUS_RT_ENABLE_TRACING=1)
+  target_link_libraries(cactus_rt
+    PUBLIC
+    cactus_tracing_embedded_perfetto_protos
+  )
 endif()
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
