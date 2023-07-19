@@ -15,21 +15,26 @@ void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
   threads_.push_back(thread);
 }
 
-App::App(size_t heap_size) : heap_size_(heap_size) {
-  quill::Config default_config;
+App::App(const AppConfig& config)
+    : name_(config.name),
+      heap_size_(config.reserved_heap_size),
+      tracer_(config.name, config.tracer_cpu_affinity_) {
+  if (config.logger_config == std::nullopt) {
+    quill::Config default_config;
 
-  // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
-  // default_config.backend_thread_notification_handler
+    // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
+    // default_config.backend_thread_notification_handler
 
-  SetDefaultLogFormat(default_config);
-  logger_config_ = default_config;
-}
-
-App::App(quill::Config logger_config, size_t heap_size) : logger_config_(logger_config),
-                                                          heap_size_(heap_size) {
-  if (logger_config_.default_handlers.empty()) {
-    SetDefaultLogFormat(logger_config_);
+    SetDefaultLogFormat(default_config);
+    logger_config_ = default_config;
+  } else {
+    logger_config_ = config.logger_config.value();
+    if (logger_config_.default_handlers.empty()) {
+      SetDefaultLogFormat(logger_config_);
+    }
   }
+
+  // TODO: deal with logger background thread CPU affinity
 }
 
 void App::Start() {

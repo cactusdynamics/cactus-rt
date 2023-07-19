@@ -14,8 +14,11 @@ class Tracer;
 class TraceSpan;
 
 struct EventCountData {
-  uint32_t total_events;
-  uint32_t dropped_events;
+  uint32_t total_events = 0;
+  uint32_t dropped_events = 0;
+
+  EventCountData() = default;
+  EventCountData(uint32_t total, uint32_t dropped) : total_events(total), dropped_events(dropped) {}
 };
 
 /**
@@ -28,20 +31,30 @@ class ThreadTracer {
   const Tracer& tracer_;
 
   const char* thread_name_;
-  int32_t     thread_tid_;
+  int32_t     thread_tid_ = 0;
   uint64_t    thread_track_uuid_;
   uint32_t    trusted_packet_sequence_id_;
 
-  uint32_t                                          queue_capacity_;
+  size_t                                            queue_capacity_;
   moodycamel::ReaderWriterQueue<TrackEventInternal> queue_;
 
-  cactus_rt::experimental::lockless::AtomicMessage<EventCountData> event_count_;
+  // TODO: relaxed memory order OK? It's not a control variable nor do any other
+  // variables depend on this variable.
+  cactus_rt::experimental::lockless::AtomicMessage<EventCountData, std::memory_order_relaxed> event_count_;
 
  public:
+  /**
+   * @brief Do not use this constructor. Use Tracer::CreateThreadTracer instead.
+   *
+   * The only reason this is public is because vector::emplace_back works poorly
+   * with a private constructor and I don't want to go through the song and
+   * dance of that.
+   *
+   * @private
+   */
   ThreadTracer(
     const Tracer& tracer,
     const char*   thread_name,
-    int32_t       thread_tid,
     uint64_t      thread_track_uuid,
     uint32_t      trusted_packet_sequence_id,
     uint32_t      queue_capacity = 16384  // TODO: probably need a better way to specify this
@@ -52,20 +65,34 @@ class ThreadTracer {
   TraceSpan WithSpan(const char* name, const char* category = nullptr) noexcept;
   bool      InstantEvent(const char* name, const char* category = nullptr) noexcept;
 
-  template <typename... Args>
-  bool Emit(Args&&... args) noexcept;
+  /**
+   * @brief Sets the thread tid for this ThreadTracer.
+   *
+   * The reason this is delayed is because we create the ThreadTracer on thread
+   * creation, but the tid is not available until the thread starts.
+   */
+  inline void SetThreadTid(int32_t thread_tid) {
+    thread_tid_ = thread_tid;
+  }
 
-  inline EventCountData EventCount() noexcept {
+  inline EventCountData EventCount() const noexcept {
     return event_count_.Read();
   }
 
+  inline size_t QueueCapacity() const noexcept {
+    return queue_capacity_;
+  }
+
  private:
+  template <typename... Args>
+  bool Emit(Args&&... args) noexcept;
+
   void IncrementEventCount(bool dropped) noexcept;
 };
 
 class TraceSpan {
   friend class ThreadTracer;
-  ThreadTracer* tracer_;
+  ThreadTracer* thread_tracer_;
 
   TraceSpan(ThreadTracer* tracer, const char* name, const char* category = nullptr);
 

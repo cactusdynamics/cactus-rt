@@ -3,6 +3,7 @@
 #include <iostream>
 
 using cactus_rt::App;
+using cactus_rt::AppConfig;
 using cactus_rt::CyclicThread;
 using cactus_rt::schedulers::Fifo;
 
@@ -38,8 +39,6 @@ class ExampleRTThread : public CyclicThread<> {
 };
 
 int main() {
-  auto thread = std::make_shared<ExampleRTThread>();
-
   // Create a Quill logging config
   quill::Config cfg;
 
@@ -49,7 +48,12 @@ int main() {
   // Set the background logging thread CPU affinity
   cfg.backend_thread_cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
 
-  App app(cfg);
+  AppConfig config;
+  config.name = "logging_example";
+  config.logger_config.emplace(cfg);
+  App app(config);
+
+  auto thread = std::make_shared<ExampleRTThread>();
 
   app.RegisterThread(thread);
   constexpr unsigned int time = 5;

@@ -23,7 +23,7 @@ class AtomicMessage {
    * underlying type.
    */
   template <typename... Args>
-  AtomicMessage(Args&&... args) : data_(std::forward<Args>(args)...) {}
+  AtomicMessage(Args&&... args) : data_(T(std::forward<Args>(args)...)) {}
 
   /**
    * @brief Returns a copy of the data in a lock-less manner.

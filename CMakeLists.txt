@@ -109,6 +109,8 @@ add_library(cactus_rt
   src/cactus_rt/cyclic_thread.cc
   src/cactus_rt/signal_handler.cc
   src/cactus_rt/tracing/thread_tracer.cc
+  src/cactus_rt/tracing/sink.cc
+  src/cactus_rt/tracing/tracer.cc
 )
 
 target_include_directories(cactus_rt

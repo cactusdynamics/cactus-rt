@@ -5,6 +5,7 @@
 #include "double_buffer.h"
 
 using cactus_rt::App;
+using cactus_rt::AppConfig;
 using cactus_rt::CyclicThread;
 using cactus_rt::Thread;
 using cactus_rt::schedulers::Fifo;
@@ -71,13 +72,16 @@ void TrivialDemo() {
 }
 
 void ThreadedDemo() {
+  AppConfig config;
+  config.name = "mutex_example";
+  App app(config);
+
   // The double buffer is shared between the two threads, so we pass a reference
   // into the thread and maintain the object lifetime to this function.
   NaiveDoubleBuffer<Data> buf;
 
   auto rt_thread = std::make_shared<RTThread>(buf);
   auto non_rt_thread = std::make_shared<NonRTThread>(buf);
-  App  app;
 
   app.RegisterThread(non_rt_thread);
   app.RegisterThread(rt_thread);

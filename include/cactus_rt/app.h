@@ -2,22 +2,40 @@
 #define CACTUS_RT_APP_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "quill/Quill.h"
 #include "thread.h"
+#include "tracing/tracer.h"
 
 namespace cactus_rt {
+
+/**
+ * @brief A struct that serves as the configuration of App.
+ */
+struct AppConfig {
+  const char*                  name = "RTApp";
+  size_t                       reserved_heap_size = 0;
+  std::optional<quill::Config> logger_config;
+
+  std::vector<size_t> tracer_cpu_affinity_;
+  std::vector<size_t> logger_background_thread_cpu_affinity_;  // TODO: this is unused
+};
 
 /**
  * @brief Creates a real-time application with multiple real-time and non-real-time threads.
  */
 class App {
-  // Configuration for quill logging
-  quill::Config logger_config_;
+  const char* name_;
 
   // Size of heap to reserve in bytes at program startup.
   size_t heap_size_;
+
+  // Configuration for quill logging
+  quill::Config logger_config_;
+
+  tracing::Tracer tracer_;
 
   std::vector<std::shared_ptr<BaseThread>> threads_;
 
@@ -34,14 +52,7 @@ class App {
   }
 
  public:
-  explicit App(size_t heap_size = 0);
-
-  /**
-   * @brief Start the App with a custom logging configuration.
-   *
-   * @param logger_config The custom logging configuration.
-   */
-  App(quill::Config logger_config, size_t heap_size = 0);
+  explicit App(const AppConfig& config);
 
   virtual ~App() = default;
 

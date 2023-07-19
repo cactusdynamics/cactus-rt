@@ -3,10 +3,10 @@
 
 #include <atomic>
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <thread>
-#include <vector>
 
 #include "../thread.h"
 #include "sink.h"
@@ -52,14 +52,22 @@ class Tracer : public cactus_rt::Thread<> {
   std::mutex mutex_;
 
   // A vector of sinks that we can write the trace packets to.
-  std::vector<std::unique_ptr<Sink>> sinks_;
+  std::deque<std::unique_ptr<Sink>> sinks_;
 
-  // This is a vector of all known thread tracers. The background processing
+  // This is a list of all known thread tracers. The background processing
   // thread will loop through this and pop all data from the queues.
   // Tracer is a friend class of ThreadTracer and thus can access all private
   // variables. These two structs are supposed to be tightly coupled so this is
   // no problem.
-  std::vector<ThreadTracer> thread_tracers_;
+  //
+  // Note we cannot use a std::vector because ThreadTracer contains an atomic
+  // variable which cannot be a part of a vector which requires move/copy
+  // constructors. A double-ended queue (deque) works tho.
+  //
+  // See: https://stackoverflow.com/questions/13193484/how-to-declare-a-vector-of-atomic-in-c
+  std::deque<ThreadTracer> thread_tracers_;
+
+  using Trace = cactus_tracing::vendor::perfetto::protos::Trace;
 
   // This is a vector of sticky trace packets that should always be emitted
   // when a new sink connects to the tracer. When a new sink connects to the
@@ -70,13 +78,16 @@ class Tracer : public cactus_rt::Thread<> {
   // globally and must be emitted before events are emitted.
   //
   // The list of packets only grow here (although shouldn't grow that much).
-  std::vector<cactus_tracing::vendor::perfetto::protos::Trace> sticky_trace_packets_;
+  std::deque<Trace> sticky_trace_packets_;
 
  public:
   /**
    * @brief Constructs a new Tracer. Should only be called once per process.
+   *
+   * @param process_name The name of this process
+   * @param cpu_affinity CPU affinity for the background trace process thread.
    */
-  Tracer();
+  Tracer(const char* process_name, std::vector<size_t> cpu_affinity);
 
   // No copy
   Tracer(const Tracer&) = delete;
@@ -90,12 +101,12 @@ class Tracer : public cactus_rt::Thread<> {
    * @brief Creates a new thread tracer. Each thread should only have one of
    * these and it should be called during initialization of the thread.
    */
-  ThreadTracer& CreateThreadTracer();
+  ThreadTracer& CreateThreadTracer(const char* thread_name, uint32_t queue_capacity = 16384);
 
   /**
    * @brief Adds a sink. Not real-time safe.
    */
-  void AddSink(std::unique_ptr<Sink> sink);
+  void RegisterSink(std::unique_ptr<Sink> sink);
 
   /**
    * @brief Dynamically enables tracing in a thread-safe manner.
@@ -125,13 +136,18 @@ class Tracer : public cactus_rt::Thread<> {
    *
    * @returns true if tracing is enabled, false otherwise.
    */
-  inline bool IsTracingEnabled() noexcept {
+  inline bool IsTracingEnabled() const noexcept {
     // TODO: give likely hint if CACTUS_RT_TRACING_STARTS_ENABLED is true...
     return tracing_enabled_.load(std::memory_order_relaxed);
   }
 
  protected:
   void Run() final;
+
+ private:
+  Trace CreateProcessDescriptorPacket() const;
+  Trace CreateThreadDescriptorPacket(const ThreadTracer& thread_tracer) const;
+  void  AddTrackEventPacketToTrace(Trace& trace, const ThreadTracer& thread_tracer, const TrackEventInternal& track_event_internal) const;
 };
 }  // namespace cactus_rt::tracing
 

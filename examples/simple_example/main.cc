@@ -3,6 +3,7 @@
 #include <iostream>
 
 using cactus_rt::App;
+using cactus_rt::AppConfig;
 using cactus_rt::CyclicThread;
 using cactus_rt::schedulers::Fifo;
 
@@ -37,8 +38,11 @@ class ExampleRTThread : public CyclicThread<> {
 };
 
 int main() {
+  AppConfig config;
+  config.name = "simple_example";
+  App app(config);
+
   auto thread = std::make_shared<ExampleRTThread>();
-  App  app;
 
   app.RegisterThread(thread);
   constexpr unsigned int time = 5;

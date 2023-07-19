@@ -3,6 +3,7 @@
 #include <iostream>
 
 using cactus_rt::App;
+using cactus_rt::AppConfig;
 using cactus_rt::CyclicThread;
 using cactus_rt::schedulers::Deadline;
 
@@ -37,8 +38,11 @@ class ExampleDeadlineThread : public CyclicThread<Deadline> {
 };
 
 int main() {
+  AppConfig config;
+  config.name = "simple_deadline_example";
+  App app(config);
+
   auto thread = std::make_shared<ExampleDeadlineThread>();
-  App  app;
 
   app.RegisterThread(thread);
   constexpr unsigned int time = 5;

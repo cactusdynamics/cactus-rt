@@ -4,12 +4,16 @@
 #include "rt_thread.h"
 
 using cactus_rt::App;
+using cactus_rt::AppConfig;
 
 int main() {
+  AppConfig config;
+  config.name = "message_passing_example";
+  App app(config);
+
   auto data_logger = std::make_shared<DataLogger>("build/data.csv");
   auto rt_thread = std::make_shared<RtThread>(data_logger, 1'000'000);
 
-  App app;
   app.RegisterThread(data_logger);
   app.RegisterThread(rt_thread);
 
