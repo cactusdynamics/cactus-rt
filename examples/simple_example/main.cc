@@ -4,23 +4,17 @@
 
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
-using cactus_rt::schedulers::Fifo;
 
 /**
  * This is a no-op thread that does nothing at 1 kHz.
  *
  * TODO: it should demonstrate logging and tracing capabilities.
  */
-class ExampleRTThread : public CyclicThread<> {
+class ExampleRTThread : public CyclicThread {
   int64_t loop_counter_ = 0;
 
  public:
-  ExampleRTThread() : CyclicThread<>(
-                        "ExampleRTThread",
-                        1'000'000,  // Period in ns
-                        Fifo::Config{80 /* Priority */},
-                        std::vector<size_t>{2} /* CPU affinity */
-                      ) {}
+  ExampleRTThread(cactus_rt::CyclicThreadConfig config) : CyclicThread(config) {}
 
   int64_t GetLoopCounter() const {
     return loop_counter_;
@@ -37,7 +31,16 @@ class ExampleRTThread : public CyclicThread<> {
 };
 
 int main() {
-  auto thread = std::make_shared<ExampleRTThread>();
+  cactus_rt::FifoThreadConfig fifo_config;
+  fifo_config.priority = 80;
+
+  cactus_rt::CyclicThreadConfig config;
+  config.name = "ExampleRTThread";
+  config.period_ns = 1'000'000;
+  config.cpu_affinity = std::vector<size_t>{2};
+  config.scheduler_config = fifo_config;
+
+  auto thread = std::make_shared<ExampleRTThread>(config);
   App  app;
 
   app.RegisterThread(thread);

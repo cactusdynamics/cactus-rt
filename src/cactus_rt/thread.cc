@@ -1,21 +1,72 @@
 #include "cactus_rt/thread.h"
 
+#include <sched.h>
+
+#include <cerrno>
 #include <cstring>
+#include <ctime>
+#include <iostream>
 #include <stdexcept>
 
+#include "cactus_rt/linux/sched_ext.h"
+
 namespace cactus_rt {
-template <typename SchedulerT>
-void* Thread<SchedulerT>::RunThread(void* data) {
+
+namespace {
+// TODO: Pass thread config instead of CPU affinity
+void SetSchedAttr(const SchedulerConfigVariant& config_variant, const std::vector<size_t>& cpu_affinity) {
+  // Populate sched_attr based on the type of scheduler config provided
+  sched_attr attr = {};
+  attr.size = sizeof(attr);
+
+  if (std::holds_alternative<OtherThreadConfig>(config_variant)) {
+    auto config = std::get<OtherThreadConfig>(config_variant);
+
+    attr.sched_flags = 0;
+    attr.sched_nice = config.nice;    // Set the thread niceness
+    attr.sched_policy = SCHED_OTHER;  // Set the scheduler policy
+  } else if (std::holds_alternative<FifoThreadConfig>(config_variant)) {
+    auto config = std::get<FifoThreadConfig>(config_variant);
+
+    attr.sched_flags = 0;
+    attr.sched_nice = 0;
+    attr.sched_priority = config.priority;  // Set the scheduler priority
+    attr.sched_policy = SCHED_FIFO;         // Set the scheduler policy
+  } else if (std::holds_alternative<DeadlineThreadConfig>(config_variant)) {
+    if (!cpu_affinity.empty()) {
+      throw std::runtime_error{"SCHED_DEADLINE cannot be used with cpu affinity, see sched_setattr(2)"};
+    }
+
+    auto config = std::get<DeadlineThreadConfig>(config_variant);
+
+    attr.sched_flags = 0;
+    attr.sched_nice = 0;
+    attr.sched_priority = 0;  // No priority for SCHED_DEADLINE
+
+    attr.sched_policy = SCHED_DEADLINE;  // Set the scheduler policy
+    attr.sched_runtime = config.sched_runtime_ns;
+    attr.sched_deadline = config.sched_deadline_ns;
+    attr.sched_period = config.sched_period_ns;
+  }
+
+  auto ret = sched_setattr(0, &attr, 0);
+  if (ret < 0) {
+    throw std::runtime_error{std::string("failed to sched_setattr: ") + std::strerror(errno)};
+  }
+}
+}  // namespace
+
+void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
-  SchedulerT::SetThreadScheduling(thread->scheduler_config_);  // TODO: return error instead of throwing
+  SetSchedAttr(thread->scheduler_config_, thread->cpu_affinity_);
+
   thread->BeforeRun();
   thread->Run();
   thread->AfterRun();
   return nullptr;
 }
 
-template <typename SchedulerT>
-void Thread<SchedulerT>::Start(int64_t start_monotonic_time_ns) {
+void Thread::Start(int64_t start_monotonic_time_ns) {
   start_monotonic_time_ns_ = start_monotonic_time_ns;
 
   pthread_attr_t attr;
@@ -53,14 +104,13 @@ void Thread<SchedulerT>::Start(int64_t start_monotonic_time_ns) {
     }
   }
 
-  ret = pthread_create(&thread_, &attr, &Thread<SchedulerT>::RunThread, this);
+  ret = pthread_create(&thread_, &attr, &Thread::RunThread, this);
   if (ret != 0) {
     throw std::runtime_error(std::string("error in pthread_create: ") + std::strerror(ret));
   }
 }
 
-template <typename SchedulerT>
-int Thread<SchedulerT>::Join() {
+int Thread::Join() {
   return pthread_join(thread_, nullptr);
 }
 }  // namespace cactus_rt

@@ -1,14 +1,13 @@
 #include <cactus_rt/rt.h>
 
 #include <cmath>
+#include <iostream>
 
 #include "double_buffer.h"
 
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
 using cactus_rt::Thread;
-using cactus_rt::schedulers::Fifo;
-using cactus_rt::schedulers::Other;
 
 struct Data {
   double v1 = 0.0;
@@ -17,16 +16,14 @@ struct Data {
   double v4 = 0.0;
 };
 
-class RTThread : public CyclicThread<> {
+class RTThread : public CyclicThread {
   NaiveDoubleBuffer<Data>& buf_;
 
  public:
-  explicit RTThread(NaiveDoubleBuffer<Data>& buf) : CyclicThread<>(
-                                                      "RTThread",
-                                                      1'000'000,  // Period in ns
-                                                      Fifo::Config{80 /* Priority */}
-                                                    ),
-                                                    buf_(buf) {}
+  explicit RTThread(cactus_rt::CyclicThreadConfig config, NaiveDoubleBuffer<Data>& buf)
+      : CyclicThread(config
+        ),
+        buf_(buf) {}
 
  protected:
   bool Loop(int64_t ellapsed_ns) noexcept final {
@@ -45,11 +42,11 @@ class RTThread : public CyclicThread<> {
   }
 };
 
-class NonRTThread : public Thread<Other> {
+class NonRTThread : public Thread {
   NaiveDoubleBuffer<Data>& buf_;
 
  public:
-  explicit NonRTThread(NaiveDoubleBuffer<Data>& buf) : Thread<Other>("NonRTThread"), buf_(buf) {}
+  explicit NonRTThread(cactus_rt::CyclicThreadConfig config, NaiveDoubleBuffer<Data>& buf) : Thread(config), buf_(buf) {}
 
  protected:
   void Run() final {
@@ -71,12 +68,27 @@ void TrivialDemo() {
 }
 
 void ThreadedDemo() {
+  cactus_rt::FifoThreadConfig fifo_config;
+  fifo_config.priority = 80;
+
+  cactus_rt::CyclicThreadConfig rt_thread_config;
+  rt_thread_config.name = "RTThread";
+  rt_thread_config.period_ns = 1'000'000;
+  rt_thread_config.scheduler_config = fifo_config;
+
+  cactus_rt::OtherThreadConfig other_config;
+  fifo_config.priority = 80;
+
+  cactus_rt::CyclicThreadConfig non_rt_thread_config;
+  non_rt_thread_config.name = "NonRTThread";
+  non_rt_thread_config.scheduler_config = other_config;
+
   // The double buffer is shared between the two threads, so we pass a reference
   // into the thread and maintain the object lifetime to this function.
   NaiveDoubleBuffer<Data> buf;
 
-  auto rt_thread = std::make_shared<RTThread>(buf);
-  auto non_rt_thread = std::make_shared<NonRTThread>(buf);
+  auto rt_thread = std::make_shared<RTThread>(rt_thread_config, buf);
+  auto non_rt_thread = std::make_shared<NonRTThread>(non_rt_thread_config, buf);
   App  app;
 
   app.RegisterThread(non_rt_thread);

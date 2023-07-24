@@ -9,12 +9,12 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
 #include "quill/Quill.h"
-#include "schedulers/deadline.h"
-#include "schedulers/fifo.h"
-#include "schedulers/other.h"
 
 namespace cactus_rt {
+
+using SchedulerConfigVariant = std::variant<OtherThreadConfig, FifoThreadConfig, DeadlineThreadConfig>;
 
 /// @private
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack space should be plenty
@@ -87,14 +87,14 @@ class BaseThread {
   }
 };
 
-template <typename SchedulerT = schedulers::Other>
 class Thread : public BaseThread {
   std::string         name_;
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
 
-  typename SchedulerT::Config scheduler_config_;
-  quill::Logger*              logger_;
+  SchedulerConfigVariant scheduler_config_;
+
+  quill::Logger* logger_;
 
   pthread_t thread_;
   int64_t   start_monotonic_time_ns_ = 0;
@@ -109,21 +109,14 @@ class Thread : public BaseThread {
   /**
    * Creates a new thread.
    *
-   * @param name The name of the thread
-   * @param config The scheduler configuration for the scheduler class.
-   * @param cpu_affinity A vector of CPUs this thread should run on. If empty, no CPU restrictions are set.
-   * @param stack_size The size of the stack for this thread. Defaults to 8MB.
+   * @param config The configuration for the thread
    */
-  Thread(
-    std::string                 name,
-    typename SchedulerT::Config config = {},
-    std::vector<size_t>         cpu_affinity = {},
-    size_t                      stack_size = kDefaultStackSize
-  ) : name_(name),
-      cpu_affinity_(cpu_affinity),
-      stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + stack_size),
-      scheduler_config_(config),
-      logger_(quill::create_logger(name_)) {}
+  Thread(ThreadConfig config)
+      : name_(config.name),
+        cpu_affinity_(config.cpu_affinity),
+        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config.stack_size),
+        scheduler_config_(config.scheduler_config),
+        logger_(quill::create_logger(name_)) {}
 
   /**
    * Returns the name of the thread
@@ -149,8 +142,8 @@ class Thread : public BaseThread {
   int Join() override;
 
  protected:
-  inline quill::Logger*               Logger() const { return logger_; }
-  inline typename SchedulerT::Config& SchedulerConfig() {
+  inline quill::Logger*         Logger() const { return logger_; }
+  inline SchedulerConfigVariant SchedulerConfig() {
     return scheduler_config_;
   }
   inline int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
@@ -173,10 +166,6 @@ class Thread : public BaseThread {
    */
   virtual void AfterRun() {}
 };
-
-template class Thread<schedulers::Other>;
-template class Thread<schedulers::Fifo>;
-template class Thread<schedulers::Deadline>;
 }  // namespace cactus_rt
 
 #endif

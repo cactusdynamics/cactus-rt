@@ -15,21 +15,14 @@ void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
   threads_.push_back(thread);
 }
 
-App::App(size_t heap_size) : heap_size_(heap_size) {
-  quill::Config default_config;
-
-  // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
-  // default_config.backend_thread_notification_handler
-
-  SetDefaultLogFormat(default_config);
-  logger_config_ = default_config;
-}
-
-App::App(quill::Config logger_config, size_t heap_size) : logger_config_(logger_config),
-                                                          heap_size_(heap_size) {
+App::App(AppConfig config)
+    : name_(config.name), logger_config_(config.logger_config), heap_size_(config.heap_size) {
   if (logger_config_.default_handlers.empty()) {
     SetDefaultLogFormat(logger_config_);
   }
+
+  // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
+  // logger_config_.backend_thread_notification_handler
 }
 
 void App::Start() {

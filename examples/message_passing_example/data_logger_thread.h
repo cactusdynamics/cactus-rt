@@ -13,7 +13,6 @@
 using moodycamel::ReaderWriterQueue;
 
 using cactus_rt::Thread;
-using cactus_rt::schedulers::Other;
 
 struct OutputData {
   double timestamp = 0;
@@ -23,7 +22,7 @@ struct OutputData {
   OutputData(double t, double o) : timestamp(t), output_value(o) {}
 };
 
-class DataLogger : public Thread<Other> {
+class DataLogger : public Thread {
   constexpr static int kQueueCapacity = 8 * 1024;  // This is over 8 seconds of data while we write every 1 second. Should never be full.
 
   int64_t period_ns_;
