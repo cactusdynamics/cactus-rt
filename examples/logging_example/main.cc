@@ -1,5 +1,6 @@
 #include <cactus_rt/rt.h>
 
+#include <chrono>
 #include <iostream>
 
 using cactus_rt::App;
@@ -63,7 +64,7 @@ int main() {
   std::cout << "Testing RT loop for " << time << " seconds.\n";
 
   app.Start();
-  sleep(time);
+  std::this_thread::sleep_for(std::chrono::seconds(time));
   app.RequestStop();
   app.Join();
 

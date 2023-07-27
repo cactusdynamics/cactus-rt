@@ -1,5 +1,6 @@
 #include <cactus_rt/rt.h>
 
+#include <chrono>
 #include <cmath>
 #include <iostream>
 
@@ -96,7 +97,7 @@ void ThreadedDemo() {
 
   constexpr unsigned int time = 10;
   app.Start();
-  sleep(time);
+  std::this_thread::sleep_for(std::chrono::seconds(time));
   app.RequestStop();
   app.Join();
 }

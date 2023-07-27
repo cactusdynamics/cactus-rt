@@ -18,7 +18,7 @@ struct AppConfig {
   quill::Config logger_config;
 
   // Size of heap to reserve in bytes at program startup.
-  size_t heap_size;
+  size_t heap_size = 0;
 };
 
 /**

@@ -1,5 +1,7 @@
 #include "cactus_rt/signal_handler.h"
 
+#include <unistd.h>
+
 #include <cstring>
 
 namespace cactus_rt {
