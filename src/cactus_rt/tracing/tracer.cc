@@ -23,6 +23,9 @@ Tracer::Tracer(const char* process_name, std::vector<size_t> cpu_affinity)
       process_track_uuid_(static_cast<uint64_t>(process_pid_)) {
   // The process always needs one of these.
   this->sticky_trace_packets_.push_back(CreateProcessDescriptorPacket());
+
+  // Every thread needs a thread tracer. This thread we must manually create it.
+  RegisterThreadTracer(CreateThreadTracer("__Tracer"));
 }
 
 ThreadTracer& Tracer::CreateThreadTracer(const char* thread_name, uint32_t queue_capacity) {

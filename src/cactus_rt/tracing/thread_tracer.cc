@@ -30,7 +30,8 @@ ThreadTracer::ThreadTracer(
 
 bool ThreadTracer::StartSpan(const char* name, const char* category) noexcept {
   if (tracer_.IsTracingEnabled()) {
-    return Emit(NowNs(), TrackEvent_Type_TYPE_SLICE_BEGIN, name, category);
+    auto now = NowNs();
+    return Emit(now, TrackEvent_Type_TYPE_SLICE_BEGIN, name, category);
   }
 
   // TODO: determine if this should be false or true...
@@ -39,7 +40,8 @@ bool ThreadTracer::StartSpan(const char* name, const char* category) noexcept {
 
 bool ThreadTracer::EndSpan() noexcept {
   if (tracer_.IsTracingEnabled()) {
-    return Emit(NowNs(), TrackEvent_Type_TYPE_SLICE_END);
+    auto now = NowNs();
+    return Emit(now, TrackEvent_Type_TYPE_SLICE_END);
   }
 
   return true;

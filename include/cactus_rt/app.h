@@ -84,7 +84,7 @@ class App {
    * Provided for convenience only. If you want to stop in a different order,
    * you can override this method or implement your own functions.
    */
-  virtual void RequestStop();
+  virtual void RequestStop(bool stop_system_threads_only = false);
 
   /**
    * @brief Joins all the threads in registration order.
@@ -92,7 +92,7 @@ class App {
    * Provided for convenience only. If you want to join in a different order,
    * you can override this method or implement your own functions.
    */
-  virtual void Join();
+  virtual void Join(bool join_system_threads_only = false);
 
  protected:
   /**

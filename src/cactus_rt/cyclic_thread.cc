@@ -16,8 +16,12 @@ void CyclicThread<SchedulerT>::Run() noexcept {
 
     TraceLoopStart();
 
-    if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
-      break;
+    {
+      auto span = this->Tracer().WithSpan("CyclicThread::Loop", "cactusrt");
+
+      if (Loop(loop_start - Thread<SchedulerT>::StartMonotonicTimeNs())) {
+        break;
+      }
     }
 
     TraceLoopEnd();
@@ -27,7 +31,10 @@ void CyclicThread<SchedulerT>::Run() noexcept {
     TrackLatency(wakeup_latency, loop_latency);
 
     next_wakeup_time_ = AddTimespecByNs(next_wakeup_time_, period_ns_);
-    SchedulerT::Sleep(next_wakeup_time_);  // TODO: maybe track busy wait latency? That feature is not even enabled.
+    {
+      auto span = this->Tracer().WithSpan("CyclicThread::Sleep", "cactusrt");
+      SchedulerT::Sleep(next_wakeup_time_);  // TODO: maybe track busy wait latency? That feature is not even enabled.
+    }
   }
 }
 }  // namespace cactus_rt

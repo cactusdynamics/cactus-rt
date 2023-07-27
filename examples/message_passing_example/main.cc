@@ -22,5 +22,9 @@ int main() {
   data_logger->RequestStop();  // Stop the data logger after
   data_logger->Join();         // Wait for it to quit and flush everything.
 
+  // Need to pass true as we stopped and joined the registered threads manually.
+  app.RequestStop(true);
+  app.Join(true);
+
   return 0;
 }

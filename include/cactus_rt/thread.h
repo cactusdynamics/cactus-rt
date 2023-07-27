@@ -13,6 +13,7 @@
 #include "schedulers/deadline.h"
 #include "schedulers/fifo.h"
 #include "schedulers/other.h"
+#include "tracing/thread_tracer.h"
 
 namespace cactus_rt {
 
@@ -48,11 +49,18 @@ class BaseThread {
   virtual int Join() = 0;
 
   /**
-   * Requests the thread to stop with an atomic.
+   * @brief Requests the thread to stop with an atomic.
    */
   virtual void RequestStop() noexcept {
     stop_requested_ = true;
   }
+
+  /**
+   * @brief Sets the thread tracers. Should only be called by the App class and never by consumers.
+   *
+   * @private
+   */
+  virtual void RegisterThreadTracer(tracing::ThreadTracer& thread_tracer) = 0;
 
   // The constructors and destructors are needed because we need to delete
   // objects of type BaseThread polymorphically, through the map in the App class.
@@ -95,6 +103,7 @@ class Thread : public BaseThread {
 
   typename SchedulerT::Config scheduler_config_;
   quill::Logger*              logger_;
+  tracing::ThreadTracer*      tracer_ = nullptr;  // TODO: don't like this pointer.
 
   pthread_t thread_;
   int64_t   start_monotonic_time_ns_ = 0;
@@ -134,6 +143,10 @@ class Thread : public BaseThread {
     return name_;
   }
 
+  void RegisterThreadTracer(tracing::ThreadTracer& thread_tracer) override {
+    tracer_ = &thread_tracer;
+  }
+
   /**
    * Starts the thread in the background.
    *
@@ -149,10 +162,17 @@ class Thread : public BaseThread {
   int Join() override;
 
  protected:
-  inline quill::Logger*               Logger() const { return logger_; }
+  inline quill::Logger* Logger() const { return logger_; }
+
+  // Kind of dangerous to return a reference, but maybe ok as it should always be available as long as it is registered
+  // TODO: figure out a way to create the thread class with tracer always!
+  // TODO: with the thread config, the reference to application must be passed in.
+  inline tracing::ThreadTracer& Tracer() { return *tracer_; }
+
   inline typename SchedulerT::Config& SchedulerConfig() {
     return scheduler_config_;
   }
+
   inline int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
 
   /**

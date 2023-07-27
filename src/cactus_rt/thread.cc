@@ -3,14 +3,28 @@
 #include <cstring>
 #include <stdexcept>
 
+#include "cactus_rt/utils.h"
+
 namespace cactus_rt {
 template <typename SchedulerT>
 void* Thread<SchedulerT>::RunThread(void* data) {
-  auto* thread = static_cast<Thread*>(data);
+  auto* thread = static_cast<Thread<SchedulerT>*>(data);
   SchedulerT::SetThreadScheduling(thread->scheduler_config_);  // TODO: return error instead of throwing
-  thread->BeforeRun();
+
+  thread->Tracer().SetThreadTid(GetTid());
+
+  {
+    auto span = thread->Tracer().WithSpan("BeforeRun", "cactusrt");
+    thread->BeforeRun();
+  }
+
   thread->Run();
-  thread->AfterRun();
+
+  {
+    auto span = thread->Tracer().WithSpan("AfterRun", "cactusrt");  // TODO: at least use C++ level string interning for the category
+    thread->AfterRun();
+  }
+
   return nullptr;
 }
 

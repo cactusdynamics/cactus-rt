@@ -6,13 +6,20 @@
 #include <cstring>
 #include <stdexcept>
 
+#include "cactus_rt/tracing/sink.h"
 #include "cactus_rt/utils.h"
 #include "quill/Quill.h"
+
+using Sink = cactus_rt::tracing::Sink;
+using FileSink = cactus_rt::tracing::FileSink;
 
 namespace cactus_rt {
 
 void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
   threads_.push_back(thread);
+
+  // TODO: queue length... This needs thread config refactor
+  thread->RegisterThreadTracer(tracer_.CreateThreadTracer(thread->Name().c_str()));
 }
 
 App::App(const AppConfig& config)
@@ -35,6 +42,7 @@ App::App(const AppConfig& config)
   }
 
   // TODO: deal with logger background thread CPU affinity
+  tracer_.RegisterSink(std::make_unique<FileSink>("data.perfetto"));
 }
 
 void App::Start() {
@@ -43,21 +51,31 @@ void App::Start() {
   StartQuill();
 
   auto start_monotonic_time_ns = NowNs();
+  tracer_.Start(start_monotonic_time_ns);
+
   for (auto& thread : threads_) {
     thread->Start(start_monotonic_time_ns);
   }
 }
 
-void App::RequestStop() {
-  for (auto& thread : threads_) {
-    thread->RequestStop();
+void App::RequestStop(bool stop_system_threads_only) {
+  if (!stop_system_threads_only) {
+    for (auto& thread : threads_) {
+      thread->RequestStop();
+    }
   }
+
+  tracer_.RequestStop();
 }
 
-void App::Join() {
-  for (auto& thread : threads_) {
-    thread->Join();
+void App::Join(bool join_system_threads_only) {
+  if (!join_system_threads_only) {
+    for (auto& thread : threads_) {
+      thread->Join();
+    }
   }
+
+  tracer_.Join();
 }
 
 void App::LockMemory() const {

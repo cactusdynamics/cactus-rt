@@ -1,6 +1,8 @@
 #ifndef CACTUS_RT_UTILS_H_
 #define CACTUS_RT_UTILS_H_
 
+#include <sys/types.h>
+
 #include <cstdint>
 #include <ctime>
 
@@ -42,6 +44,10 @@ inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
   }
 
   return ts;
+}
+
+inline int32_t GetTid() {
+  return gettid();  // Not cross platform. May need to have separate implementation..
 }
 
 }  // namespace cactus_rt

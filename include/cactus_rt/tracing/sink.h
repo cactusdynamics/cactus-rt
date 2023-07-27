@@ -11,7 +11,7 @@ namespace cactus_rt::tracing {
  */
 class Sink {
  public:
-  virtual ~Sink() = 0;
+  virtual ~Sink() = default;
   virtual bool Write(const cactus_tracing::vendor::perfetto::protos::Trace& trace) = 0;
 };
 
