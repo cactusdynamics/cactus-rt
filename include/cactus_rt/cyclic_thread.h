@@ -1,27 +1,25 @@
 #ifndef CACTUS_RT_CYCLIC_THREAD_
 #define CACTUS_RT_CYCLIC_THREAD_
 
-#include "schedulers/deadline.h"
-#include "schedulers/fifo.h"
-#include "schedulers/other.h"
 #include "thread.h"
 #include "utils.h"
 
 namespace cactus_rt {
-template <typename SchedulerT = schedulers::Fifo>
-class CyclicThread : public Thread<SchedulerT> {
-  int64_t         period_ns_;
+class CyclicThread : public Thread {
+  uint64_t        period_ns_;
   struct timespec next_wakeup_time_;
 
  public:
   CyclicThread(
-    std::string                 name,
-    int64_t                     period_ns = 1'000'000,
-    typename SchedulerT::Config config = {},
-    std::vector<size_t>         cpu_affinity = {},
-    size_t                      stack_size = kDefaultStackSize
-  ) : Thread<SchedulerT>(name, config, cpu_affinity, stack_size),
-      period_ns_(period_ns) {}
+    CyclicThreadConfig config
+  ) : Thread(config),
+      period_ns_(config.period_ns) {
+    // Set the cyclic thread period to match the deadline period
+    if (std::holds_alternative<DeadlineThreadConfig>(config.scheduler_config)) {
+      auto deadline_config = std::get<DeadlineThreadConfig>(config.scheduler_config);
+      period_ns_ = deadline_config.sched_period_ns;
+    }
+  }
 
  protected:
   void Run() noexcept final;
@@ -52,25 +50,6 @@ class CyclicThread : public Thread<SchedulerT> {
   virtual void TraceLoopEnd() noexcept {}
 };
 
-// Deadline needs access to the cyclic thread's period
-// This template specialization avoids needing to pass the thread into a Deadline::SetThreadScheduling by
-// manually overriding the period of Deadline::Config in the template-specialized constructor. User setting of sched_period directly on the Deadline::Config object for cyclic threads is
-// not supported.
-template <>
-inline CyclicThread<schedulers::Deadline>::CyclicThread(
-  std::string                  name,
-  int64_t                      period_ns,
-  schedulers::Deadline::Config config,
-  std::vector<size_t>          cpu_affinity,
-  size_t                       stack_size
-) : Thread<schedulers::Deadline>(name, config, cpu_affinity, stack_size),
-    period_ns_(period_ns) {
-  SchedulerConfig().sched_period_ns = static_cast<uint64_t>(period_ns);
-}
-
-template class CyclicThread<schedulers::Other>;
-template class CyclicThread<schedulers::Fifo>;
-template class CyclicThread<schedulers::Deadline>;
 }  // namespace cactus_rt
 
 #endif

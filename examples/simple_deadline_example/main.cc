@@ -4,7 +4,6 @@
 
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
-using cactus_rt::schedulers::Deadline;
 
 /**
  * This is a no-op thread that does nothing at 1 kHz.
@@ -12,18 +11,12 @@ using cactus_rt::schedulers::Deadline;
  * Note that we are using the Deadline scheduler as opposed to leaving the
  * template argument blank (which defaults to real-time).
  */
-class ExampleDeadlineThread : public CyclicThread<Deadline> {
+class ExampleDeadlineThread : public CyclicThread {
   int64_t loop_counter_ = 0;
 
  public:
-  ExampleDeadlineThread() : CyclicThread<Deadline>(
-                              "ExampleRTThread",
-                              1'000'000,  // Period in ns
-                              Deadline::Config{
-                                500'000,  /* Run time in ns */
-                                1'000'000 /* Deadline in ns */
-                              }
-                            ) {}
+  ExampleDeadlineThread(cactus_rt::CyclicThreadConfig config) : CyclicThread(config
+                                                                ) {}
 
   int64_t GetLoopCounter() const {
     return loop_counter_;
@@ -37,7 +30,18 @@ class ExampleDeadlineThread : public CyclicThread<Deadline> {
 };
 
 int main() {
-  auto thread = std::make_shared<ExampleDeadlineThread>();
+  cactus_rt::DeadlineThreadConfig deadline_config;
+  deadline_config.sched_deadline_ns = 1'000'000;
+  deadline_config.sched_runtime_ns = 500'000;
+  deadline_config.sched_period_ns = 1'000'000;
+
+  cactus_rt::CyclicThreadConfig config;
+  config.name = "ExampleRTThread";
+
+  // config.cpu_affinity = std::vector<size_t>{2};
+
+  config.scheduler_config = deadline_config;
+  auto thread = std::make_shared<ExampleDeadlineThread>(config);
   App  app;
 
   app.RegisterThread(thread);

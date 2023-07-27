@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include "config.h"
 #include "quill/Quill.h"
 #include "thread.h"
 
@@ -13,6 +14,9 @@ namespace cactus_rt {
  * @brief Creates a real-time application with multiple real-time and non-real-time threads.
  */
 class App {
+  // The name of the app
+  const char* name_;
+
   // Configuration for quill logging
   quill::Config logger_config_;
 
@@ -34,14 +38,7 @@ class App {
   }
 
  public:
-  explicit App(size_t heap_size = 0);
-
-  /**
-   * @brief Start the App with a custom logging configuration.
-   *
-   * @param logger_config The custom logging configuration.
-   */
-  App(quill::Config logger_config, size_t heap_size = 0);
+  explicit App(AppConfig config = AppConfig());
 
   virtual ~App() = default;
 

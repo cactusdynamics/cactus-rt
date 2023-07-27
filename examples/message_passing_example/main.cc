@@ -7,7 +7,7 @@ using cactus_rt::App;
 
 int main() {
   auto data_logger = std::make_shared<DataLogger>("build/data.csv");
-  auto rt_thread = std::make_shared<RtThread>(data_logger, 1'000'000);
+  auto rt_thread = std::make_shared<RtThread>(data_logger);
 
   App app;
   app.RegisterThread(data_logger);
