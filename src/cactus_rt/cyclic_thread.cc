@@ -33,12 +33,16 @@ void CyclicThread::Run() noexcept {
 
     TraceLoopStart();
 
-    if (Loop(loop_start - Thread::StartMonotonicTimeNs())) {
-      break;
+    {
+      auto span = Tracer().WithSpan("CyclicThread::Loop", "cactusrt");
+      if (Loop(loop_start - Thread::StartMonotonicTimeNs())) {
+        break;
+      }
     }
 
     TraceLoopEnd();
 
+    // TODO: remove these or use information from the span?
     loop_end = NowNs();
     loop_latency = loop_end - loop_start;
     TrackLatency(wakeup_latency, loop_latency);

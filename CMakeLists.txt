@@ -127,7 +127,19 @@ target_link_libraries(cactus_rt
 target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
 if (ENABLE_TRACING)
+  target_sources(cactus_rt
+    PRIVATE
+    src/cactus_rt/tracing/sink.cc
+    src/cactus_rt/tracing/thread_tracer.cc
+    src/cactus_rt/tracing/tracer.cc
+  )
+
   target_compile_definitions(cactus_rt PUBLIC CACTUS_RT_ENABLE_TRACING=1)
+
+  target_link_libraries(cactus_rt
+    PUBLIC
+    cactus_tracing_embedded_perfetto_protos
+  )
 endif()
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})

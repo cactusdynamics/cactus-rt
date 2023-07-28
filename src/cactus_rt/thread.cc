@@ -60,6 +60,17 @@ void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
   SetSchedAttr(thread->scheduler_config_, thread->cpu_affinity_);
 
+  if (thread->tracer_) {
+    auto& thread_tracer = thread->tracer_->CreateThreadTracer(
+      thread->name_.c_str(),
+      thread->thread_tracer_config_.queue_size
+    );
+
+    thread->thread_tracer_ = &thread_tracer;
+  } else {
+    LOG_WARNING(thread->Logger(), "tracer_ not defined, tracing disabled for this thread");
+  }
+
   thread->BeforeRun();
   thread->Run();
   thread->AfterRun();

@@ -1,6 +1,8 @@
 #ifndef CACTUS_RT_THREAD_H_
 #define CACTUS_RT_THREAD_H_
 
+#include <quill/Quill.h>
+
 #include <atomic>
 #include <climits>  // For PTHREAD_STACK_MIN
 #include <cstddef>
@@ -10,7 +12,8 @@
 #include <vector>
 
 #include "config.h"
-#include "quill/Quill.h"
+#include "tracing/thread_tracer.h"
+#include "tracing/tracer.h"
 
 namespace cactus_rt {
 
@@ -88,16 +91,22 @@ class BaseThread {
 };
 
 class Thread : public BaseThread {
+  friend class App;
+
   std::string         name_;
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
 
   SchedulerConfigVariant scheduler_config_;
+  ThreadTracerConfig     thread_tracer_config_;
 
   quill::Logger* logger_;
 
   pthread_t thread_;
   int64_t   start_monotonic_time_ns_ = 0;
+
+  tracing::Tracer*       tracer_ = nullptr;
+  tracing::ThreadTracer* thread_tracer_ = nullptr;
 
   /**
    * A wrapper function that is passed to pthreads which starts the thread and
@@ -116,6 +125,7 @@ class Thread : public BaseThread {
         cpu_affinity_(config.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config.stack_size),
         scheduler_config_(config.scheduler_config),
+        thread_tracer_config_(config.thread_tracer),
         logger_(quill::create_logger(name_)) {}
 
   /**
@@ -125,6 +135,17 @@ class Thread : public BaseThread {
    */
   inline const std::string& Name() override {
     return name_;
+  }
+
+  /**
+   * @brief This is called by the App to register the tracer when the thread is registered with the app.
+   *
+   * TODO: this is kind of a hack as there's some danger of the tracer_ not existing if the thread is used standalone without the App...
+   *
+   * @private
+   */
+  inline void RegisterTracer(tracing::Tracer* tracer) {
+    tracer_ = tracer;
   }
 
   /**
@@ -143,9 +164,9 @@ class Thread : public BaseThread {
 
  protected:
   inline quill::Logger*         Logger() const { return logger_; }
-  inline SchedulerConfigVariant SchedulerConfig() {
-    return scheduler_config_;
-  }
+  inline SchedulerConfigVariant SchedulerConfig() { return scheduler_config_; }
+  inline tracing::ThreadTracer& Tracer() { return *thread_tracer_; }
+
   inline int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
 
   /**

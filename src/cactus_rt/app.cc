@@ -9,20 +9,29 @@
 #include "cactus_rt/utils.h"
 #include "quill/Quill.h"
 
+using FileSink = cactus_rt::tracing::FileSink;
+
 namespace cactus_rt {
 
-void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
+void App::RegisterThread(std::shared_ptr<Thread> thread) {
+  thread->RegisterTracer(&tracer_);
   threads_.push_back(thread);
 }
 
 App::App(AppConfig config)
-    : name_(config.name), logger_config_(config.logger_config), heap_size_(config.heap_size) {
+    : name_(config.name),
+      heap_size_(config.heap_size),
+      logger_config_(config.logger_config),
+      tracer_config_(config.tracer_config),
+      tracer_(name_, config.tracer_config.cpu_affinity) {
   if (logger_config_.default_handlers.empty()) {
     SetDefaultLogFormat(logger_config_);
   }
 
   // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
   // logger_config_.backend_thread_notification_handler
+
+  tracer_.RegisterSink(std::make_unique<FileSink>(config.tracer_config.trace_output_filename.c_str()));
 }
 
 void App::Start() {
@@ -31,6 +40,7 @@ void App::Start() {
   StartQuill();
 
   auto start_monotonic_time_ns = NowNs();
+  tracer_.Start();
   for (auto& thread : threads_) {
     thread->Start(start_monotonic_time_ns);
   }
@@ -40,12 +50,24 @@ void App::RequestStop() {
   for (auto& thread : threads_) {
     thread->RequestStop();
   }
+
+  RequestStopForSystemThreads();
+}
+
+void App::RequestStopForSystemThreads() {
+  tracer_.RequestStop();
 }
 
 void App::Join() {
   for (auto& thread : threads_) {
     thread->Join();
   }
+
+  JoinSystemThreads();
+}
+
+void App::JoinSystemThreads() {
+  tracer_.Join();
 }
 
 void App::LockMemory() const {

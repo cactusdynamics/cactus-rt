@@ -44,6 +44,10 @@ inline struct timespec AddTimespecByNs(struct timespec ts, int64_t ns) {
   return ts;
 }
 
+inline int32_t GetThreadId() {
+  return gettid();
+}
+
 }  // namespace cactus_rt
 
 #endif

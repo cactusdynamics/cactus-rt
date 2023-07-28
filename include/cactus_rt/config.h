@@ -8,17 +8,41 @@
 namespace cactus_rt {
 
 /**
+ * @brief Config for the tracer
+ */
+struct TracerConfig {
+  /**
+   * @brief If the tracer starts enabled or not
+   * TODO: make this actually work
+   */
+  bool starts_enabled = true;
+
+  // TODO: custom sink support to skip the output file
+  /**
+   * @brief The output filename for the trace packet
+   */
+  std::string trace_output_filename = "data.perfetto";
+
+  /**
+   * @brief The CPU configuration for the tracer's background processing thread
+   */
+  std::vector<size_t> cpu_affinity;
+};
+
+/**
  * @brief The configuration required for an App
  */
 struct AppConfig {
   // The name of the app
-  char* name;
+  const char* name = "RTApp";
+
+  // Size of heap to reserve in bytes at program startup.
+  size_t heap_size = 0;
 
   // Configuration for quill logging
   quill::Config logger_config;
 
-  // Size of heap to reserve in bytes at program startup.
-  size_t heap_size = 0;
+  TracerConfig tracer_config;
 };
 
 /**
@@ -44,12 +68,16 @@ struct DeadlineThreadConfig {
   uint64_t sched_period_ns;
 };
 
+struct ThreadTracerConfig {
+  uint32_t queue_size = 16384;
+};
+
 /**
  * @brief The configuration required for a thread
  */
 struct ThreadConfig {
   // The name of the thread
-  std::string name;
+  std::string name = "Thread";
 
   // A vector of CPUs this thread should run on. If empty, no CPU restrictions are set.
   std::vector<size_t> cpu_affinity = {};
@@ -59,6 +87,8 @@ struct ThreadConfig {
 
   // The configuration for the scheduler (SCHED_OTHER, SCHED_FIFO, or SCHED_DEADLINE)
   std::variant<OtherThreadConfig, FifoThreadConfig, DeadlineThreadConfig> scheduler_config;
+
+  ThreadTracerConfig thread_tracer;
 };
 
 struct CyclicThreadConfig : ThreadConfig {
