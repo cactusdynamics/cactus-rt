@@ -89,6 +89,9 @@ class BaseThread {
   }
 };
 
+// Necessary forward declaration
+class App;
+
 class Thread : public BaseThread {
   std::string         name_;
   std::vector<size_t> cpu_affinity_;
@@ -99,9 +102,9 @@ class Thread : public BaseThread {
   quill::Logger*                         logger_;
   std::shared_ptr<tracing::ThreadTracer> tracer_;
 
-  // Non-owning trace aggregator pointer. Used only for notifying that
-  // the thread has started.
-  tracing::TraceAggregator* trace_aggregator_ = nullptr;
+  // Non-owning App pointer. Used only for notifying that the thread has
+  // started/stopped for tracing purposes.
+  App* app_ = nullptr;
 
   pthread_t thread_;
   int64_t   start_monotonic_time_ns_ = 0;
@@ -153,8 +156,8 @@ class Thread : public BaseThread {
    *
    * @private
    */
-  inline void SetTraceAggregator(tracing::TraceAggregator* trace_aggregator) {
-    trace_aggregator_ = trace_aggregator;
+  inline void SetApp(App* app) {
+    app_ = app;
   }
 
  protected:

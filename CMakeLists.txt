@@ -135,9 +135,6 @@ if (ENABLE_TRACING)
     src/cactus_rt/tracing/trace_aggregator.cc
   )
 
-  # TODO: Make this dynamic and controllable
-  target_compile_definitions(cactus_rt PUBLIC CACTUS_RT_TRACING_STARTS_ENABLED=1)
-
   target_link_libraries(cactus_rt
     PUBLIC
     cactus_tracing_embedded_perfetto_protos
@@ -175,6 +172,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 
     if (ENABLE_TRACING)
       add_subdirectory(examples/tracing_protos_example)
+      add_subdirectory(examples/tracing_example)
     endif()
   endif()
 

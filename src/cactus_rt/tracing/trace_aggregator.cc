@@ -62,6 +62,14 @@ void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer)
   this->sticky_trace_packets_.push_back(std::move(trace));
 }
 
+void TraceAggregator::DeregisterThreadTracer(const std::shared_ptr<ThreadTracer>& tracer) {
+  const std::scoped_lock lock(mutex_);
+
+  tracers_.remove_if([tracer](const std::shared_ptr<tracing::ThreadTracer>& t) {
+    return t == tracer;
+  });
+}
+
 void TraceAggregator::Start() {
   // TODO: CPU affinity!
   std::thread thread{&TraceAggregator::Run, this};

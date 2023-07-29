@@ -1,5 +1,4 @@
 build/
 .cache/
 
-data.perfetto
 .vscode/settings.json

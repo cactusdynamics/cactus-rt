@@ -13,12 +13,6 @@ namespace cactus_rt {
  * @brief Config for the tracer
  */
 struct TracerConfig {
-  // TODO: custom sink support to skip the output file
-  /**
-   * @brief The output filename for the trace packet
-   */
-  std::string trace_output_filename = "data.perfetto";
-
   /**
    * @brief The CPU configuration for the tracer's background processing thread
    */

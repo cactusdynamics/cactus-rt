@@ -4,7 +4,7 @@
 #include <quill/Quill.h>
 
 #include <atomic>
-#include <deque>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -29,14 +29,14 @@ class TraceAggregator {
   std::mutex       mutex_;
 
   // A list of sinks the output should be written to.
-  std::deque<std::unique_ptr<Sink>> sinks_;
+  std::list<std::unique_ptr<Sink>> sinks_;
 
   // This is a list of all known thread tracers. The background processing
   // thread will loop through this and pop all data from the queues.
   // Tracer is a friend class of ThreadTracer and thus can access all private
   // variables. These two structs are supposed to be tightly coupled so this is
   // no problem.
-  std::deque<std::shared_ptr<ThreadTracer>> tracers_;
+  std::list<std::shared_ptr<ThreadTracer>> tracers_;
 
   // This is a vector of sticky trace packets that should always be emitted
   // when a new sink connects to the tracer. When a new sink connects to the
@@ -47,7 +47,7 @@ class TraceAggregator {
   // globally and must be emitted before events are emitted.
   //
   // The list of packets only grow here (although shouldn't grow that much).
-  std::deque<Trace> sticky_trace_packets_;
+  std::list<Trace> sticky_trace_packets_;
 
  public:
   explicit TraceAggregator(const char* name, std::vector<size_t> cpu_affinity);
@@ -71,6 +71,11 @@ class TraceAggregator {
    * accumulating.
    */
   void RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer);
+
+  /**
+   * @brief Removes a thread tracer. Not real-time safe.
+   */
+  void DeregisterThreadTracer(const std::shared_ptr<ThreadTracer>& tracer);
 
   /**
    * @brief Starts the trace aggregator background thread

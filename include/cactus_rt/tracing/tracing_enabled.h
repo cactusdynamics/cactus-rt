@@ -4,16 +4,13 @@
 #include <atomic>
 
 namespace cactus_rt::tracing {
+// This is a process-level atomic because we don't want a dependency of
+// ThreadTracer and TraceAggregator to App.
 extern std::atomic_bool tracing_enabled;
 
-inline void EnableTracing() noexcept {
-  tracing_enabled.store(true, std::memory_order_relaxed);
-}
-
-inline void DisableTracing() noexcept {
-  tracing_enabled.store(false, std::memory_order_relaxed);
-}
-
+/**
+ * @brief Checks if tracing is enabled
+ */
 inline bool IsTracingEnabled() noexcept {
   return tracing_enabled.load(std::memory_order_relaxed);
 }

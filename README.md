@@ -44,6 +44,7 @@ See each example's README for more details on what they do.
 * [`simple_deadline_example`](examples/simple_deadline_example/): Same as
   `simple_example`, except it uses `SCHED_DEADLINE` as opposed to `SCHED_FIFO`.
   This is for a more advanced use case.
+* [`tracing_example`](examples/tracing_example/): Shows how to dynamically start and stop tracing, as well as trace custom application functions.
 
 
 Installation instructions
