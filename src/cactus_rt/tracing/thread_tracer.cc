@@ -11,8 +11,6 @@ using cactus_tracing::vendor::perfetto::protos::TrackEvent_Type_TYPE_SLICE_END;
 
 namespace {
 
-std::mutex id_gen_mutex;
-
 uint64_t GenerateTrackUuid() noexcept {
   static std::atomic<uint64_t> track_uuid = 0;
   return ++track_uuid;
@@ -22,15 +20,15 @@ uint64_t GenerateTrackUuid() noexcept {
 
 namespace cactus_rt::tracing {
 ThreadTracer::ThreadTracer(const char* name, uint32_t queue_capacity)
-    : name_(name),
+    : queue_(queue_capacity),
+      name_(name),
       track_uuid_(GenerateTrackUuid()),
+      event_count_(static_cast<uint32_t>(0), static_cast<uint32_t>(0)),
       // Should be ok to set the trusted packet sequence id to be the same if we
       // atomically generate these ids. Perfetto has more flexible architecture
       // as trace can come from multiple processes and be aggregated, which is
       // not possible here.
-      trusted_packet_sequence_id_(track_uuid_),
-      queue_(queue_capacity),
-      event_count_(static_cast<uint32_t>(0), static_cast<uint32_t>(0)) {
+      trusted_packet_sequence_id_(static_cast<uint32_t>(track_uuid_)) {
   // need to be cached as queue_.max_capacity() is not free.
   // TODO: can max_capacity change? What do we do then? What if it decreases
   // after we read it? That said, the events emitted should never be close to
@@ -71,7 +69,7 @@ TraceSpan ThreadTracer::WithSpan(const char* name, const char* category) noexcep
 
 template <typename... Args>
 bool ThreadTracer::Emit(Args&&... args) noexcept {
-  bool success = queue_.try_emplace(std::forward<Args>(args)...);
+  const bool success = queue_.try_emplace(std::forward<Args>(args)...);
   IncrementEventCount(!success);
   return success;
 }

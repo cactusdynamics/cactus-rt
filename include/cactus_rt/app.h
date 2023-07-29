@@ -52,8 +52,8 @@ class App {
   App& operator=(const App&) = delete;
 
   // Move constructors
-  App(App&&) noexcept = default;
-  App& operator=(App&&) noexcept = default;
+  App(App&&) noexcept = delete;
+  App& operator=(App&&) noexcept = delete;
 
   /**
    * @brief Registers a thread to be automatically started by the app. The start

@@ -164,6 +164,7 @@ bool TraceAggregator::StopRequested() const noexcept {
 }
 
 Trace TraceAggregator::CreateProcessDescriptorPacket() const {
+  // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
   Trace trace;
   auto* packet = trace.add_packet();
 
@@ -176,11 +177,13 @@ Trace TraceAggregator::CreateProcessDescriptorPacket() const {
 
   process_track_descriptor->set_allocated_process(process_descriptor);
   packet->set_allocated_track_descriptor(process_track_descriptor);
+  // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
   return trace;
 }
 
 Trace TraceAggregator::CreateThreadDescriptorPacket(const ThreadTracer& thread_tracer) const {
+  // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
   Trace trace;
 
   auto* packet = trace.add_packet();
@@ -196,6 +199,7 @@ Trace TraceAggregator::CreateThreadDescriptorPacket(const ThreadTracer& thread_t
 
   thread_track_descriptor->set_allocated_thread(thread_descriptor);
   packet->set_allocated_track_descriptor(thread_track_descriptor);
+  // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
   return trace;
 }
@@ -205,6 +209,7 @@ void TraceAggregator::AddTrackEventPacketToTrace(
   const ThreadTracer&       thread_tracer,
   const TrackEventInternal& track_event_internal
 ) const {
+  // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
   auto* packet = trace.add_packet();
   packet->set_timestamp(track_event_internal.timestamp);
 
@@ -224,6 +229,7 @@ void TraceAggregator::AddTrackEventPacketToTrace(
 
   packet->set_allocated_track_event(track_event);
   packet->set_trusted_packet_sequence_id(thread_tracer.trusted_packet_sequence_id_);
+  // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 
 }  // namespace cactus_rt::tracing

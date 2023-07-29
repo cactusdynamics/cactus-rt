@@ -28,23 +28,24 @@ class TraceAggregator;
 class ThreadTracer {
   friend class TraceAggregator;
 
+  moodycamel::ReaderWriterQueue<TrackEventInternal> queue_;
+
   const char* name_;
   uint64_t    track_uuid_;
-  uint32_t    trusted_packet_sequence_id_;
-
-  moodycamel::ReaderWriterQueue<TrackEventInternal> queue_;
 
   // TODO: relaxed memory order OK? It's not a control variable nor do any other
   // variables depend on this variable.
   cactus_rt::experimental::lockless::AtomicMessage<EventCountData, std::memory_order_relaxed> event_count_;
 
-  // This cannot be initialized when the ThreadTracer is created and must be
-  // initialized when the thread actually starts running.
-  int32_t tid_ = 0;
-
   // This is not the same as the passed in queue size as that is the minimum
   // queue size
   size_t queue_capacity_;
+
+  uint32_t trusted_packet_sequence_id_;
+
+  // This cannot be initialized when the ThreadTracer is created and must be
+  // initialized when the thread actually starts running.
+  int32_t tid_ = 0;
 
  public:
   ThreadTracer(const char* name, uint32_t queue_capacity = 16384);
