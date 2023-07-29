@@ -7,6 +7,7 @@
 #include "config.h"
 #include "quill/Quill.h"
 #include "thread.h"
+#include "tracing/trace_aggregator.h"
 
 namespace cactus_rt {
 
@@ -17,13 +18,17 @@ class App {
   // The name of the app
   const char* name_;
 
-  // Configuration for quill logging
-  quill::Config logger_config_;
-
   // Size of heap to reserve in bytes at program startup.
   size_t heap_size_;
 
-  std::vector<std::shared_ptr<BaseThread>> threads_;
+  // Configuration for quill logging
+  quill::Config logger_config_;
+
+  TracerConfig tracer_config_;
+
+  std::vector<std::shared_ptr<Thread>> threads_;
+
+  tracing::TraceAggregator trace_aggregator_;
 
   void SetDefaultLogFormat(quill::Config& cfg) {
     // Create a handler of stdout
@@ -56,7 +61,7 @@ class App {
    *
    * @param thread A shared ptr to a thread.
    */
-  void RegisterThread(std::shared_ptr<BaseThread> thread);
+  void RegisterThread(std::shared_ptr<Thread> thread);
 
   /**
    * @brief Starts the app by locking the memory and reserving the memory. Also
@@ -65,12 +70,26 @@ class App {
   virtual void Start();
 
   /**
+   * @brief Request stops for threads started by the cactus rt framework
+   *
+   * This is useful if you need a custom thread shutdown order.
+   */
+  void RequestStopForSystemThreads();
+
+  /**
    * @brief sends RequestStop to all threads in registration order.
    *
    * Provided for convenience only. If you want to stop in a different order,
    * you can override this method or implement your own functions.
    */
   virtual void RequestStop();
+
+  /**
+   * @brief Only join the threads started by the cactus rt framework
+   *
+   * This is useful if you need a custom thread shutdown order.
+   */
+  void JoinSystemThreads();
 
   /**
    * @brief Joins all the threads in registration order.

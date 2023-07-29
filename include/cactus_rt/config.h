@@ -1,24 +1,53 @@
 #ifndef CACTUS_RT_CONFIG_H_
 #define CACTUS_RT_CONFIG_H_
 
-#include <variant>
+#include <quill/Quill.h>
 
-#include "quill/Quill.h"
+#include <string>
+#include <variant>
+#include <vector>
 
 namespace cactus_rt {
+
+/**
+ * @brief Config for the tracer
+ */
+struct TracerConfig {
+  // TODO: custom sink support to skip the output file
+  /**
+   * @brief The output filename for the trace packet
+   */
+  std::string trace_output_filename = "data.perfetto";
+
+  /**
+   * @brief The CPU configuration for the tracer's background processing thread
+   */
+  std::vector<size_t> trace_aggregator_cpu_affinity;
+};
 
 /**
  * @brief The configuration required for an App
  */
 struct AppConfig {
-  // The name of the app
-  char* name;
+  /**
+   * @brief The name of the app
+   */
+  const char* name = "RTApp";
 
-  // Configuration for quill logging
+  /**
+   * @brief Size of heap to reserve in bytes at program startup.
+   */
+  size_t heap_size = 0;
+
+  /**
+   * @brief The configuration for quill logging
+   */
   quill::Config logger_config;
 
-  // Size of heap to reserve in bytes at program startup.
-  size_t heap_size = 0;
+  /**
+   * @brief The config for the tracer if enabled (ENABLE_TRACING option in cmake)
+   */
+  TracerConfig tracer_config;
 };
 
 /**
@@ -44,12 +73,16 @@ struct DeadlineThreadConfig {
   uint64_t sched_period_ns;
 };
 
+struct ThreadTracerConfig {
+  uint32_t queue_size = 16384;
+};
+
 /**
  * @brief The configuration required for a thread
  */
 struct ThreadConfig {
   // The name of the thread
-  std::string name;
+  const char* name = "Thread";
 
   // A vector of CPUs this thread should run on. If empty, no CPU restrictions are set.
   std::vector<size_t> cpu_affinity = {};
@@ -59,6 +92,8 @@ struct ThreadConfig {
 
   // The configuration for the scheduler (SCHED_OTHER, SCHED_FIFO, or SCHED_DEADLINE)
   std::variant<OtherThreadConfig, FifoThreadConfig, DeadlineThreadConfig> scheduler_config;
+
+  ThreadTracerConfig tracer_config;
 };
 
 struct CyclicThreadConfig : ThreadConfig {

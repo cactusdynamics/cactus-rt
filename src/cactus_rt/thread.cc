@@ -60,6 +60,13 @@ void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
   SetSchedAttr(thread->scheduler_config_, thread->cpu_affinity_);
 
+  thread->tracer_->SetTid();
+  if (thread->trace_aggregator_ != nullptr) {
+    thread->trace_aggregator_->RegisterThreadTracer(thread->tracer_);
+  } else {
+    LOG_WARNING(thread->Logger(), "thread {} does not have trace_aggregator_ and tracing is disabled. Did you all App::RegisterThread?", thread->name_);
+  }
+
   thread->BeforeRun();
   thread->Run();
   thread->AfterRun();

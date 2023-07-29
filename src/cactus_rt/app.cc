@@ -9,20 +9,30 @@
 #include "cactus_rt/utils.h"
 #include "quill/Quill.h"
 
+using FileSink = cactus_rt::tracing::FileSink;
+
 namespace cactus_rt {
 
-void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
+void App::RegisterThread(std::shared_ptr<Thread> thread) {
+  thread->SetTraceAggregator(&trace_aggregator_);
   threads_.push_back(thread);
 }
 
 App::App(AppConfig config)
-    : name_(config.name), logger_config_(config.logger_config), heap_size_(config.heap_size) {
+    : name_(config.name),
+      heap_size_(config.heap_size),
+      logger_config_(config.logger_config),
+      tracer_config_(config.tracer_config),
+      trace_aggregator_(name_, config.tracer_config.trace_aggregator_cpu_affinity) {
   if (logger_config_.default_handlers.empty()) {
     SetDefaultLogFormat(logger_config_);
   }
 
   // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
   // logger_config_.backend_thread_notification_handler
+
+  // TODO: make the sinks more flexible
+  trace_aggregator_.RegisterSink(std::make_unique<FileSink>(config.tracer_config.trace_output_filename.c_str()));
 }
 
 void App::Start() {
@@ -34,18 +44,36 @@ void App::Start() {
   for (auto& thread : threads_) {
     thread->Start(start_monotonic_time_ns);
   }
+
+  // Start trace aggregator second as the trace aggregator begins to take a
+  // lock, while thread startup involves taking the same lock to register the
+  // thread tracer. This may make startup faster, but the statement is not
+  // based on measured facts but just hypothesis.
+  trace_aggregator_.Start();
 }
 
 void App::RequestStop() {
   for (auto& thread : threads_) {
     thread->RequestStop();
   }
+
+  RequestStopForSystemThreads();
+}
+
+void App::RequestStopForSystemThreads() {
+  trace_aggregator_.RequestStop();
 }
 
 void App::Join() {
   for (auto& thread : threads_) {
     thread->Join();
   }
+
+  JoinSystemThreads();
+}
+
+void App::JoinSystemThreads() {
+  trace_aggregator_.Join();
 }
 
 void App::LockMemory() const {

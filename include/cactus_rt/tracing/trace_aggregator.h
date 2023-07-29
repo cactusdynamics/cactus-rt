@@ -13,17 +13,14 @@
 #include "thread_tracer.h"
 
 namespace cactus_rt::tracing {
-struct TraceAggregatorConfig {
-  const char*         process_name;
-  std::vector<size_t> cpu_affinity;
-};
 
 class TraceAggregator {
   using Trace = cactus_tracing::vendor::perfetto::protos::Trace;
 
-  TraceAggregatorConfig config_;
-  uint64_t              process_track_uuid_;
-  quill::Logger*        logger_;
+  const char*         process_name_;
+  std::vector<size_t> cpu_affinity_;
+  uint64_t            process_track_uuid_;
+  quill::Logger*      logger_;
 
   // We use a std::thread and not a cactus_rt::Thread as cactus_rt::Thread has
   // dependency on this class, so we cannot have a circular dependency.
@@ -53,7 +50,7 @@ class TraceAggregator {
   std::deque<Trace> sticky_trace_packets_;
 
  public:
-  explicit TraceAggregator(TraceAggregatorConfig config);
+  explicit TraceAggregator(const char* name, std::vector<size_t> cpu_affinity);
 
   // No copy no move
   TraceAggregator(const TraceAggregator&) = delete;

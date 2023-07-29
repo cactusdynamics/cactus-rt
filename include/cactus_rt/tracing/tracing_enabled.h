@@ -6,11 +6,11 @@
 namespace cactus_rt::tracing {
 extern std::atomic_bool tracing_enabled;
 
-void EnableTracing() noexcept {
+inline void EnableTracing() noexcept {
   tracing_enabled.store(true, std::memory_order_relaxed);
 }
 
-void DisableTracing() noexcept {
+inline void DisableTracing() noexcept {
   tracing_enabled.store(false, std::memory_order_relaxed);
 }
 

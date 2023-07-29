@@ -59,13 +59,16 @@ class ThreadTracer {
   TraceSpan WithSpan(const char* name, const char* category = nullptr) noexcept;
   bool      InstantEvent(const char* name, const char* category = nullptr) noexcept;
 
-  inline EventCountData EventCount() const noexcept {
-    return event_count_.Read();
-  }
+  inline EventCountData EventCount() const noexcept { return event_count_.Read(); }
+  inline size_t         QueueCapacity() const noexcept { return queue_capacity_; }
 
-  inline size_t QueueCapacity() const noexcept {
-    return queue_capacity_;
-  }
+  /**
+   * @brief Get and memorize the thread id. Should only be called from the
+   *        thread by Thread::RunThread.
+   *
+   * @private
+   */
+  void SetTid() noexcept { tid_ = gettid(); }
 
  private:
   template <typename... Args>

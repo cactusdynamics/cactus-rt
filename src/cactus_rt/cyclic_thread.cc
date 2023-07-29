@@ -33,8 +33,11 @@ void CyclicThread::Run() noexcept {
 
     TraceLoopStart();
 
-    if (Loop(loop_start - Thread::StartMonotonicTimeNs())) {
-      break;
+    {
+      auto span = Tracer().WithSpan("CyclicThread::Loop", "cactusrt");
+      if (Loop(loop_start - Thread::StartMonotonicTimeNs())) {
+        break;
+      }
     }
 
     TraceLoopEnd();

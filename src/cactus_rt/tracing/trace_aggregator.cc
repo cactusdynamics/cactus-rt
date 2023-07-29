@@ -11,8 +11,9 @@ using TrackEvent = cactus_tracing::vendor::perfetto::protos::TrackEvent;
 using namespace std::chrono_literals;
 
 namespace cactus_rt::tracing {
-TraceAggregator::TraceAggregator(TraceAggregatorConfig config)
-    : config_(config),
+TraceAggregator::TraceAggregator(const char* process_name, std::vector<size_t> cpu_affinity)
+    : process_name_(process_name),
+      cpu_affinity_(cpu_affinity),
       process_track_uuid_(static_cast<uint64_t>(getpid())),
       logger_(quill::create_logger("__trace_aggregator__")) {
   this->sticky_trace_packets_.push_back(CreateProcessDescriptorPacket());
@@ -83,29 +84,31 @@ void TraceAggregator::Run() {
   // TODO: major refactor required
 
   while (!StopRequested()) {
-    // This lock is needed as when we are writing packets into sinks, we don't
-    // want new thread tracers and sinks to be created or registered as that
-    // can cause potential data loss. This lock is NOT for dequeueing from the
-    // thread tracer queues, as expected.
-    const std::scoped_lock lock(mutex_);
+    int tracers_with_events = 0;
+    {
+      // This lock is needed as when we are writing packets into sinks, we don't
+      // want new thread tracers and sinks to be created or registered as that
+      // can cause potential data loss. This lock is NOT for dequeueing from the
+      // thread tracer queues, as expected.
 
-    int   tracers_with_events = 0;
-    Trace trace;
+      const std::scoped_lock lock(mutex_);
+      Trace                  trace;
 
-    for (auto& tracer : tracers_) {
-      TrackEventInternal event;
-      if (!tracer->queue_.try_dequeue(event)) {
-        // No event in this queue.
-        continue;
+      for (auto& tracer : tracers_) {
+        TrackEventInternal event;
+        if (!tracer->queue_.try_dequeue(event)) {
+          // No event in this queue.
+          continue;
+        }
+
+        tracers_with_events++;
+        AddTrackEventPacketToTrace(trace, *tracer, event);
       }
 
-      tracers_with_events++;
-      AddTrackEventPacketToTrace(trace, *tracer, event);
-    }
-
-    if (tracers_with_events > 0) {
-      for (auto& sink : sinks_) {
-        sink->Write(trace);
+      if (tracers_with_events > 0) {
+        for (auto& sink : sinks_) {
+          sink->Write(trace);
+        }
       }
     }
 
@@ -169,7 +172,7 @@ Trace TraceAggregator::CreateProcessDescriptorPacket() const {
 
   auto* process_descriptor = new ProcessDescriptor();
   process_descriptor->set_pid(getpid());
-  process_descriptor->set_process_name(config_.process_name);
+  process_descriptor->set_process_name(process_name_);
 
   process_track_descriptor->set_allocated_process(process_descriptor);
   packet->set_allocated_track_descriptor(process_track_descriptor);
