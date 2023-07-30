@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/build/debug/_deps/**",
-                "${workspaceFolder}/build/debug/_deps/readerwriterqueue-src"
+                "${workspaceFolder}/build/debug/_deps/readerwriterqueue-src",
+                "${workspaceFolder}/build/debug/protos"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
@@ -19,7 +20,8 @@
             "includePath": [
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/build/release/_deps/**",
-                "${workspaceFolder}/build/debug/_deps/readerwriterqueue-src"
+                "${workspaceFolder}/build/release/_deps/readerwriterqueue-src",
+                "${workspaceFolder}/build/release/protos"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

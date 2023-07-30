@@ -11,6 +11,8 @@
 
 #include "config.h"
 #include "quill/Quill.h"
+#include "tracing/thread_tracer.h"
+#include "tracing/trace_aggregator.h"
 
 namespace cactus_rt {
 
@@ -87,6 +89,9 @@ class BaseThread {
   }
 };
 
+// Necessary forward declaration
+class App;
+
 class Thread : public BaseThread {
   std::string         name_;
   std::vector<size_t> cpu_affinity_;
@@ -94,7 +99,12 @@ class Thread : public BaseThread {
 
   SchedulerConfigVariant scheduler_config_;
 
-  quill::Logger* logger_;
+  quill::Logger*                         logger_;
+  std::shared_ptr<tracing::ThreadTracer> tracer_;
+
+  // Non-owning App pointer. Used only for notifying that the thread has
+  // started/stopped for tracing purposes.
+  App* app_ = nullptr;
 
   pthread_t thread_;
   int64_t   start_monotonic_time_ns_ = 0;
@@ -116,16 +126,15 @@ class Thread : public BaseThread {
         cpu_affinity_(config.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config.stack_size),
         scheduler_config_(config.scheduler_config),
-        logger_(quill::create_logger(name_)) {}
+        logger_(quill::create_logger(name_)),
+        tracer_(std::make_shared<tracing::ThreadTracer>(config.name, config.tracer_config.queue_size)) {}
 
   /**
    * Returns the name of the thread
    *
    * @returns The name of the thread.
    */
-  inline const std::string& Name() override {
-    return name_;
-  }
+  inline const std::string& Name() override { return name_; }
 
   /**
    * Starts the thread in the background.
@@ -141,12 +150,21 @@ class Thread : public BaseThread {
    */
   int Join() override;
 
+  /**
+   * @brief Sets the trace_aggregator_ pointer so the thread can notify the
+   *        trace_aggregator_ when it starts. This should only be called by App.
+   *
+   * @private
+   */
+  inline void SetApp(App* app) {
+    app_ = app;
+  }
+
  protected:
   inline quill::Logger*         Logger() const { return logger_; }
-  inline SchedulerConfigVariant SchedulerConfig() {
-    return scheduler_config_;
-  }
-  inline int64_t StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
+  inline SchedulerConfigVariant SchedulerConfig() { return scheduler_config_; }
+  inline tracing::ThreadTracer& Tracer() { return *tracer_; }
+  inline int64_t                StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
 
   /**
    * Override this method to do work. If this is a real-time thread, once this

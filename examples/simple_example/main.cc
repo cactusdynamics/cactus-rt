@@ -8,8 +8,6 @@ using cactus_rt::CyclicThread;
 
 /**
  * This is a no-op thread that does nothing at 1 kHz.
- *
- * TODO: it should demonstrate logging and tracing capabilities.
  */
 class ExampleRTThread : public CyclicThread {
   int64_t loop_counter_ = 0;
@@ -42,11 +40,12 @@ int main() {
   config.scheduler_config = fifo_config;
 
   auto thread = std::make_shared<ExampleRTThread>(config);
-  App  app;
 
+  App app;
+  app.StartTraceSession("build/data.perfetto");
   app.RegisterThread(thread);
-  constexpr unsigned int time = 5;
 
+  constexpr unsigned int time = 5;
   std::cout << "Testing RT loop for " << time << " seconds.\n";
 
   app.Start();

@@ -1,12 +1,15 @@
 #ifndef CACTUS_RT_APP_H_
 #define CACTUS_RT_APP_H_
 
+#include <list>
 #include <memory>
 #include <vector>
 
 #include "config.h"
 #include "quill/Quill.h"
 #include "thread.h"
+#include "tracing/thread_tracer.h"
+#include "tracing/trace_aggregator.h"
 
 namespace cactus_rt {
 
@@ -17,13 +20,24 @@ class App {
   // The name of the app
   const char* name_;
 
-  // Configuration for quill logging
-  quill::Config logger_config_;
-
   // Size of heap to reserve in bytes at program startup.
   size_t heap_size_;
 
-  std::vector<std::shared_ptr<BaseThread>> threads_;
+  // Configuration for quill logging
+  quill::Config logger_config_;
+
+  TracerConfig tracer_config_;
+
+  std::vector<std::shared_ptr<Thread>> threads_;
+
+  // We need to cache the list thread tracers here because the trace_aggregator
+  // can be dynamically created and stopped. When a new trace aggregator is
+  // created, it needs to know about all the thread tracers.
+  //
+  // TODO: investigate into a weak pointer.
+  std::list<std::shared_ptr<tracing::ThreadTracer>> thread_tracers_;
+  std::unique_ptr<tracing::TraceAggregator>         trace_aggregator_ = nullptr;
+  std::mutex                                        tracer_mutex_;
 
   void SetDefaultLogFormat(quill::Config& cfg) {
     // Create a handler of stdout
@@ -40,15 +54,15 @@ class App {
  public:
   explicit App(AppConfig config = AppConfig());
 
-  virtual ~App() = default;
+  virtual ~App();
 
   // Copy constructors
   App(const App&) = delete;
   App& operator=(const App&) = delete;
 
   // Move constructors
-  App(App&&) noexcept = default;
-  App& operator=(App&&) noexcept = default;
+  App(App&&) noexcept = delete;
+  App& operator=(App&&) noexcept = delete;
 
   /**
    * @brief Registers a thread to be automatically started by the app. The start
@@ -56,7 +70,7 @@ class App {
    *
    * @param thread A shared ptr to a thread.
    */
-  void RegisterThread(std::shared_ptr<BaseThread> thread);
+  void RegisterThread(std::shared_ptr<Thread> thread);
 
   /**
    * @brief Starts the app by locking the memory and reserving the memory. Also
@@ -80,6 +94,38 @@ class App {
    */
   virtual void Join();
 
+  /**
+   * @brief Starts a new tracing session for the process. Will not start a new
+   * tracing session if an existing tracing session is in progress. This
+   * function is not real-time safe.
+   *
+   * @param output_filename the filename the data will be written to.
+   * @returns true if a session has started, false if a session is already in progress.
+   */
+  bool StartTraceSession(const char* output_filename) noexcept;
+
+  /**
+   * @brief Stops the tracing session for the process. Will be no-op if tracing
+   * is not enabled. This function is not real-time safe.
+   *
+   * @returns true if a session was stopped, false if tracing is not enabled.
+   */
+  bool StopTraceSession() noexcept;
+
+  /**
+   * @brief Register a thread tracer. Should only be called from Thread::RunThread.
+   *
+   * @private
+   */
+  void RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept;
+
+  /**
+   * @brief Remove a thread tracer. Should only be called from Thread::~Thread().
+   *
+   * @private
+   */
+  void DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept;
+
  protected:
   /**
    * Locks memory via mlockall and configure malloc to not give up memory nor
@@ -96,6 +142,11 @@ class App {
    * Starts the Quill background logging thread.
    */
   void StartQuill();
+
+ private:
+  void CreateAndStartTraceAggregator(const char* output_filename) noexcept;
+
+  void StopTraceAggregator() noexcept;
 };
 }  // namespace cactus_rt
 

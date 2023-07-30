@@ -15,6 +15,7 @@ RUN set -xe; \
       lttng-tools \
       doxygen \
       graphviz \
+      protobuf-compiler \
     ; \
     mkdir /cactus-rt
 

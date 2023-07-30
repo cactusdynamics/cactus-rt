@@ -6,23 +6,34 @@
 #include <cstring>
 #include <stdexcept>
 
+#include "cactus_rt/tracing/tracing_enabled.h"
 #include "cactus_rt/utils.h"
 #include "quill/Quill.h"
 
+using FileSink = cactus_rt::tracing::FileSink;
+
 namespace cactus_rt {
 
-void App::RegisterThread(std::shared_ptr<BaseThread> thread) {
+void App::RegisterThread(std::shared_ptr<Thread> thread) {
+  thread->SetApp(this);
   threads_.push_back(thread);
 }
 
 App::App(AppConfig config)
-    : name_(config.name), logger_config_(config.logger_config), heap_size_(config.heap_size) {
+    : name_(config.name),
+      heap_size_(config.heap_size),
+      logger_config_(config.logger_config),
+      tracer_config_(config.tracer_config) {
   if (logger_config_.default_handlers.empty()) {
     SetDefaultLogFormat(logger_config_);
   }
 
   // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
   // logger_config_.backend_thread_notification_handler
+}
+
+App::~App() {
+  StopTraceSession();
 }
 
 void App::Start() {
@@ -45,6 +56,50 @@ void App::RequestStop() {
 void App::Join() {
   for (auto& thread : threads_) {
     thread->Join();
+  }
+}
+
+bool App::StartTraceSession(const char* output_filename) noexcept {
+  if (cactus_rt::tracing::IsTracingEnabled()) {
+    return false;
+  }
+
+  CreateAndStartTraceAggregator(output_filename);
+  cactus_rt::tracing::tracing_enabled = true;
+
+  return true;
+}
+
+bool App::StopTraceSession() noexcept {
+  if (!cactus_rt::tracing::IsTracingEnabled()) {
+    return false;
+  }
+
+  cactus_rt::tracing::tracing_enabled = false;
+  StopTraceAggregator();
+
+  return true;
+}
+
+void App::RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept {
+  const std::scoped_lock lock(tracer_mutex_);
+
+  thread_tracers_.push_back(thread_tracer);
+
+  if (trace_aggregator_ != nullptr) {
+    trace_aggregator_->RegisterThreadTracer(thread_tracer);
+  }
+}
+
+void App::DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept {
+  const std::scoped_lock lock(tracer_mutex_);
+
+  thread_tracers_.remove_if([thread_tracer](const std::shared_ptr<tracing::ThreadTracer>& t) {
+    return t == thread_tracer;
+  });
+
+  if (trace_aggregator_ != nullptr) {
+    trace_aggregator_->DeregisterThreadTracer(thread_tracer);
   }
 }
 
@@ -73,7 +128,7 @@ void App::LockMemory() const {
     throw std::runtime_error{std::string("mlockall failed: ") + std::strerror(errno)};
   }
 
-  // Do not free any RAM to the OS if the continguous free memory at the top of
+  // Do not free any RAM to the OS if the contiguous free memory at the top of
   // the heap grows too large. If RAM is freed, a syscall (sbrk) will be called
   // which can have unbounded execution time.
   ret = mallopt(M_TRIM_THRESHOLD, -1);
@@ -112,5 +167,35 @@ void App::ReserveHeap() const {
 void App::StartQuill() {
   quill::configure(logger_config_);
   quill::start();
+}
+
+void App::CreateAndStartTraceAggregator(const char* output_filename) noexcept {
+  const std::scoped_lock lock(tracer_mutex_);
+
+  if (trace_aggregator_ != nullptr) {
+    // TODO: error here
+    return;
+  }
+
+  trace_aggregator_ = std::make_unique<tracing::TraceAggregator>(name_, tracer_config_.trace_aggregator_cpu_affinity);
+  for (auto tracer : thread_tracers_) {
+    trace_aggregator_->RegisterThreadTracer(std::move(tracer));
+  }
+
+  trace_aggregator_->RegisterSink(std::make_unique<FileSink>(output_filename));
+  trace_aggregator_->Start();
+}
+
+void App::StopTraceAggregator() noexcept {
+  const std::scoped_lock lock(tracer_mutex_);
+
+  if (trace_aggregator_ == nullptr) {
+    // TODO: error here
+    return;
+  }
+
+  trace_aggregator_->RequestStop();
+  trace_aggregator_->Join();
+  trace_aggregator_ = nullptr;
 }
 }  // namespace cactus_rt

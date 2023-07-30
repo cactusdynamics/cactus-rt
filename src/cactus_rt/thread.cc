@@ -8,6 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "cactus_rt/app.h"
 #include "cactus_rt/linux/sched_ext.h"
 
 namespace cactus_rt {
@@ -59,6 +60,13 @@ void SetSchedAttr(const SchedulerConfigVariant& config_variant, const std::vecto
 void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
   SetSchedAttr(thread->scheduler_config_, thread->cpu_affinity_);
+
+  thread->tracer_->SetTid();
+  if (thread->app_ != nullptr) {
+    thread->app_->RegisterThreadTracer(thread->tracer_);
+  } else {
+    LOG_WARNING(thread->Logger(), "thread {} does not have trace_aggregator_ and tracing is disabled. Did you all App::RegisterThread?", thread->name_);
+  }
 
   thread->BeforeRun();
   thread->Run();

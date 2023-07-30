@@ -54,7 +54,3 @@ The best option from the above appears to be the the [`readerwriterqueue`][reade
 [^1]: More information about FUTEX_WAKE is found in this blog post's comments: https://timur.audio/using-locks-in-real-time-audio-processing-safely
 
 ### Data-passing architecture
-
-### Trace data format
-
-### Trace viewing

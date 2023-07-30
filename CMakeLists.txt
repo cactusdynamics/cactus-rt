@@ -5,6 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
+option(ENABLE_TRACING "Enable runtime tracing support" ON)
 option(BUILD_DOCS "Build documentations" OFF)
 
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
@@ -13,6 +14,10 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 Include(FetchContent)
+
+#########################
+# External dependencies #
+#########################
 
 FetchContent_Declare(
   quill
@@ -41,37 +46,9 @@ FetchContent_MakeAvailable(readerwriterqueue)
 get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
 set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
 
-add_library(cactus_rt
-  STATIC
-  src/cactus_rt/app.cc
-  src/cactus_rt/thread.cc
-  src/cactus_rt/cyclic_thread.cc
-  src/cactus_rt/signal_handler.cc
-)
-
-target_include_directories(cactus_rt
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_link_libraries(cactus_rt
-  PUBLIC
-  quill::quill
-  readerwriterqueue
-  PRIVATE
-  Threads::Threads
-)
-
-# Use a bounded queue
-target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
-
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY clang-tidy clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
-  else()
-    message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
-  endif()
-endif()
+##########################################################
+# Helper function to setup all cactus-rt related targets #
+##########################################################
 
 function(setup_cactus_rt_target_options target_name)
   # https://github.com/cpp-best-practices/cppbestpractices/blob/b1629eb/02-Use_the_Tools_Available.md#gcc--clang
@@ -117,6 +94,61 @@ function(setup_cactus_rt_target_options target_name)
   endif()
 endfunction()
 
+#####################
+# Cactus RT library #
+#####################
+
+if (ENABLE_TRACING)
+  add_subdirectory(protos)
+endif()
+
+add_library(cactus_rt
+  STATIC
+  src/cactus_rt/app.cc
+  src/cactus_rt/thread.cc
+  src/cactus_rt/cyclic_thread.cc
+  src/cactus_rt/signal_handler.cc
+)
+
+target_include_directories(cactus_rt
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(cactus_rt
+  PUBLIC
+  quill::quill
+  readerwriterqueue
+  PRIVATE
+  Threads::Threads
+)
+
+# Use a bounded queue
+target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
+
+if (ENABLE_TRACING)
+  target_sources(cactus_rt
+    PRIVATE
+    src/cactus_rt/tracing/tracing_enabled.cc
+    src/cactus_rt/tracing/sink.cc
+    src/cactus_rt/tracing/thread_tracer.cc
+    src/cactus_rt/tracing/trace_aggregator.cc
+  )
+
+  target_link_libraries(cactus_rt
+    PUBLIC
+    cactus_tracing_embedded_perfetto_protos
+  )
+endif()
+
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY clang-tidy clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
+  else()
+    message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
+  endif()
+endif()
+
 setup_cactus_rt_target_options(cactus_rt)
 
 # Build tests, examples, docs, only if this project is not embedded in another
@@ -137,6 +169,11 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/signal_handling_example)
     add_subdirectory(examples/simple_deadline_example)
     add_subdirectory(examples/simple_example)
+
+    if (ENABLE_TRACING)
+      add_subdirectory(examples/tracing_protos_example)
+      add_subdirectory(examples/tracing_example)
+    endif()
   endif()
 
   if (BUILD_DOCS)

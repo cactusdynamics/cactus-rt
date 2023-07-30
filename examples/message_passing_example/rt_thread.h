@@ -8,26 +8,23 @@
 #include "data_logger_thread.h"
 
 using cactus_rt::CyclicThread;
-// "RtThread", 1'000'000, Fifo::Config{80 /* priority */}
-
-namespace {
-cactus_rt::CyclicThreadConfig MakeRealTimeThreadConfig() {
-  cactus_rt::FifoThreadConfig fifo_config;
-  fifo_config.priority = 80;
-
-  cactus_rt::CyclicThreadConfig config;
-  config.name = "RtThread";
-  config.period_ns = 1'000'000;
-  config.scheduler_config = fifo_config;
-
-  return config;
-}
-}  // namespace
 
 class RtThread : public CyclicThread {
   std::shared_ptr<DataLogger> data_logger_;
   size_t                      max_iterations_;
   size_t                      iterations_ = 0;
+
+  static cactus_rt::CyclicThreadConfig MakeRealTimeThreadConfig() {
+    cactus_rt::FifoThreadConfig fifo_config;
+    fifo_config.priority = 80;
+
+    cactus_rt::CyclicThreadConfig config;
+    config.name = "RtThread";
+    config.period_ns = 1'000'000;
+    config.scheduler_config = fifo_config;
+
+    return config;
+  }
 
  public:
   RtThread(std::shared_ptr<DataLogger> data_logger, size_t max_iterations = 30000)

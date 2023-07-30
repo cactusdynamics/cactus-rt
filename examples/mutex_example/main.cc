@@ -77,8 +77,7 @@ void ThreadedDemo() {
   rt_thread_config.period_ns = 1'000'000;
   rt_thread_config.scheduler_config = fifo_config;
 
-  cactus_rt::OtherThreadConfig other_config;
-  fifo_config.priority = 80;
+  const cactus_rt::OtherThreadConfig other_config;
 
   cactus_rt::CyclicThreadConfig non_rt_thread_config;
   non_rt_thread_config.name = "NonRTThread";
