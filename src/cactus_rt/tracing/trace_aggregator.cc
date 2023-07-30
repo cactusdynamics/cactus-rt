@@ -1,6 +1,15 @@
 #include "cactus_rt/tracing/trace_aggregator.h"
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#include <pthread.h>
+#include <sched.h>
+
 #include <chrono>
+#include <cstring>
+#include <string>
 
 using Trace = cactus_tracing::vendor::perfetto::protos::Trace;
 using TrackDescriptor = cactus_tracing::vendor::perfetto::protos::TrackDescriptor;
@@ -89,6 +98,8 @@ quill::Logger* TraceAggregator::Logger() noexcept {
 }
 
 void TraceAggregator::Run() {
+  SetupCPUAffinityIfNecessary();
+
   // TODO: major refactor required
 
   while (!StopRequested()) {
@@ -169,6 +180,25 @@ void TraceAggregator::Run() {
 
 bool TraceAggregator::StopRequested() const noexcept {
   return stop_requested_.load(std::memory_order_relaxed);
+}
+
+void TraceAggregator::SetupCPUAffinityIfNecessary() const {
+  if (cpu_affinity_.empty()) {
+    return;
+  }
+
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  for (auto cpu : cpu_affinity_) {
+    CPU_SET(cpu, &cpuset);
+  }
+
+  const int ret = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (ret == 0) {
+    return;
+  }
+
+  throw std::runtime_error{std::string("cannot set affinity for trace aggregator: ") + std::strerror(errno)};
 }
 
 Trace TraceAggregator::CreateProcessDescriptorPacket() const {
