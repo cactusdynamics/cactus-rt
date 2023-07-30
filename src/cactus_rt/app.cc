@@ -34,6 +34,7 @@ App::App(AppConfig config)
 
 App::~App() {
   StopTraceSession();
+  quill::flush();
 }
 
 void App::Start() {
