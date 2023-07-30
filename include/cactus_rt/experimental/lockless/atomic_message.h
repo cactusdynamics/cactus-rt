@@ -45,7 +45,8 @@ class AtomicMessage {
    * @param f A function that takes the old value and returns the new value.
    * Maybe called multiple times. To be real-time safe, this can be a function
    * pointer or a lambda function that doesn't capture anything that can cause
-   * dynamic memory allocation.
+   * dynamic memory allocation. This is a template instead of a std::function as
+   * std::function can dynamically allocate.
    */
   template <typename Func>
   void Modify(Func f) noexcept {

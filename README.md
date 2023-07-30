@@ -145,3 +145,5 @@ LICENSE
 Open source projects and some commercial projects can use [MPL 2.0](https://www.mozilla.org/MPL/2.0/).
 
 If you need commercial, closed-sourced modifications, please obtain a license from [Cactus Dynamics](https://cactusdynamics.com).
+
+This library embeds work from [Perfetto](https://perfetto.dev), which is licensed under Apache License, version 2.
