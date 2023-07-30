@@ -229,11 +229,10 @@ void TraceAggregator::AddTrackEventPacketToTrace(
     track_event->set_name(track_event_internal.name);
   }
 
-  // TODO: set category
-  // Trickier to do because this needs to allocate an array and stuff
-  // if (track_event.category != nullptr) {
-  //   track_event_proto->set_categories(track_event.category);
-  // }
+  // TODO: support multiple categories later?
+  if (track_event_internal.category != nullptr) {
+    track_event->add_categories(track_event_internal.category);
+  }
 
   packet->set_allocated_track_event(track_event);
   packet->set_trusted_packet_sequence_id(thread_tracer.trusted_packet_sequence_id_);

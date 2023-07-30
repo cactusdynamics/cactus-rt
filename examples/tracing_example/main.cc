@@ -39,17 +39,17 @@ class ExampleRTThread : public CyclicThread {
 
  private:
   void Sense() noexcept {
-    auto span = Tracer().WithSpan("Sense");
+    auto span = Tracer().WithSpan("Sense", "app");
     WasteTime(std::chrono::microseconds(100));
   }
 
   void Plan() noexcept {
-    auto span = Tracer().WithSpan("Plan");
+    auto span = Tracer().WithSpan("Plan", "app");
     WasteTime(std::chrono::microseconds(50));
   }
 
   void Act() noexcept {
-    auto span = Tracer().WithSpan("Act");
+    auto span = Tracer().WithSpan("Act", "app");
     WasteTime(std::chrono::microseconds(75));
   }
 };
