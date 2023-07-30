@@ -58,13 +58,16 @@ int main() {
   cactus_rt::FifoThreadConfig fifo_config;
   fifo_config.priority = 80;
 
-  cactus_rt::CyclicThreadConfig config;
-  config.name = "ExampleRTThread";
-  config.period_ns = 1'000'000;
-  config.scheduler_config = fifo_config;
+  cactus_rt::CyclicThreadConfig thread_config;
+  thread_config.name = "ExampleRTThread";
+  thread_config.period_ns = 1'000'000;
+  thread_config.scheduler_config = fifo_config;
 
-  auto thread = std::make_shared<ExampleRTThread>(config);
-  App  app;
+  cactus_rt::AppConfig app_config;
+  app_config.tracer_config.trace_aggregator_cpu_affinity = {1};
+
+  auto thread = std::make_shared<ExampleRTThread>(thread_config);
+  App  app(app_config);
   app.RegisterThread(thread);
 
   std::cout << "Testing RT loop for 15 seconds with two trace sessions.\n";

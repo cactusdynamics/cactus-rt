@@ -98,6 +98,8 @@ class TraceAggregator {
   void Run();
   bool StopRequested() const noexcept;
 
+  void SetupCPUAffinityIfNecessary() const;
+
   Trace CreateProcessDescriptorPacket() const;
   Trace CreateThreadDescriptorPacket(const ThreadTracer& thread_tracer) const;
   void  AddTrackEventPacketToTrace(Trace& trace, const ThreadTracer& thread_tracer, const TrackEventInternal& track_event_internal) const;
