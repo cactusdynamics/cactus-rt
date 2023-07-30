@@ -21,78 +21,10 @@ using SchedulerConfigVariant = std::variant<OtherThreadConfig, FifoThreadConfig,
 /// @private
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack space should be plenty
 
-/**
- * The base thread
- */
-class BaseThread {
-  std::atomic_bool stop_requested_ = false;
-
- public:
-  /**
-   * @brief Return the name of the thread. Mostly used for debug purpose.
-   *
-   * @returns a const renferece to the name string
-   */
-  virtual const std::string& Name() = 0;
-
-  /**
-   * @brief Starts the thread.
-   *
-   * @param start_monotonic_time_ns The start time in the monotonic clock
-   */
-  virtual void Start(int64_t start_monotonic_time_ns) = 0;
-
-  /**
-   * @brief Joins the thread.
-   *
-   * @returns the return value of pthread_join.
-   */
-  virtual int Join() = 0;
-
-  /**
-   * Requests the thread to stop with an atomic.
-   */
-  virtual void RequestStop() noexcept {
-    stop_requested_ = true;
-  }
-
-  // The constructors and destructors are needed because we need to delete
-  // objects of type BaseThread polymorphically, through the map in the App class.
-  BaseThread() = default;
-  virtual ~BaseThread() = default;
-
-  // Copy constructors are not allowed
-  BaseThread(const BaseThread&) = delete;
-  BaseThread& operator=(const BaseThread&) = delete;
-
-  // Should the thread be moveable? std::thread is moveable
-  // TODO: investigate moving the stop_requested_ flag somewhere else
-  // Move constructors are not allowed because of the atomic_bool for now.
-  BaseThread(BaseThread&&) noexcept = delete;
-  BaseThread& operator=(BaseThread&&) noexcept = delete;
-
- protected:
-  /**
-   * @brief Check if stop has been requested
-   *
-   * @return true if stop is requested
-   */
-  bool StopRequested() const noexcept {
-    // Memory order relaxed is OK, because we don't really care when the signal
-    // arrives, we just care that it is arrived at some point.
-    //
-    // Also this could be used in a tight loop so we don't want to waste time when we don't need to.
-    //
-    // https://stackoverflow.com/questions/70581645/why-set-the-stop-flag-using-memory-order-seq-cst-if-you-check-it-with-memory
-    // TODO: possibly use std::stop_source and std::stop_token (C++20)
-    return stop_requested_.load(std::memory_order_relaxed);
-  }
-};
-
 // Necessary forward declaration
 class App;
 
-class Thread : public BaseThread {
+class Thread {
   std::string         name_;
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
@@ -101,6 +33,8 @@ class Thread : public BaseThread {
 
   quill::Logger*                         logger_;
   std::shared_ptr<tracing::ThreadTracer> tracer_;
+
+  std::atomic_bool stop_requested_ = false;
 
   // Non-owning App pointer. Used only for notifying that the thread has
   // started/stopped for tracing purposes.
@@ -134,21 +68,28 @@ class Thread : public BaseThread {
    *
    * @returns The name of the thread.
    */
-  inline const std::string& Name() override { return name_; }
+  inline const std::string& Name() { return name_; }
 
   /**
    * Starts the thread in the background.
    *
    * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
    */
-  void Start(int64_t start_monotonic_time_ns) override;
+  void Start(int64_t start_monotonic_time_ns);
 
   /**
    * Joins the thread.
    *
    * @returns the return value of pthread_join
    */
-  int Join() override;
+  int Join();
+
+  /**
+   * Requests the thread to stop with an atomic.
+   */
+  virtual void RequestStop() noexcept {
+    stop_requested_ = true;
+  }
 
   /**
    * @brief Sets the trace_aggregator_ pointer so the thread can notify the
@@ -159,6 +100,21 @@ class Thread : public BaseThread {
   inline void SetApp(App* app) {
     app_ = app;
   }
+
+  // The constructors and destructors are needed because we need to delete
+  // objects of type Thread polymorphically, through the map in the App class.
+  Thread() = default;
+  virtual ~Thread() = default;
+
+  // Copy constructors are not allowed
+  Thread(const Thread&) = delete;
+  Thread& operator=(const Thread&) = delete;
+
+  // Should the thread be moveable? std::thread is moveable
+  // TODO: investigate moving the stop_requested_ flag somewhere else
+  // Move constructors are not allowed because of the atomic_bool for now.
+  Thread(Thread&&) noexcept = delete;
+  Thread& operator=(Thread&&) noexcept = delete;
 
  protected:
   inline quill::Logger*         Logger() const { return logger_; }
@@ -183,6 +139,22 @@ class Thread : public BaseThread {
    * real-time section.
    */
   virtual void AfterRun() {}
+
+  /**
+   * @brief Check if stop has been requested
+   *
+   * @return true if stop is requested
+   */
+  bool StopRequested() const noexcept {
+    // Memory order relaxed is OK, because we don't really care when the signal
+    // arrives, we just care that it is arrived at some point.
+    //
+    // Also this could be used in a tight loop so we don't want to waste time when we don't need to.
+    //
+    // https://stackoverflow.com/questions/70581645/why-set-the-stop-flag-using-memory-order-seq-cst-if-you-check-it-with-memory
+    // TODO: possibly use std::stop_source and std::stop_token (C++20)
+    return stop_requested_.load(std::memory_order_relaxed);
+  }
 };
 }  // namespace cactus_rt
 
