@@ -154,7 +154,6 @@ setup_cactus_rt_target_options(cactus_rt)
 # Build tests, examples, docs, only if this project is not embedded in another
 # project.
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  # TODO: re-enable tests when we have some
   include(CTest)
 
   if (BUILD_TESTING)

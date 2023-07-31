@@ -15,7 +15,8 @@ release:
 	cmake -Bbuild/$@ -DCMAKE_BUILD_TYPE=RelWithDebInfo $(CMAKE_FLAGS)
 	cmake --build build/$@ -j $$(nproc)
 
-test: debug
+test:
+	make debug BUILD_TESTING=ON
 	ctest --test-dir build/debug
 
 clean:

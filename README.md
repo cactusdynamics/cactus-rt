@@ -62,11 +62,12 @@ Installation instructions
 * [Quill](https://github.com/odygrd/quill): this is included as a part of the CMake-based build process.
 * [`moodycamel::ReaderWriterQueue`](https://github.com/cameron314/readerwriterqueue): this is included as a part of the CMake-based build process.
 * Protobuf: for runtime tracing
+* Googletest: for testing
 
 For Debian/Ubuntu:
 
 ```bash
-$ sudo apt install build-essential cmake protobuf-compiler
+$ sudo apt install build-essential cmake protobuf-compiler libgtest-dev
 ```
 
 For building documentations, we need: doxygen.
