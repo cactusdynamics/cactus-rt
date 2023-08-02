@@ -16,6 +16,21 @@
             "compileCommands": "${workspaceFolder}/build/debug/compile_commands.json"
         },
         {
+            "name": "Linux (Test)",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/build/test/_deps/**",
+                "${workspaceFolder}/build/test/_deps/readerwriterqueue-src",
+                "${workspaceFolder}/build/test/protos"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compileCommands": "${workspaceFolder}/build/test/compile_commands.json"
+        },
+        {
             "name": "Linux (Release)",
             "includePath": [
                 "${workspaceFolder}/include",

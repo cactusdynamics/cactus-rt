@@ -65,10 +65,30 @@ bool App::StartTraceSession(const char* output_filename) noexcept {
     return false;
   }
 
-  CreateAndStartTraceAggregator(output_filename);
+  CreateAndStartTraceAggregator();
+  trace_aggregator_->RegisterSink(std::make_unique<FileSink>(output_filename));
   cactus_rt::tracing::tracing_enabled = true;
 
   return true;
+}
+
+bool App::StartTraceSession() noexcept {
+  if (cactus_rt::tracing::IsTracingEnabled()) {
+    return false;
+  }
+
+  CreateAndStartTraceAggregator();
+  cactus_rt::tracing::tracing_enabled = true;
+
+  return true;
+}
+
+void App::RegisterTraceSink(std::shared_ptr<cactus_rt::tracing::Sink> sink) noexcept {
+  if (trace_aggregator_ == nullptr) {
+    return;
+  }
+
+  trace_aggregator_->RegisterSink(sink);
 }
 
 bool App::StopTraceSession() noexcept {
@@ -170,7 +190,7 @@ void App::StartQuill() {
   quill::start();
 }
 
-void App::CreateAndStartTraceAggregator(const char* output_filename) noexcept {
+void App::CreateAndStartTraceAggregator() noexcept {
   const std::scoped_lock lock(tracer_mutex_);
 
   if (trace_aggregator_ != nullptr) {
@@ -183,7 +203,6 @@ void App::CreateAndStartTraceAggregator(const char* output_filename) noexcept {
     trace_aggregator_->RegisterThreadTracer(std::move(tracer));
   }
 
-  trace_aggregator_->RegisterSink(std::make_unique<FileSink>(output_filename));
   trace_aggregator_->Start();
 }
 

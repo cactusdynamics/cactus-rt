@@ -28,20 +28,19 @@ TraceAggregator::TraceAggregator(const char* process_name, std::vector<size_t> c
   this->sticky_trace_packets_.push_back(CreateProcessDescriptorPacket());
 }
 
-void TraceAggregator::RegisterSink(std::unique_ptr<Sink> sink) {
+void TraceAggregator::RegisterSink(std::shared_ptr<Sink> sink) {
   // RegisterSink is mutually exclusive with RegisterThreadTracer and writing
   // metric data from queues to the sinks. This is because we need to ensure the
   // first trace packets on any new sink must be the track descriptors for all
   // known tracks. We also need to ensure that writing to sinks only happen on
   // one thread with mutual exclusion to avoid data race.
   const std::scoped_lock lock(mutex_);
-
   for (const auto& trace : this->sticky_trace_packets_) {
     // TODO: deal with errors
     sink->Write(trace);
   }
 
-  sinks_.push_back(std::move(sink));
+  sinks_.push_back(sink);
 }
 
 void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer) {

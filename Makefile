@@ -16,10 +16,13 @@ release:
 	cmake --build build/$@ -j $$(nproc)
 
 test:
-	make debug BUILD_TESTING=ON
-	ctest --test-dir build/debug
+	cmake -Bbuild/test -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXAMPLES=OFF -DBUILD_TESTING=ON
+	cmake --build build/test -j $$(nproc)
+	# ctest --test-dir build/test
+	build/test/tests/cactus_rt_tests
 
 clean:
+	test ! -d build/test || cmake --build build/test --target clean
 	test ! -d build/debug || cmake --build build/debug --target clean
 	test ! -d build/release || cmake --build build/release --target clean
 

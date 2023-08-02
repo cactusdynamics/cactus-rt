@@ -105,6 +105,19 @@ class App {
   bool StartTraceSession(const char* output_filename) noexcept;
 
   /**
+   * @brief Starts a new tracing session for the process. Will not start a new
+   * tracing session if an existing tracing session is in progress. This
+   * function is not real-time safe. This will not register any output sinks.
+   * Use App::RegisterTraceSink() to register custom sinks.
+   */
+  bool StartTraceSession() noexcept;
+
+  /**
+   * @brief Register a custom trace sink after starting the trace session
+   */
+  void RegisterTraceSink(std::shared_ptr<cactus_rt::tracing::Sink> sink) noexcept;
+
+  /**
    * @brief Stops the tracing session for the process. Will be no-op if tracing
    * is not enabled. This function is not real-time safe.
    *
@@ -144,7 +157,7 @@ class App {
   void StartQuill();
 
  private:
-  void CreateAndStartTraceAggregator(const char* output_filename) noexcept;
+  void CreateAndStartTraceAggregator() noexcept;
 
   void StopTraceAggregator() noexcept;
 };

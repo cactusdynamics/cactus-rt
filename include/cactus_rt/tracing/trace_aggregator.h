@@ -29,7 +29,7 @@ class TraceAggregator {
   std::mutex       mutex_;
 
   // A list of sinks the output should be written to.
-  std::list<std::unique_ptr<Sink>> sinks_;
+  std::list<std::shared_ptr<Sink>> sinks_;
 
   // This is a list of all known thread tracers. The background processing
   // thread will loop through this and pop all data from the queues.
@@ -61,7 +61,7 @@ class TraceAggregator {
   /**
    * @brief Adds a sink. Not real-time safe.
    */
-  void RegisterSink(std::unique_ptr<Sink> sink);
+  void RegisterSink(std::shared_ptr<Sink> sink);
 
   /**
    * @brief Adds a thread tracer. Not real-time safe.
