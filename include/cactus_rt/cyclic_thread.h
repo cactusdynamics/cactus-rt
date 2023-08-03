@@ -6,19 +6,15 @@
 
 namespace cactus_rt {
 class CyclicThread : public Thread {
-  uint64_t        period_ns_;
-  struct timespec next_wakeup_time_;
+  CyclicThreadConfig config_;
+  uint64_t           period_ns_;
+  struct timespec    next_wakeup_time_;
 
  public:
   CyclicThread(
     CyclicThreadConfig config
   ) : Thread(config),
       period_ns_(config.period_ns) {
-    // Set the cyclic thread period to match the deadline period
-    if (std::holds_alternative<DeadlineThreadConfig>(config.scheduler_config)) {
-      auto deadline_config = std::get<DeadlineThreadConfig>(config.scheduler_config);
-      period_ns_ = deadline_config.sched_period_ns;
-    }
   }
 
  protected:

@@ -30,16 +30,13 @@ class ExampleRTThread : public CyclicThread {
 };
 
 int main() {
-  cactus_rt::FifoThreadConfig fifo_config;
-  fifo_config.priority = 80;
-
   cactus_rt::CyclicThreadConfig config;
   config.name = "ExampleRTThread";
   config.period_ns = 1'000'000;
   config.cpu_affinity = std::vector<size_t>{2};
-  config.scheduler_config = fifo_config;
+  config.SetFifoScheduler(80);
 
-  auto thread = std::make_shared<ExampleRTThread>(config);
+  auto thread = std::make_shared<ExampleRTThread>(std::move(config));
 
   App app;
   app.StartTraceSession("build/data.perfetto");

@@ -31,17 +31,12 @@ class ExampleDeadlineThread : public CyclicThread {
 };
 
 int main() {
-  cactus_rt::DeadlineThreadConfig deadline_config;
-  deadline_config.sched_deadline_ns = 1'000'000;
-  deadline_config.sched_runtime_ns = 500'000;
-  deadline_config.sched_period_ns = 1'000'000;
-
   cactus_rt::CyclicThreadConfig config;
+
   config.name = "ExampleRTThread";
+  config.period_ns = 1'000'000;
+  config.SetDeadlineScheduler(500'000 /* runtime */, 1'000'000 /* deadline*/);
 
-  // config.cpu_affinity = std::vector<size_t>{2};
-
-  config.scheduler_config = deadline_config;
   auto thread = std::make_shared<ExampleDeadlineThread>(config);
   App  app;
 

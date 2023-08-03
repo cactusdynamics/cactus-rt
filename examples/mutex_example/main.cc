@@ -69,19 +69,16 @@ void TrivialDemo() {
 }
 
 void ThreadedDemo() {
-  cactus_rt::FifoThreadConfig fifo_config;
-  fifo_config.priority = 80;
-
   cactus_rt::CyclicThreadConfig rt_thread_config;
   rt_thread_config.name = "RTThread";
   rt_thread_config.period_ns = 1'000'000;
-  rt_thread_config.scheduler_config = fifo_config;
+  rt_thread_config.SetFifoScheduler(80 /* priority */);
 
   const cactus_rt::OtherThreadConfig other_config;
 
   cactus_rt::CyclicThreadConfig non_rt_thread_config;
   non_rt_thread_config.name = "NonRTThread";
-  non_rt_thread_config.scheduler_config = other_config;
+  non_rt_thread_config.SetOtherScheduler(0 /* niceness */);
 
   // The double buffer is shared between the two threads, so we pass a reference
   // into the thread and maintain the object lifetime to this function.

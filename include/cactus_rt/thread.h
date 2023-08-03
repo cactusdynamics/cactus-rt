@@ -16,8 +16,6 @@
 
 namespace cactus_rt {
 
-using SchedulerConfigVariant = std::variant<OtherThreadConfig, FifoThreadConfig, DeadlineThreadConfig>;
-
 /// @private
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack space should be plenty
 
@@ -25,11 +23,10 @@ constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack spac
 class App;
 
 class Thread {
+  ThreadConfig        config_;
   std::string         name_;
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
-
-  SchedulerConfigVariant scheduler_config_;
 
   quill::Logger*                         logger_;
   std::shared_ptr<tracing::ThreadTracer> tracer_;
@@ -56,12 +53,12 @@ class Thread {
    * @param config The configuration for the thread
    */
   Thread(ThreadConfig config)
-      : name_(config.name),
-        cpu_affinity_(config.cpu_affinity),
-        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config.stack_size),
-        scheduler_config_(config.scheduler_config),
+      : config_(config),
+        name_(config_.name),
+        cpu_affinity_(config_.cpu_affinity),
+        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
         logger_(quill::create_logger(name_)),
-        tracer_(std::make_shared<tracing::ThreadTracer>(config.name, config.tracer_config.queue_size)) {}
+        tracer_(std::make_shared<tracing::ThreadTracer>(config_.name, config_.tracer_config.queue_size)) {}
 
   /**
    * Returns the name of the thread
@@ -118,9 +115,9 @@ class Thread {
 
  protected:
   inline quill::Logger*         Logger() const { return logger_; }
-  inline SchedulerConfigVariant SchedulerConfig() { return scheduler_config_; }
   inline tracing::ThreadTracer& Tracer() { return *tracer_; }
   inline int64_t                StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
+  inline const ThreadConfig&    Config() const { return config_; }
 
   /**
    * Override this method to do work. If this is a real-time thread, once this

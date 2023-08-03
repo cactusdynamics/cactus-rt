@@ -15,13 +15,11 @@ class RtThread : public CyclicThread {
   size_t                      iterations_ = 0;
 
   static cactus_rt::CyclicThreadConfig MakeRealTimeThreadConfig() {
-    cactus_rt::FifoThreadConfig fifo_config;
-    fifo_config.priority = 80;
-
     cactus_rt::CyclicThreadConfig config;
     config.name = "RtThread";
     config.period_ns = 1'000'000;
-    config.scheduler_config = fifo_config;
+    config.cpu_affinity = std::vector<size_t>{2};
+    config.SetFifoScheduler(80);
 
     return config;
   }

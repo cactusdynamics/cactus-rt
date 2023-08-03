@@ -55,13 +55,11 @@ class ExampleRTThread : public CyclicThread {
 };
 
 int main() {
-  cactus_rt::FifoThreadConfig fifo_config;
-  fifo_config.priority = 80;
-
   cactus_rt::CyclicThreadConfig thread_config;
   thread_config.name = "ExampleRTThread";
   thread_config.period_ns = 1'000'000;
-  thread_config.scheduler_config = fifo_config;
+  thread_config.cpu_affinity = std::vector<size_t>{2};
+  thread_config.SetFifoScheduler(80);
 
   cactus_rt::AppConfig app_config;
   app_config.tracer_config.trace_aggregator_cpu_affinity = {1};

@@ -3,9 +3,10 @@
 
 #include <quill/Quill.h>
 
+#include <memory>
 #include <string>
-#include <variant>
-#include <vector>
+
+#include "cactus_rt/scheduler.h"
 
 namespace cactus_rt {
 
@@ -75,6 +76,9 @@ struct ThreadTracerConfig {
  * @brief The configuration required for a thread
  */
 struct ThreadConfig {
+  // Construct the ThreadConfig. Default scheduler is SCHED_OTHER
+  ThreadConfig() : scheduler(std::make_shared<OtherScheduler>()) {}
+
   // The name of the thread
   const char* name = "Thread";
 
@@ -84,15 +88,54 @@ struct ThreadConfig {
   // The size of the stack for this thread. Defaults to 8MB.
   size_t stack_size = 8 * 1024 * 1024;
 
-  // The configuration for the scheduler (SCHED_OTHER, SCHED_FIFO, or SCHED_DEADLINE)
-  std::variant<OtherThreadConfig, FifoThreadConfig, DeadlineThreadConfig> scheduler_config;
+  ThreadTracerConfig         tracer_config;
+  std::shared_ptr<Scheduler> scheduler;
 
-  ThreadTracerConfig tracer_config;
+  /**
+   * @brief Set the thread scheduler to use the default (non-RT) scheduler
+   * @param priority The thread nice value (19 to -20)
+   */
+  void SetOtherScheduler(int32_t nice) {
+    auto other_sched = std::make_shared<OtherScheduler>();
+    other_sched->nice = nice;
+
+    scheduler = other_sched;
+  }
+
+  /**
+   * @brief Set the thread scheduler to be first-in-first-out (FIFO)
+   * @param priority The thread priority (0 - 100)
+   */
+  void SetFifoScheduler(uint32_t priority) {
+    auto fifo_sched = std::make_shared<FifoScheduler>();
+    fifo_sched->priority = priority;
+
+    scheduler = fifo_sched;
+  }
 };
 
 struct CyclicThreadConfig : ThreadConfig {
   // The period of the cyclic thread in ns
   uint64_t period_ns = 1'000'000;
+
+  /**
+   * @brief Set the thread scheduler to be earliest deadline first (EDF)
+   * @param sched_runtime_ns The runtime of that the task will receive each period
+   * @param sched_deadline_ns The number of nanoseconds from the beginning of the period for which the runtime is available
+   * @details Deadline scheduling is only applicable to cyclic threads. The period of the cyclic thread is used as the
+   * EDF scheduling period.
+   */
+  void SetDeadlineScheduler(uint64_t sched_runtime_ns, uint64_t sched_deadline_ns) {
+    if (!cpu_affinity.empty()) {
+      throw std::runtime_error{"SCHED_DEADLINE cannot be used with cpu affinity, see sched_setattr(2)"};
+    }
+    auto deadline_sched = std::make_shared<DeadlineScheduler>();
+    deadline_sched->sched_runtime_ns = sched_runtime_ns;
+    deadline_sched->sched_deadline_ns = sched_deadline_ns;
+    deadline_sched->sched_period_ns = period_ns;
+
+    scheduler = deadline_sched;
+  }
 };
 
 }  // namespace cactus_rt
