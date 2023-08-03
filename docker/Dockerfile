@@ -16,6 +16,8 @@ RUN set -xe; \
       doxygen \
       graphviz \
       protobuf-compiler \
+      libgtest-dev \
+      libbenchmark-dev \
     ; \
     mkdir /cactus-rt
 

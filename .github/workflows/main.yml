@@ -4,7 +4,7 @@ name: cactus-rt
 
 jobs:
   build-and-test:
-    runs-on: [self-hosted, jammy]
+    runs-on: [self-hosted, jammy, real-time]
     env:
       CACTUS_RT_BUILD_DIR: build
     steps:
@@ -14,10 +14,16 @@ jobs:
         run: docker/scripts/00-format.sh
 
       - name: Setup dependencies
-        run: sudo apt-get update && sudo apt-get install -y libspdlog-dev liblttng-ust-dev libboost-dev doxygen graphviz protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y libspdlog-dev liblttng-ust-dev libboost-dev doxygen graphviz protobuf-compiler libgtest-dev libbenchmark-dev
 
       - name: Build library
         run: docker/scripts/01-build.sh
 
       - name: Test
         run: docker/scripts/02-test.sh
+
+      - name: Benchmark
+        run: docker/scripts/03-benchmark.sh
+
+      # - name: Run example
+      #   run: docker/scripts/04-example.sh

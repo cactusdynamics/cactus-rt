@@ -2,6 +2,7 @@
 #define CACTUS_TRACING_THREAD_TRACER_H_
 
 #include <readerwriterqueue.h>
+#include <unistd.h>
 
 #include <cstdint>
 

@@ -1,4 +1,4 @@
-.PHONY: release debug clean clean-all
+.PHONY: release debug build-test-debug test-debug test benchmark clean clean-all
 
 ENABLE_CLANG_TIDY ?= OFF
 ENABLE_TRACING ?= ON
@@ -15,11 +15,17 @@ release:
 	cmake -Bbuild/$@ -DCMAKE_BUILD_TYPE=RelWithDebInfo $(CMAKE_FLAGS)
 	cmake --build build/$@ -j $$(nproc)
 
-test:
-	cmake -Bbuild/test -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXAMPLES=OFF -DBUILD_TESTING=ON
+build-test-debug:
+	cmake -Bbuild/test -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXAMPLES=OFF -DBUILD_TESTING=ON -DENABLE_CLANG_TIDY=$(ENABLE_CLANG_TIDY)
 	cmake --build build/test -j $$(nproc)
-	# ctest --test-dir build/test
-	build/test/tests/cactus_rt_tests
+
+test-debug: build-test-debug
+	ctest --test-dir build/test -V
+
+test: test-debug
+
+benchmark: build-test-debug
+	build/test/tests/cactus_rt_tracing_benchmark
 
 clean:
 	test ! -d build/test || cmake --build build/test --target clean

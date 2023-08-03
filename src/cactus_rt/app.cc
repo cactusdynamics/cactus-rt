@@ -67,7 +67,7 @@ bool App::StartTraceSession(const char* output_filename) noexcept {
 
   CreateAndStartTraceAggregator();
   trace_aggregator_->RegisterSink(std::make_unique<FileSink>(output_filename));
-  cactus_rt::tracing::tracing_enabled = true;
+  cactus_rt::tracing::EnableTracing();
 
   return true;
 }
@@ -78,7 +78,7 @@ bool App::StartTraceSession() noexcept {
   }
 
   CreateAndStartTraceAggregator();
-  cactus_rt::tracing::tracing_enabled = true;
+  cactus_rt::tracing::EnableTracing();
 
   return true;
 }
@@ -96,7 +96,7 @@ bool App::StopTraceSession() noexcept {
     return false;
   }
 
-  cactus_rt::tracing::tracing_enabled = false;
+  cactus_rt::tracing::DisableTracing();
   StopTraceAggregator();
 
   return true;
@@ -200,7 +200,7 @@ void App::CreateAndStartTraceAggregator() noexcept {
 
   trace_aggregator_ = std::make_unique<tracing::TraceAggregator>(name_, tracer_config_.trace_aggregator_cpu_affinity);
   for (auto tracer : thread_tracers_) {
-    trace_aggregator_->RegisterThreadTracer(std::move(tracer));
+    trace_aggregator_->RegisterThreadTracer(tracer);
   }
 
   trace_aggregator_->Start();
