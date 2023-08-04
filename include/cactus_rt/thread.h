@@ -80,7 +80,7 @@ class Thread {
    *
    * @returns the return value of pthread_join
    */
-  int Join();
+  int Join() const;
 
   /**
    * Requests the thread to stop with an atomic.

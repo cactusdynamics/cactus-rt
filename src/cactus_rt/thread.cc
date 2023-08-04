@@ -75,7 +75,7 @@ void Thread::Start(int64_t start_monotonic_time_ns) {
   }
 }
 
-int Thread::Join() {
+int Thread::Join() const {
   return pthread_join(thread_, nullptr);
 }
 }  // namespace cactus_rt
