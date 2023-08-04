@@ -50,15 +50,16 @@ class Thread {
   /**
    * Creates a new thread.
    *
+   * @param name The thread name
    * @param config The configuration for the thread
    */
-  Thread(ThreadConfig config)
+  Thread(const char* name, ThreadConfig config)
       : config_(config),
-        name_(config_.name),
+        name_(name),
         cpu_affinity_(config_.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
         logger_(quill::create_logger(name_)),
-        tracer_(std::make_shared<tracing::ThreadTracer>(config_.name, config_.tracer_config.queue_size)) {}
+        tracer_(std::make_shared<tracing::ThreadTracer>(name, config_.tracer_config.queue_size)) {}
 
   /**
    * Returns the name of the thread

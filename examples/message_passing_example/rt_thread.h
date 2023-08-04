@@ -16,7 +16,6 @@ class RtThread : public CyclicThread {
 
   static cactus_rt::CyclicThreadConfig MakeRealTimeThreadConfig() {
     cactus_rt::CyclicThreadConfig config;
-    config.name = "RtThread";
     config.period_ns = 1'000'000;
     config.cpu_affinity = std::vector<size_t>{2};
     config.SetFifoScheduler(80);
@@ -26,7 +25,7 @@ class RtThread : public CyclicThread {
 
  public:
   RtThread(std::shared_ptr<DataLogger> data_logger, size_t max_iterations = 30000)
-      : CyclicThread(MakeRealTimeThreadConfig()),
+      : CyclicThread("RtThread", MakeRealTimeThreadConfig()),
         data_logger_(data_logger),
         max_iterations_(max_iterations) {
   }

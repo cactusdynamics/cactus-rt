@@ -79,9 +79,6 @@ struct ThreadConfig {
   // Construct the ThreadConfig. Default scheduler is SCHED_OTHER
   ThreadConfig() : scheduler(std::make_shared<OtherScheduler>()) {}
 
-  // The name of the thread
-  const char* name = "Thread";
-
   // A vector of CPUs this thread should run on. If empty, no CPU restrictions are set.
   std::vector<size_t> cpu_affinity = {};
 

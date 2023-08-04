@@ -11,10 +11,13 @@ class CyclicThread : public Thread {
   struct timespec    next_wakeup_time_;
 
  public:
-  CyclicThread(
-    CyclicThreadConfig config
-  ) : Thread(config),
-      period_ns_(config.period_ns) {
+  /**
+   * @brief Create a cyclic thread
+   * @param name The thread name
+   * @param config A cactus_rt::CyclicThreadConfig that specifies configuration parameters for this thread
+   */
+  CyclicThread(const char* name, CyclicThreadConfig config) : Thread(name, config),
+                                                              period_ns_(config.period_ns) {
   }
 
  protected:
