@@ -3,6 +3,7 @@
 
 #include <list>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "config.h"
@@ -24,7 +25,7 @@ class App {
   size_t heap_size_;
 
   // Configuration for quill logging
-  quill::Config logger_config_;
+  std::optional<quill::Config> logger_config_;
 
   TracerConfig tracer_config_;
 
@@ -39,7 +40,16 @@ class App {
   std::unique_ptr<tracing::TraceAggregator>         trace_aggregator_ = nullptr;
   std::mutex                                        tracer_mutex_;
 
-  void SetDefaultLogFormat(quill::Config& cfg) {
+  void SetDefaultLoggerConfig(std::optional<quill::Config>& cfg) {
+    quill::Config logging_config;
+
+    // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
+    // logger_config.backend_thread_notification_handler
+
+    cfg = logging_config;
+  }
+
+  void SetDefaultLogFormat(std::optional<quill::Config>& cfg) {
     // Create a handler of stdout
     const std::shared_ptr<quill::Handler> handler = quill::stdout_handler();
 
@@ -48,7 +58,7 @@ class App {
 
     // Set the default pattern
     handler->set_pattern("[%(ascii_time)][%(level_id)][%(logger_name)][%(filename):%(lineno)] %(message)", "%Y-%m-%d %H:%M:%S.%Qns");
-    cfg.default_handlers.push_back(handler);
+    cfg->default_handlers.push_back(handler);
   }
 
  public:

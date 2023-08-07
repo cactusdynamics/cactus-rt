@@ -22,7 +22,7 @@ Include(FetchContent)
 FetchContent_Declare(
   quill
   GIT_REPOSITORY https://github.com/odygrd/quill.git
-  GIT_TAG        v2.9.1
+  GIT_TAG        v3.3.1
 )
 
 FetchContent_MakeAvailable(quill)

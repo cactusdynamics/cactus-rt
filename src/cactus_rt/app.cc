@@ -24,12 +24,17 @@ App::App(AppConfig config)
       heap_size_(config.heap_size),
       logger_config_(config.logger_config),
       tracer_config_(config.tracer_config) {
-  if (logger_config_.default_handlers.empty()) {
+  if (!logger_config_.has_value()) {
+    // Set a default logger config if none was specified
+    logger_config_ = quill::Config();
+    SetDefaultLoggerConfig(logger_config_);
+  }
+  std::cout << "Backend thread yield: " << logger_config_->backend_thread_yield << std::endl;
+  std::cout << "Backend thread sleep duration: " << logger_config_->backend_thread_sleep_duration.count() << std::endl;
+  if (logger_config_->default_handlers.empty()) {
+    // Set a default logger format if none was specified in the config
     SetDefaultLogFormat(logger_config_);
   }
-
-  // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
-  // logger_config_.backend_thread_notification_handler
 }
 
 App::~App() {
@@ -186,7 +191,10 @@ void App::ReserveHeap() const {
 }
 
 void App::StartQuill() {
-  quill::configure(logger_config_);
+  if (!logger_config_.has_value()) {
+    throw std::runtime_error{"Logger config must not be nullopt"};
+  }
+  quill::configure(logger_config_.value());
   quill::start();
 }
 

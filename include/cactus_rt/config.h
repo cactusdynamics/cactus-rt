@@ -4,7 +4,7 @@
 #include <quill/Quill.h>
 
 #include <memory>
-#include <string>
+#include <optional>
 
 #include "cactus_rt/scheduler.h"
 
@@ -37,7 +37,7 @@ struct AppConfig {
   /**
    * @brief The configuration for quill logging
    */
-  quill::Config logger_config;
+  std::optional<quill::Config> logger_config;
 
   /**
    * @brief The config for the tracer if enabled (ENABLE_TRACING option in cmake)

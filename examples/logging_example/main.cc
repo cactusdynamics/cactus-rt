@@ -50,6 +50,11 @@ int main() {
   // Set the background logging thread CPU affinity
   logging_config.backend_thread_cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
 
+  // Configure the logger queue capacity (default 131'072)
+  // The configured queue size must be in bytes, a power of two, and a multiple of the page size (4096). For example: 32,768; 65,536; 131,072; 262,144; 524,288.
+  logging_config.default_queue_capacity = {262'144};
+
+  // Set the logging config of the app
   app_config.logger_config = logging_config;
   App app(app_config);
 
