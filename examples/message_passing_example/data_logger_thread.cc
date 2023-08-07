@@ -2,19 +2,11 @@
 
 #include <chrono>
 
-namespace {
-cactus_rt::ThreadConfig MakeDataLoggerThreadConfig() {
-  cactus_rt::ThreadConfig config;
-  config.name = "DataLogger";
-  return config;
-}
-}  // namespace
-
 DataLogger::DataLogger(
   const std::string& data_file_path,
   int64_t            period_ns,
   int64_t            write_data_interval_ns
-) : Thread(MakeDataLoggerThreadConfig()),
+) : Thread("DataLogger", cactus_rt::ThreadConfig()),
     period_ns_(period_ns),
     write_data_interval_ns_(write_data_interval_ns),
     queue_(kQueueCapacity),

@@ -9,57 +9,14 @@
 #include <stdexcept>
 
 #include "cactus_rt/app.h"
+#include "cactus_rt/config.h"
 #include "cactus_rt/linux/sched_ext.h"
 
 namespace cactus_rt {
 
-namespace {
-// TODO: Pass thread config instead of CPU affinity
-void SetSchedAttr(const SchedulerConfigVariant& config_variant, const std::vector<size_t>& cpu_affinity) {
-  // Populate sched_attr based on the type of scheduler config provided
-  sched_attr attr = {};
-  attr.size = sizeof(attr);
-
-  if (std::holds_alternative<OtherThreadConfig>(config_variant)) {
-    auto config = std::get<OtherThreadConfig>(config_variant);
-
-    attr.sched_flags = 0;
-    attr.sched_nice = config.nice;    // Set the thread niceness
-    attr.sched_policy = SCHED_OTHER;  // Set the scheduler policy
-  } else if (std::holds_alternative<FifoThreadConfig>(config_variant)) {
-    auto config = std::get<FifoThreadConfig>(config_variant);
-
-    attr.sched_flags = 0;
-    attr.sched_nice = 0;
-    attr.sched_priority = config.priority;  // Set the scheduler priority
-    attr.sched_policy = SCHED_FIFO;         // Set the scheduler policy
-  } else if (std::holds_alternative<DeadlineThreadConfig>(config_variant)) {
-    if (!cpu_affinity.empty()) {
-      throw std::runtime_error{"SCHED_DEADLINE cannot be used with cpu affinity, see sched_setattr(2)"};
-    }
-
-    auto config = std::get<DeadlineThreadConfig>(config_variant);
-
-    attr.sched_flags = 0;
-    attr.sched_nice = 0;
-    attr.sched_priority = 0;  // No priority for SCHED_DEADLINE
-
-    attr.sched_policy = SCHED_DEADLINE;  // Set the scheduler policy
-    attr.sched_runtime = config.sched_runtime_ns;
-    attr.sched_deadline = config.sched_deadline_ns;
-    attr.sched_period = config.sched_period_ns;
-  }
-
-  auto ret = sched_setattr(0, &attr, 0);
-  if (ret < 0) {
-    throw std::runtime_error{std::string("failed to sched_setattr: ") + std::strerror(errno)};
-  }
-}
-}  // namespace
-
 void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
-  SetSchedAttr(thread->scheduler_config_, thread->cpu_affinity_);
+  thread->config_.scheduler->SetSchedAttr();
 
   thread->tracer_->SetTid();
   if (thread->app_ != nullptr) {
@@ -118,7 +75,7 @@ void Thread::Start(int64_t start_monotonic_time_ns) {
   }
 }
 
-int Thread::Join() {
+int Thread::Join() const {
   return pthread_join(thread_, nullptr);
 }
 }  // namespace cactus_rt

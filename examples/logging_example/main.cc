@@ -14,8 +14,7 @@ class ExampleRTThread : public CyclicThread {
   int64_t loop_counter_ = 0;
 
  public:
-  ExampleRTThread(cactus_rt::CyclicThreadConfig config) : CyclicThread(config
-                                                          ) {}
+  ExampleRTThread(const char* name, cactus_rt::CyclicThreadConfig config) : CyclicThread(name, config) {}
 
   int64_t GetLoopCounter() const {
     return loop_counter_;
@@ -32,16 +31,12 @@ class ExampleRTThread : public CyclicThread {
 };
 
 int main() {
-  cactus_rt::FifoThreadConfig fifo_config;
-  fifo_config.priority = 80;
+  cactus_rt::CyclicThreadConfig thread_config;
+  thread_config.period_ns = 1'000'000;
+  thread_config.cpu_affinity = std::vector<size_t>{2};
+  thread_config.SetFifoScheduler(80);
 
-  cactus_rt::CyclicThreadConfig config;
-  config.name = "ExampleRTThread";
-  config.period_ns = 1'000'000;
-  config.cpu_affinity = std::vector<size_t>{2};
-  config.scheduler_config = fifo_config;
-
-  auto thread = std::make_shared<ExampleRTThread>(config);
+  auto thread = std::make_shared<ExampleRTThread>("ExampleRTThread", thread_config);
 
   // Create a cactus_rt app configuration
   cactus_rt::AppConfig app_config;

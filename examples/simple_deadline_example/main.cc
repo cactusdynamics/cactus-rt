@@ -16,8 +16,7 @@ class ExampleDeadlineThread : public CyclicThread {
   int64_t loop_counter_ = 0;
 
  public:
-  ExampleDeadlineThread(cactus_rt::CyclicThreadConfig config) : CyclicThread(config
-                                                                ) {}
+  ExampleDeadlineThread(const char* name, cactus_rt::CyclicThreadConfig config) : CyclicThread(name, config) {}
 
   int64_t GetLoopCounter() const {
     return loop_counter_;
@@ -31,18 +30,12 @@ class ExampleDeadlineThread : public CyclicThread {
 };
 
 int main() {
-  cactus_rt::DeadlineThreadConfig deadline_config;
-  deadline_config.sched_deadline_ns = 1'000'000;
-  deadline_config.sched_runtime_ns = 500'000;
-  deadline_config.sched_period_ns = 1'000'000;
-
   cactus_rt::CyclicThreadConfig config;
-  config.name = "ExampleRTThread";
 
-  // config.cpu_affinity = std::vector<size_t>{2};
+  config.period_ns = 1'000'000;
+  config.SetDeadlineScheduler(500'000 /* runtime */, 1'000'000 /* deadline*/);
 
-  config.scheduler_config = deadline_config;
-  auto thread = std::make_shared<ExampleDeadlineThread>(config);
+  auto thread = std::make_shared<ExampleDeadlineThread>("ExampleRTThread", config);
   App  app;
 
   app.RegisterThread(thread);
