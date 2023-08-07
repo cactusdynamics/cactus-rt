@@ -1,2 +1,5 @@
 #!/bin/bash
-ctest --test-dir ${CACTUS_RT_BUILD_DIR}
+
+set -xe
+
+ctest -V --test-dir ${CACTUS_RT_BUILD_DIR}

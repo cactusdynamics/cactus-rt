@@ -15,6 +15,14 @@ inline bool IsTracingEnabled() noexcept {
   return tracing_enabled.load(std::memory_order_relaxed);
 }
 
+inline void EnableTracing() noexcept {
+  tracing_enabled = true;
+}
+
+inline void DisableTracing() noexcept {
+  tracing_enabled = false;
+}
+
 }  // namespace cactus_rt::tracing
 
 #endif
