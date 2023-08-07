@@ -73,8 +73,6 @@ void ThreadedDemo() {
   rt_thread_config.period_ns = 1'000'000;
   rt_thread_config.SetFifoScheduler(80 /* priority */);
 
-  const cactus_rt::OtherThreadConfig other_config;
-
   cactus_rt::CyclicThreadConfig non_rt_thread_config;
   non_rt_thread_config.SetOtherScheduler(0 /* niceness */);
 

@@ -59,7 +59,11 @@ class Thread {
         cpu_affinity_(config_.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
         logger_(quill::create_logger(name_)),
-        tracer_(std::make_shared<tracing::ThreadTracer>(name, config_.tracer_config.queue_size)) {}
+        tracer_(std::make_shared<tracing::ThreadTracer>(name, config_.tracer_config.queue_size)) {
+    if (!config.scheduler) {
+      throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
+    }
+  }
 
   /**
    * Returns the name of the thread
@@ -85,7 +89,7 @@ class Thread {
   /**
    * Requests the thread to stop with an atomic.
    */
-  virtual void RequestStop() noexcept {
+  void RequestStop() noexcept {
     stop_requested_ = true;
   }
 
@@ -101,7 +105,6 @@ class Thread {
 
   // The constructors and destructors are needed because we need to delete
   // objects of type Thread polymorphically, through the map in the App class.
-  Thread() = default;
   virtual ~Thread() = default;
 
   // Copy constructors are not allowed

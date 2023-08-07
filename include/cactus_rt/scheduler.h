@@ -16,7 +16,7 @@ class Scheduler {
 
   virtual void SetSchedAttr() const = 0;
 
-  virtual void Sleep(struct timespec next_wakeup_time) const noexcept = 0;
+  virtual void Sleep(const struct timespec& next_wakeup_time) const noexcept = 0;
 };
 
 class OtherScheduler : public Scheduler {
@@ -37,9 +37,8 @@ class OtherScheduler : public Scheduler {
     }
   }
 
-  void Sleep(struct timespec /* next_wakeup_time */) const noexcept override {
-    // Ignoring return value as man page says "In the Linux implementation, sched_yield() always succeeds."
-    sched_yield();
+  void Sleep(const struct timespec& next_wakeup_time) const noexcept override {
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr);
   }
 };
 
@@ -62,7 +61,7 @@ class FifoScheduler : public Scheduler {
     }
   }
 
-  void Sleep(struct timespec next_wakeup_time) const noexcept override {
+  void Sleep(const struct timespec& next_wakeup_time) const noexcept override {
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr);
   }
 };
@@ -92,8 +91,9 @@ class DeadlineScheduler : public Scheduler {
     }
   }
 
-  void Sleep(struct timespec next_wakeup_time) const noexcept override {
-    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup_time, nullptr);
+  void Sleep(const struct timespec& /* next_wakeup_time */) const noexcept override {
+    // Ignoring return value as man page says "In the Linux implementation, sched_yield() always succeeds."
+    sched_yield();
   }
 };
 

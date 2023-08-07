@@ -76,17 +76,16 @@ struct ThreadTracerConfig {
  * @brief The configuration required for a thread
  */
 struct ThreadConfig {
-  // Construct the ThreadConfig. Default scheduler is SCHED_OTHER
-  ThreadConfig() : scheduler(std::make_shared<OtherScheduler>()) {}
-
   // A vector of CPUs this thread should run on. If empty, no CPU restrictions are set.
   std::vector<size_t> cpu_affinity = {};
 
   // The size of the stack for this thread. Defaults to 8MB.
   size_t stack_size = 8 * 1024 * 1024;
 
-  ThreadTracerConfig         tracer_config;
-  std::shared_ptr<Scheduler> scheduler;
+  ThreadTracerConfig tracer_config;
+
+  // The scheduler type, default scheduler is SCHED_OTHER
+  std::shared_ptr<Scheduler> scheduler = std::make_shared<OtherScheduler>();
 
   /**
    * @brief Set the thread scheduler to use the default (non-RT) scheduler
