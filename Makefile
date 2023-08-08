@@ -16,7 +16,7 @@ release:
 	cmake --build build/$@ -j $$(nproc)
 
 build-test-debug:
-	cmake -Bbuild/test -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXAMPLES=OFF -DBUILD_TESTING=ON -DENABLE_CLANG_TIDY=$(ENABLE_CLANG_TIDY)
+	cmake -Bbuild/test -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXAMPLES=OFF -DBUILD_TESTING=ON -DENABLE_CLANG_TIDY=$(ENABLE_CLANG_TIDY) -DENABLE_TRACING=$(ENABLE_TRACING)
 	cmake --build build/test -j $$(nproc)
 
 test-debug: build-test-debug
