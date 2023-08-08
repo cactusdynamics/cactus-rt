@@ -1,6 +1,10 @@
 #ifndef CACTUS_TRACING_THREAD_TRACER_H_
 #define CACTUS_TRACING_THREAD_TRACER_H_
 
+#ifndef CACTUS_RT_TRACING_ENABLED
+#include "thread_tracer.disabled.h"
+#else
+
 #include <readerwriterqueue.h>
 #include <unistd.h>
 
@@ -99,4 +103,5 @@ class TraceSpan {
 
 }  // namespace cactus_rt::tracing
 
+#endif
 #endif

@@ -1,6 +1,7 @@
 #ifndef CACTUS_RT_TRACING_TRACK_EVENT_INTERNAL_H_
 #define CACTUS_RT_TRACING_TRACK_EVENT_INTERNAL_H_
 
+#ifdef CACTUS_RT_TRACING_ENABLED
 #include <cstdint>
 #include <optional>
 #include <variant>
@@ -63,4 +64,5 @@ struct TrackEventInternal {
   ) : timestamp(_timestamp), type(_type), name(_name), category(_category) {}
 };
 }  // namespace cactus_rt::tracing
+#endif
 #endif
