@@ -26,6 +26,7 @@ class ExampleRTThread : public CyclicThread {
     if (loop_counter_ % 1000 == 0) {
       LOG_INFO(Logger(), "Loop {}", loop_counter_);
     }
+    LOG_INFO_LIMIT(std::chrono::milliseconds{1500}, Logger(), "Log limit: Loop {}", loop_counter_);
     return false;
   }
 };
