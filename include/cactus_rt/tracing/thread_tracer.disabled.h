@@ -10,7 +10,26 @@ struct EventCountData {
 
 class TraceSpan {
  public:
-  TraceSpan() {}
+  // The reason to have a non-empty constructor and destructor is because user
+  // code does:
+  //
+  //   auto span = Tracer().WithSpan("name")
+  //
+  // When tracing is disabled, the above code will generate:
+  //
+  //   error: unused variable 'span' [clang-diagnostic-unused-variable,-warnings-as-errors]
+  //
+  // By creating some unused variables here, the compiler _should_ be able to
+  // see through this and remove all these functions when optimizing, and we
+  // avoid the error above during compilation and during clang-tidy.
+  TraceSpan() {
+    [[maybe_unused]] int haha;
+  }
+
+  ~TraceSpan() {
+    [[maybe_unused]] int haha;
+  }
+
   TraceSpan(const TraceSpan&) = delete;
   TraceSpan& operator=(const TraceSpan&) = delete;
 
