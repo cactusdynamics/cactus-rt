@@ -23,7 +23,8 @@ void HandleSignal(int /*sig*/) {
   // That said, overall this should be a good pattern to use.
   const int ret = sem_post(&signal_semaphore);
   if (ret != 0) {
-    write(STDERR_FILENO, "failed to post semaphore\n", 25);
+    // Suppress warn_unused_result. yay c++.
+    std::ignore = write(STDERR_FILENO, "failed to post semaphore\n", 25);
     std::_Exit(EXIT_FAILURE);
   }
 }

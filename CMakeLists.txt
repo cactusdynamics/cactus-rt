@@ -140,6 +140,11 @@ if (ENABLE_TRACING)
     PUBLIC
     cactus_tracing_embedded_perfetto_protos
   )
+
+  target_compile_definitions(cactus_rt
+    PUBLIC
+    CACTUS_RT_TRACING_ENABLED=1
+  )
 endif()
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})

@@ -1,6 +1,9 @@
 #ifndef CACTUS_RT_TRACING_SINK_H_
 #define CACTUS_RT_TRACING_SINK_H_
 
+#ifndef CACTUS_RT_TRACING_ENABLED
+#include "sink.disabled.h"
+#else
 #include <fstream>
 
 #include "trace.pb.h"
@@ -27,4 +30,6 @@ class FileSink : public Sink {
   bool Write(const cactus_tracing::vendor::perfetto::protos::Trace& trace) final;
 };
 }  // namespace cactus_rt::tracing
+#endif
+
 #endif

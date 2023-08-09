@@ -1,6 +1,10 @@
 #ifndef CACTUS_RT_TRACING_GLOBALS_H_
 #define CACTUS_RT_TRACING_GLOBALS_H_
 
+#ifndef CACTUS_RT_TRACING_ENABLED
+#include "tracing_enabled.disabled.h"
+#else
+
 #include <atomic>
 
 namespace cactus_rt::tracing {
@@ -22,7 +26,7 @@ inline void EnableTracing() noexcept {
 inline void DisableTracing() noexcept {
   tracing_enabled = false;
 }
-
 }  // namespace cactus_rt::tracing
 
+#endif
 #endif

@@ -5,4 +5,9 @@ set -xe
 cd docker
 docker build . -t cactus-rt-test
 cd ..
-docker run --rm -it --cap-add IPC_LOCK -v $(pwd):/cactus-rt/source cactus-rt-test
+docker run --rm \
+  -e ENABLE_TRACING=${ENABLE_TRACING:-ON} \
+  -it \
+  --cap-add IPC_LOCK \
+  -v $(pwd):/cactus-rt/source \
+  cactus-rt-test

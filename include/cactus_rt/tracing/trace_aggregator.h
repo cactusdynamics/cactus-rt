@@ -1,6 +1,9 @@
 #ifndef CACTUS_RT_TRACING_TRACE_AGGREGATOR_H_
 #define CACTUS_RT_TRACING_TRACE_AGGREGATOR_H_
 
+#ifndef CACTUS_RT_TRACING_ENABLED
+#include "trace_aggregator.disabled.h"
+#else
 #include <quill/Quill.h>
 
 #include <atomic>
@@ -29,14 +32,14 @@ class TraceAggregator {
   std::mutex       mutex_;
 
   // A list of sinks the output should be written to.
-  std::list<std::shared_ptr<Sink>> sinks_;
+  std::list<std::shared_ptr<Sink> > sinks_;
 
   // This is a list of all known thread tracers. The background processing
   // thread will loop through this and pop all data from the queues.
   // Tracer is a friend class of ThreadTracer and thus can access all private
   // variables. These two structs are supposed to be tightly coupled so this is
   // no problem.
-  std::list<std::shared_ptr<ThreadTracer>> tracers_;
+  std::list<std::shared_ptr<ThreadTracer> > tracers_;
 
   // This is a vector of sticky trace packets that should always be emitted
   // when a new sink connects to the tracer. When a new sink connects to the
@@ -106,4 +109,5 @@ class TraceAggregator {
 };
 }  // namespace cactus_rt::tracing
 
+#endif
 #endif
