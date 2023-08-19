@@ -64,7 +64,7 @@ int main() {
   app_config.tracer_config.trace_aggregator_cpu_affinity = {1};
 
   auto thread = std::make_shared<ExampleRTThread>("ExampleRTThread", thread_config);
-  App  app(app_config);
+  App  app("TracingExampleApp", app_config);
   app.RegisterThread(thread);
 
   std::cout << "Testing RT loop for 15 seconds with two trace sessions.\n";

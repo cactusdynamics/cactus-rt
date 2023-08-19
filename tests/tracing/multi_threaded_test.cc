@@ -16,7 +16,6 @@ const char* kAppName = "TestApp";
 class MultiThreadTracingTest : public ::testing::Test {
   static cactus_rt::AppConfig CreateAppConfig() {
     cactus_rt::AppConfig config;
-    config.name = kAppName;
     return config;
   }
 
@@ -28,7 +27,7 @@ class MultiThreadTracingTest : public ::testing::Test {
 
  public:
   MultiThreadTracingTest()
-      : app_(CreateAppConfig()),
+      : app_(kAppName, CreateAppConfig()),
         regular_thread_(std::make_shared<MockRegularThread>()),
         cyclic_thread_(std::make_shared<MockCyclicThread>()),
         sink_(std::make_shared<MockSink>()) {}

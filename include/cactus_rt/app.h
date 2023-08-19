@@ -17,6 +17,8 @@ namespace cactus_rt {
  * @brief Creates a real-time application with multiple real-time and non-real-time threads.
  */
 class App {
+  friend class Thread;
+
   // The name of the app
   const char* name_;
 
@@ -52,7 +54,7 @@ class App {
   }
 
  public:
-  explicit App(AppConfig config = AppConfig());
+  explicit App(const char* name = "RTApp", AppConfig config = AppConfig());
 
   virtual ~App();
 
@@ -125,20 +127,6 @@ class App {
    */
   bool StopTraceSession() noexcept;
 
-  /**
-   * @brief Register a thread tracer. Should only be called from Thread::RunThread.
-   *
-   * @private
-   */
-  void RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept;
-
-  /**
-   * @brief Remove a thread tracer. Should only be called from Thread::~Thread().
-   *
-   * @private
-   */
-  void DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept;
-
  protected:
   /**
    * Locks memory via mlockall and configure malloc to not give up memory nor
@@ -157,6 +145,16 @@ class App {
   void StartQuill();
 
  private:
+  /**
+   * @brief Register a thread tracer. Should only be called from Thread::RunThread.
+   */
+  void RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept;
+
+  /**
+   * @brief Remove a thread tracer. Should only be called from Thread::~Thread().
+   */
+  void DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept;
+
   void CreateAndStartTraceAggregator() noexcept;
 
   void StopTraceAggregator() noexcept;

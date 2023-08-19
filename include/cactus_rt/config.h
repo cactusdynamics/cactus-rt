@@ -25,11 +25,6 @@ struct TracerConfig {
  */
 struct AppConfig {
   /**
-   * @brief The name of the app
-   */
-  const char* name = "RTApp";
-
-  /**
    * @brief Size of heap to reserve in bytes at program startup.
    */
   size_t heap_size = 0;

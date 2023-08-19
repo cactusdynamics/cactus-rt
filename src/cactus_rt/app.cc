@@ -19,8 +19,8 @@ void App::RegisterThread(std::shared_ptr<Thread> thread) {
   threads_.push_back(thread);
 }
 
-App::App(AppConfig config)
-    : name_(config.name),
+App::App(const char* name, AppConfig config)
+    : name_(name),
       heap_size_(config.heap_size),
       logger_config_(config.logger_config),
       tracer_config_(config.tracer_config) {

@@ -16,7 +16,6 @@ const char* kAppName = "TestApp";
 class SingleThreadTracingTest : public ::testing::Test {
   static cactus_rt::AppConfig CreateAppConfig() {
     cactus_rt::AppConfig config;
-    config.name = kAppName;
     return config;
   }
 
@@ -27,7 +26,7 @@ class SingleThreadTracingTest : public ::testing::Test {
 
  public:
   SingleThreadTracingTest()
-      : app_(CreateAppConfig()),
+      : app_(kAppName, CreateAppConfig()),
         regular_thread_(std::make_shared<MockRegularThread>()),
         sink_(std::make_shared<MockSink>()) {}
 

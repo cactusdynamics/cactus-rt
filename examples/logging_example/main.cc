@@ -52,7 +52,7 @@ int main() {
   logging_config.backend_thread_cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
 
   app_config.logger_config = logging_config;
-  App app(app_config);
+  App app("LoggingExampleApp", app_config);
 
   app.RegisterThread(thread);
   constexpr unsigned int time = 5;
