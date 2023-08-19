@@ -2,6 +2,7 @@
 #define CACTUS_RT_EXPERIMENTAL_LOCKLESS_ATOMIC_MESSAGE_H_
 
 #include <atomic>
+#include <type_traits>
 #include <utility>
 
 namespace cactus_rt::experimental::lockless {
@@ -50,6 +51,11 @@ class AtomicMessage {
    */
   template <typename Func>
   void Modify(Func f) noexcept {
+    static_assert(
+      std::is_nothrow_invocable_r<T, Func, T>::value,
+      "Argument f to AtomicMessage::Modify requires an invocable signature T(T) noexcept"
+    );
+
     auto old_value = Read();
 
     while (true) {

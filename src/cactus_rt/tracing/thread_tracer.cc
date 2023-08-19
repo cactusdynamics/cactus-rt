@@ -82,7 +82,7 @@ void ThreadTracer::IncrementEventCount(bool dropped) noexcept {
   // Note lambdas are real-time safe as it doesn't allocate. std::function
   // allocates but the Modify function is a template so it doesn't need to
   // allocate.
-  event_count_.Modify([dropped](EventCountData old_data) {
+  event_count_.Modify([dropped](EventCountData old_data) noexcept {
     EventCountData new_data = old_data;
     if (dropped) {
       new_data.dropped_events++;
