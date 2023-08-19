@@ -121,7 +121,7 @@ class Thread {
   inline quill::Logger*         Logger() const { return logger_; }
   inline tracing::ThreadTracer& Tracer() { return *tracer_; }
   inline int64_t                StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
-  inline const ThreadConfig&    Config() const { return config_; }
+  inline const ThreadConfig&    Config() const noexcept { return config_; }
 
   /**
    * Override this method to do work. If this is a real-time thread, once this
@@ -146,7 +146,7 @@ class Thread {
    *
    * @return true if stop is requested
    */
-  bool StopRequested() const noexcept {
+  inline bool StopRequested() const noexcept {
     // Memory order relaxed is OK, because we don't really care when the signal
     // arrives, we just care that it is arrived at some point.
     //

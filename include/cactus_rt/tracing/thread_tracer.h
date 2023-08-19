@@ -62,7 +62,7 @@ class ThreadTracer {
 
   bool      StartSpan(const char* name, const char* category = nullptr) noexcept;
   bool      EndSpan() noexcept;
-  TraceSpan WithSpan(const char* name, const char* category = nullptr) noexcept;
+  TraceSpan WithSpan(const char* name, const char* category = nullptr, bool enabled = true) noexcept;
   bool      InstantEvent(const char* name, const char* category = nullptr) noexcept;
 
   inline EventCountData EventCount() const noexcept { return event_count_.Read(); }
@@ -87,7 +87,7 @@ class TraceSpan {
   friend class ThreadTracer;
   ThreadTracer* thread_tracer_;
 
-  TraceSpan(ThreadTracer* tracer, const char* name, const char* category = nullptr);
+  TraceSpan(ThreadTracer* tracer, const char* name, const char* category = nullptr, bool enabled = true);
 
  public:
   ~TraceSpan();

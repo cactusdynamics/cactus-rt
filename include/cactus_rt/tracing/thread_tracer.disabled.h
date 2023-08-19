@@ -56,7 +56,7 @@ class ThreadTracer {
     return false;
   }
 
-  TraceSpan WithSpan(const char* /* name */, const char* /* category */ = nullptr) noexcept {
+  TraceSpan WithSpan(const char* /* name */, const char* /* category */ = nullptr, bool /* enabled */ = true) noexcept {
     TraceSpan span;
     return span;
   }

@@ -6,9 +6,8 @@
 
 namespace cactus_rt {
 class CyclicThread : public Thread {
-  CyclicThreadConfig config_;
-  uint64_t           period_ns_;
-  struct timespec    next_wakeup_time_;
+  uint64_t        period_ns_;
+  struct timespec next_wakeup_time_;
 
  public:
   /**
@@ -37,16 +36,6 @@ class CyclicThread : public Thread {
    * @param loop_latency the latency of Loop() call in us.
    */
   virtual void TrackLatency(int64_t /*wakeup_latency*/, int64_t /*loop_latency*/) noexcept {}
-
-  /**
-   * @brief This function is called before each loop iteration. It is intended to act as a trace point.
-   */
-  virtual void TraceLoopStart() noexcept {}
-
-  /**
-   * @brief This function is called after each loop iteration. It is intended to act as a trace point.
-   */
-  virtual void TraceLoopEnd() noexcept {}
 };
 
 }  // namespace cactus_rt
