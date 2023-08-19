@@ -1,6 +1,8 @@
 #ifndef CACTUS_RT_APP_H_
 #define CACTUS_RT_APP_H_
 
+#include <gtest/gtest_prod.h>
+
 #include <list>
 #include <memory>
 #include <vector>
@@ -18,6 +20,7 @@ namespace cactus_rt {
  */
 class App {
   friend class Thread;
+  FRIEND_TEST(SingleThreadTracingTest, QueueOverflowWillNotBlock);
 
   // The name of the app
   const char* name_;

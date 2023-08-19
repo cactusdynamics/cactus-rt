@@ -13,6 +13,8 @@ namespace {
 const char* kAppName = "TestApp";
 }
 
+namespace cactus_rt {
+
 class MultiThreadTracingTest : public ::testing::Test {
   static cactus_rt::AppConfig CreateAppConfig() {
     cactus_rt::AppConfig config;
@@ -131,3 +133,5 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoop) {
     AssertIsTrackEventSliceEnd(*packets[end_idx], thread_track_uuid, sequence_id);
   }
 }
+
+}  // namespace cactus_rt
