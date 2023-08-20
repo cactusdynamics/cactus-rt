@@ -34,6 +34,12 @@ class ExampleRTThread : public CyclicThread {
     Plan();
     Act();
 
+    // Cause an overrun every 1.5s to demonstrate the overrun detection and marking feature.
+    if (loop_counter_ % 1500 == 0) {
+      auto span = Tracer().WithSpan("RogueSegment", "app");
+      WasteTime(std::chrono::microseconds(1200));
+    }
+
     return false;
   }
 
@@ -59,6 +65,8 @@ int main() {
   thread_config.period_ns = 1'000'000;
   thread_config.cpu_affinity = std::vector<size_t>{2};
   thread_config.SetFifoScheduler(80);
+
+  thread_config.tracer_config.trace_sleep = true;
 
   cactus_rt::AppConfig app_config;
   app_config.tracer_config.trace_aggregator_cpu_affinity = {1};

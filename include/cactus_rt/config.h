@@ -64,7 +64,33 @@ struct DeadlineThreadConfig {
 };
 
 struct ThreadTracerConfig {
+  /**
+   * @brief The size of the queue for the trace events for this thread.
+   *
+   * If the number of trace event overflows
+   */
   uint32_t queue_size = 16384;
+
+  /**
+   * @brief Automatically trace the Loop function in CyclicThread.
+   *
+   * Enabling this will cause a slight performance overhead when trace session is started.
+   */
+  bool trace_loop = true;
+
+  /**
+   * @brief Automatically emit an event if the Loop function takes longer than the period.
+   *
+   * Enabling this will cause a slight performance overhead when trace session is started.
+   */
+  bool trace_overrun = true;
+
+  /**
+   * @brief Automatically trace the Sleep function in CyclicThread.
+   *
+   * Enabling this will cause a slight performance overhead when trace session is started.
+   */
+  bool trace_sleep = false;
 };
 
 /**

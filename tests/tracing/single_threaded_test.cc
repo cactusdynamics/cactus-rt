@@ -13,6 +13,8 @@ namespace {
 const char* kAppName = "TestApp";
 }
 
+namespace cactus_rt {
+
 class SingleThreadTracingTest : public ::testing::Test {
   static cactus_rt::AppConfig CreateAppConfig() {
     cactus_rt::AppConfig config;
@@ -264,6 +266,9 @@ TEST_F(SingleThreadTracingTest, DynamicallyAddingSinkWillWork) {
 }
 
 TEST_F(SingleThreadTracingTest, QueueOverflowWillNotBlock) {
+  // To make the queue overflow, we intentionally stop the TraceAggregator
+  app_.StopTraceAggregator();
+
   // Fill the queue
   regular_thread_->RunOneIteration([](MockRegularThread* self) {
     for (size_t i = 0; i < self->TracerForTest().QueueCapacity(); ++i) {
@@ -286,3 +291,5 @@ TEST_F(SingleThreadTracingTest, TraceAggregatorCPUAffinity) {
 TEST_F(SingleThreadTracingTest, CorrectlyHandleSinkWriterFailure) {
   GTEST_SKIP() << "TODO";
 }
+
+}  // namespace cactus_rt

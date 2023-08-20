@@ -62,8 +62,8 @@ bool ThreadTracer::InstantEvent(const char* name, const char* category) noexcept
   return false;
 }
 
-TraceSpan ThreadTracer::WithSpan(const char* name, const char* category) noexcept {
-  TraceSpan span(this, name, category);
+TraceSpan ThreadTracer::WithSpan(const char* name, const char* category, bool enabled) noexcept {
+  TraceSpan span(this, name, category, enabled);
   return span;
 }
 
@@ -92,14 +92,13 @@ void ThreadTracer::IncrementEventCount(bool dropped) noexcept {
   });
 }
 
-TraceSpan::TraceSpan(ThreadTracer* tracer, const char* name, const char* category) : thread_tracer_(tracer) {
-  thread_tracer_->StartSpan(name, category);
+TraceSpan::TraceSpan(ThreadTracer* tracer, const char* name, const char* category, bool enabled) : thread_tracer_(enabled ? tracer : nullptr) {
+  if (thread_tracer_ != nullptr) {
+    thread_tracer_->StartSpan(name, category);
+  }
 }
 
 TraceSpan::~TraceSpan() {
-  // TODO: is it possible for thread_tracer_ to be nullptr? Maybe when the move
-  // constructor happens? It's hard to save. Need to check.
-  // Wouldn't there also be a data race if thread_tracer_ can potentially change?
   if (thread_tracer_ != nullptr) {
     thread_tracer_->EndSpan();
   }
