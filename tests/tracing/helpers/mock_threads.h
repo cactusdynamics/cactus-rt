@@ -33,17 +33,18 @@ class MockRegularThread : public cactus_rt::Thread {
 };
 
 class MockCyclicThread : public cactus_rt::CyclicThread {
-  static cactus_rt::CyclicThreadConfig MakeConfig();
+  static cactus_rt::CyclicThreadConfig MakeConfig(cactus_rt::ThreadTracerConfig tracer_config);
 
-  int64_t                   iterations_executed_ = 0;
-  int64_t                   num_iterations_;
-  std::chrono::microseconds time_per_iteration_;
+  int64_t                      iterations_executed_ = 0;
+  std::function<void(int64_t)> custom_loop_func_;
+  int64_t                      num_iterations_;
 
  public:
   MockCyclicThread(
-    const char*               name = kCyclicThreadName,
-    int64_t                   num_iterations = 20,  // 200ms execution, which is good enough for testing.
-    std::chrono::microseconds time_per_iteration = std::chrono::microseconds(1000)
+    const char*                   name = kCyclicThreadName,
+    cactus_rt::ThreadTracerConfig tracer_config = {},
+    std::function<void(int64_t)>  custom_loop_func = {},
+    int64_t                       num_iterations = 20  // 200ms execution, which is good enough for testing.
   );
 
  protected:

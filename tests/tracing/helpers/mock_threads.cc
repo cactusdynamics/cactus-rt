@@ -54,23 +54,30 @@ void MockRegularThread::Run() {
   }
 }
 
-cactus_rt::CyclicThreadConfig MockCyclicThread::MakeConfig() {
+cactus_rt::CyclicThreadConfig MockCyclicThread::MakeConfig(cactus_rt::ThreadTracerConfig tracer_config) {
   cactus_rt::CyclicThreadConfig config;
   config.period_ns = 1'000'000'000 / 100;  // 100 Hz
+  config.tracer_config = tracer_config;
   return config;
 }
 
 MockCyclicThread::MockCyclicThread(
-  const char*               name,
-  int64_t                   num_iterations,
-  std::chrono::microseconds time_per_iteration
-) : CyclicThread(name, MockCyclicThread::MakeConfig()),
-    num_iterations_(num_iterations),
-    time_per_iteration_(time_per_iteration) {
+  const char*                   name,
+  cactus_rt::ThreadTracerConfig tracer_config,
+  std::function<void(int64_t)>  custom_loop_func,
+  int64_t                       num_iterations
+) : CyclicThread(name, MockCyclicThread::MakeConfig(tracer_config)),
+    custom_loop_func_(custom_loop_func),
+    num_iterations_(num_iterations) {
 }
 
 bool MockCyclicThread::Loop(int64_t /* ellapsed_ns */) noexcept {
-  WasteTime(time_per_iteration_);
+  if (custom_loop_func_) {
+    custom_loop_func_(iterations_executed_);
+  } else {
+    WasteTime(20us);
+  }
+
   iterations_executed_++;
   return iterations_executed_ >= num_iterations_;
 }

@@ -13,6 +13,8 @@ namespace {
 const char* kAppName = "TestApp";
 }
 
+using namespace std::chrono_literals;
+
 namespace cactus_rt {
 
 class MultiThreadTracingTest : public ::testing::Test {
@@ -132,6 +134,93 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoop) {
     AssertIsTrackEventSliceBegin(*packets[begin_idx], "CyclicThread::Loop", "cactusrt", thread_track_uuid, sequence_id);
     AssertIsTrackEventSliceEnd(*packets[end_idx], thread_track_uuid, sequence_id);
   }
+}
+
+TEST_F(MultiThreadTracingTest, CyclicThreadTracesSleepAndDoesNotTraceLoopIfConfigured) {
+  cactus_rt::ThreadTracerConfig tracer_config;
+  tracer_config.trace_loop = false;
+  tracer_config.trace_overrun = false;
+  tracer_config.trace_sleep = true;
+
+  const char* thread_name = "CustomCyclicThread";
+
+  auto cyclic_thread = std::make_shared<MockCyclicThread>(
+    thread_name,
+    tracer_config
+  );
+
+  app_.RegisterThread(cyclic_thread);
+  app_.Start();
+
+  // The cyclic thread should shutdown on its own.
+  app_.Join();
+  app_.StopTraceSession();
+
+  auto traces = sink_->LoggedTraces();
+  auto packets = GetPacketsFromTraces(traces);
+
+  ASSERT_EQ(packets.size(), 2 + 19 * 2);  // 2 track descriptor + 19 spans of sleeps. Note the last iteration doesn't have a sleep at the end.
+
+  AssertIsProcessTrackDescriptor(*packets[0], kAppName);
+  const auto process_track_uuid = packets[0]->track_descriptor().uuid();
+
+  AssertIsThreadTrackDescriptor(*packets[1], thread_name, process_track_uuid);
+  const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
+
+  AssertIsTrackEventSliceBegin(*packets[2], "CyclicThread::Sleep", "cactusrt", thread_track_uuid);
+  auto sequence_id = packets[2]->trusted_packet_sequence_id();
+
+  for (size_t i = 0; i < 19; i++) {
+    auto begin_idx = 2 + (i * 2);
+    auto end_idx = 2 + (i * 2) + 1;
+
+    AssertIsTrackEventSliceBegin(*packets[begin_idx], "CyclicThread::Sleep", "cactusrt", thread_track_uuid, sequence_id);
+    AssertIsTrackEventSliceEnd(*packets[end_idx], thread_track_uuid, sequence_id);
+
+    // 100 Hz = 10ms loop.
+    // The loop wastes 20us of time.
+    // So we expect sleeping at least 5ms up to 15ms seems safe for testing?...
+    AssertTrackEventDuration(*packets[begin_idx], *packets[end_idx], 5'000'000, 15'000'000);
+  }
+}
+
+TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoopOverrun) {
+  cactus_rt::ThreadTracerConfig tracer_config;
+  tracer_config.trace_loop = false;
+  tracer_config.trace_overrun = true;
+  tracer_config.trace_sleep = false;
+
+  const char* thread_name = "CustomCyclicThread";
+
+  auto cyclic_thread = std::make_shared<MockCyclicThread>(
+    thread_name,
+    tracer_config,
+    [](int64_t num_iterations) {
+      if (num_iterations == 10) {
+        WasteTime(20ms);  // Should trigger overrun.
+      }
+    }
+  );
+
+  app_.RegisterThread(cyclic_thread);
+  app_.Start();
+
+  // The cyclic thread should shutdown on its own.
+  app_.Join();
+  app_.StopTraceSession();
+
+  auto traces = sink_->LoggedTraces();
+  auto packets = GetPacketsFromTraces(traces);
+
+  ASSERT_EQ(packets.size(), 2 + 1);  // 2 track descriptor + 1 instant event
+
+  AssertIsProcessTrackDescriptor(*packets[0], kAppName);
+  const auto process_track_uuid = packets[0]->track_descriptor().uuid();
+
+  AssertIsThreadTrackDescriptor(*packets[1], thread_name, process_track_uuid);
+  const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
+
+  AssertIsTrackEventInstant(*packets[2], "CyclicThread::LoopOverrun", "cactusrt", thread_track_uuid);
 }
 
 }  // namespace cactus_rt
