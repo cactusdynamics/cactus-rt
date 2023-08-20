@@ -29,6 +29,14 @@ void CyclicThread::Run() noexcept {
 
     if (tracer_config.trace_overrun && static_cast<uint64_t>(loop_latency) >= period_ns_) {
       Tracer().InstantEvent("CyclicThread::LoopOverrun", "cactusrt");
+
+      LOG_WARNING_LIMIT(
+        std::chrono::milliseconds(100),
+        this->Logger(),
+        "At least 1 loop overrun detected in the last 100ms: latency ({}ns) > period ({}ns)",
+        loop_latency,
+        period_ns_
+      );
     }
 
     if (should_stop) {
