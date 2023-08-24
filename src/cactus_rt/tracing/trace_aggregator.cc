@@ -99,82 +99,82 @@ quill::Logger* TraceAggregator::Logger() noexcept {
 void TraceAggregator::Run() {
   SetupCPUAffinityIfNecessary();
 
-  // TODO: major refactor required
-
   while (!StopRequested()) {
-    int tracers_with_events = 0;
+    uint32_t events_written = 0;
     {
-      // This lock is needed as when we are writing packets into sinks, we don't
-      // want new thread tracers and sinks to be created or registered as that
-      // can cause potential data loss. This lock is NOT for dequeueing from the
-      // thread tracer queues, as expected.
-
       const std::scoped_lock lock(mutex_);
       Trace                  trace;
-
-      for (auto& tracer : tracers_) {
-        TrackEventInternal event;
-        if (!tracer->queue_.try_dequeue(event)) {
-          // No event in this queue.
-          continue;
-        }
-
-        tracers_with_events++;
-        AddTrackEventPacketToTrace(trace, *tracer, event);
-      }
-
-      if (tracers_with_events > 0) {
-        for (auto& sink : sinks_) {
-          sink->Write(trace);
-        }
+      events_written = DequeueSingleEventForEachTracer(trace);
+      if (events_written > 0) {
+        // TODO: error handling
+        WriteTraceToAllSinks(trace);
       }
     }
 
-    // TODO: check if there are any dropped packets since last time we checked
-
-    if (tracers_with_events == 0) {
-      // No events from any tracers! We can sleep and let the queues accumulate a bit.
-      // TODO: customize this sleep period
+    if (events_written == 0) {
+      // No events from any tracers. We can let the TraceAggregator sleep and
+      // save some power while the queues accumulate some messages.
+      //
+      // TODO: this sleep duration should be customizable.
+      // The sleep duration + the queue size determines the maximum theoretical
+      // message rate.
       std::this_thread::sleep_for(10ms);
     }
-    // If there are events then we want to write as fast as possible.
+
+    // TODO: check if there are any dropped messages and log a warning?
   }
 
-  // TODO: likely need to take a large lock here when flushing?
+  DrainTraceEvents();
+}
 
-  // Need to empty all the remaining events in the queue
-  // This code is a bit redundant, but works for now. In the long term, this
-  // whole thread probably has to be rewritten to better optimize for throughput
-  // and possibly ordering problems.
-  // TODO: right now we accumulate a giant Trace message and write it all
-  // together. In the future there should be batch writing.
-  bool  has_events = false;
-  Trace trace;
-  while (true) {
-    int tracers_with_events = 0;
-
-    for (auto& tracer : tracers_) {
-      TrackEventInternal event;
-      if (!tracer->queue_.try_dequeue(event)) {
-        continue;
-      }
-
-      tracers_with_events++;
-      AddTrackEventPacketToTrace(trace, *tracer, event);
-      has_events = true;
+uint32_t TraceAggregator::DequeueSingleEventForEachTracer(Trace& trace) {
+  uint32_t events = 0;
+  for (auto& tracer : tracers_) {
+    TrackEventInternal event;
+    if (!tracer->queue_.try_dequeue(event)) {
+      // No event for this tracer
+      continue;
     }
 
-    if (tracers_with_events == 0) {
+    events++;
+    AddTrackEventPacketToTrace(trace, *tracer, event);
+  }
+
+  return events;
+}
+
+bool TraceAggregator::WriteTraceToAllSinks(const Trace& trace) {
+  bool success = true;
+
+  // TODO: better error handling? Right now it's a best effort write to all sinks.
+  for (auto& sink : sinks_) {
+    if (!sink->Write(trace)) {
+      success = false;
+    }
+  }
+
+  return success;
+}
+
+uint64_t TraceAggregator::DrainTraceEvents() {
+  Trace    trace;
+  uint64_t total_events = 0;
+
+  while (true) {
+    auto events = DequeueSingleEventForEachTracer(trace);
+    if (events == 0) {
       break;
     }
+
+    total_events += events;
   }
 
-  if (has_events) {
-    for (auto& sink : sinks_) {
-      // TODO: errors
-      sink->Write(trace);
-    }
+  if (total_events > 0) {
+    // TODO: error handling
+    WriteTraceToAllSinks(trace);
   }
+
+  return total_events;
 }
 
 bool TraceAggregator::StopRequested() const noexcept {

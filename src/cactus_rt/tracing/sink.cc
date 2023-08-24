@@ -3,7 +3,9 @@
 using cactus_tracing::vendor::perfetto::protos::Trace;
 
 namespace cactus_rt::tracing {
-FileSink::FileSink(const char* filename) : file_(filename, std::ios::out | std::ios::trunc | std::ios::binary) {}
+FileSink::FileSink(const char* filename) : file_(filename, std::ios::out | std::ios::trunc | std::ios::binary) {
+  std::cout << "Opened file " << filename << "\n";
+}
 
 bool FileSink::Write(const Trace& trace) {
   return trace.SerializeToOstream(&file_);

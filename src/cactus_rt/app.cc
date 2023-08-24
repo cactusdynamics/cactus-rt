@@ -66,7 +66,7 @@ bool App::StartTraceSession(const char* output_filename) noexcept {
   }
 
   CreateAndStartTraceAggregator();
-  trace_aggregator_->RegisterSink(std::make_unique<FileSink>(output_filename));
+  trace_aggregator_->RegisterSink(std::make_shared<FileSink>(output_filename));
   cactus_rt::tracing::EnableTracing();
 
   return true;
