@@ -45,6 +45,7 @@ See each example's README for more details on what they do.
   `simple_example`, except it uses `SCHED_DEADLINE` as opposed to `SCHED_FIFO`.
   This is for a more advanced use case.
 * [`tracing_example`](examples/tracing_example/): Shows how to dynamically start and stop tracing, as well as trace custom application functions.
+* [`tracing_example_no_rt`](examples/tracing_example_no_rt/): Shows how to using the tracing library in `cactus_rt` without using `cactus_rt::App`.
 
 
 Installation instructions

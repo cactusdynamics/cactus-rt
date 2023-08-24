@@ -178,6 +178,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     if (ENABLE_TRACING)
       add_subdirectory(examples/tracing_protos_example)
       add_subdirectory(examples/tracing_example)
+      add_subdirectory(examples/tracing_example_no_rt)
     endif()
   endif()
 

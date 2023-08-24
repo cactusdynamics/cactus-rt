@@ -53,7 +53,7 @@ class TraceAggregator {
   std::list<Trace> sticky_trace_packets_;
 
  public:
-  explicit TraceAggregator(const char* name, std::vector<size_t> cpu_affinity);
+  explicit TraceAggregator(const char* name, std::vector<size_t> cpu_affinity = {});
 
   // No copy no move
   TraceAggregator(const TraceAggregator&) = delete;
