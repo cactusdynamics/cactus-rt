@@ -41,8 +41,6 @@ void StopTracing() {
 int main() {
   auto main_thread_tracer = std::make_shared<ThreadTracer>("main_thread");
   auto thread1_tracer = std::make_shared<ThreadTracer>("thread1");
-  thread_tracers.push_back(main_thread_tracer);
-  thread_tracers.push_back(thread1_tracer);
 
   StartTracing("tracing_example_no_cactus_rt", "build/no-rt.perfetto");
 
