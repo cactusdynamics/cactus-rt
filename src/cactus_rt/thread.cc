@@ -24,6 +24,7 @@ void* Thread::RunThread(void* data) {
   } else {
     LOG_WARNING(thread->Logger(), "thread {} does not have trace_aggregator_ and tracing is disabled. Did you all App::RegisterThread?", thread->name_);
   }
+  quill::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
 
   thread->BeforeRun();
   thread->Run();
