@@ -101,6 +101,8 @@ void TraceAggregator::Run() {
 
   // TODO: major refactor required
 
+  uint32_t last_dropped_count = 0;
+
   while (!StopRequested()) {
     int tracers_with_events = 0;
     {
@@ -121,6 +123,19 @@ void TraceAggregator::Run() {
 
         tracers_with_events++;
         AddTrackEventPacketToTrace(trace, *tracer, event);
+
+        auto event_count = tracer->event_count_.Read();
+        if (event_count.dropped_events - last_dropped_count != 0) {
+          LOG_WARNING_LIMIT(
+            std::chrono::milliseconds{1000},
+            Logger(),
+            "Thread {} dropped {} trace events, trace for this thread will likely be incorrect",
+            tracer->name_,
+            event_count.dropped_events
+          );
+
+          last_dropped_count = event_count.dropped_events;
+        }
       }
 
       if (tracers_with_events > 0) {
