@@ -1,5 +1,7 @@
 find_package(GTest REQUIRED)
 
+enable_testing()
+
 add_executable(cactus_rt_tests
   utils_test.cc
 )

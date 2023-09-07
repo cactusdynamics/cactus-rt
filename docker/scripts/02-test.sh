@@ -2,4 +2,5 @@
 
 set -xe
 
-ctest -V --test-dir ${CACTUS_RT_BUILD_DIR}
+cd ${CACTUS_RT_BUILD_DIR}
+ctest -V

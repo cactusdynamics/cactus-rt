@@ -18,12 +18,18 @@ void CyclicThread::Run() noexcept {
     wakeup_latency = loop_start - should_have_woken_up_at;
 
     bool should_stop;
-    {
-      auto span = Tracer().WithSpan("CyclicThread::Loop", "cactusrt", tracer_config.trace_loop);
-      should_stop = Loop(loop_start - Thread::StartMonotonicTimeNs());
+    if (tracer_config.trace_loop) {
+      Tracer().StartSpan("CyclicThread::Loop", "cactusrt", loop_start);
     }
 
+    should_stop = Loop(loop_start - Thread::StartMonotonicTimeNs());
+
     loop_end = NowNs();
+
+    if (tracer_config.trace_loop) {
+      Tracer().EndSpan(loop_end);
+    }
+
     loop_latency = loop_end - loop_start;
     TrackLatency(wakeup_latency, loop_latency);
 

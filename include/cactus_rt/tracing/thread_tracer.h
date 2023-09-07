@@ -60,10 +60,10 @@ class ThreadTracer {
   ThreadTracer(ThreadTracer&&) = delete;
   ThreadTracer& operator=(ThreadTracer&&) = delete;
 
-  bool      StartSpan(const char* name, const char* category = nullptr) noexcept;
-  bool      EndSpan() noexcept;
+  bool      StartSpan(const char* name, const char* category = nullptr, int64_t now = 0) noexcept;
+  bool      EndSpan(int64_t now = 0) noexcept;
   TraceSpan WithSpan(const char* name, const char* category = nullptr, bool enabled = true) noexcept;
-  bool      InstantEvent(const char* name, const char* category = nullptr) noexcept;
+  bool      InstantEvent(const char* name, const char* category = nullptr, int64_t now = 0) noexcept;
 
   inline EventCountData EventCount() const noexcept { return event_count_.Read(); }
   inline size_t         QueueCapacity() const noexcept { return queue_capacity_; }

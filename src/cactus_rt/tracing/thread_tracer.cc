@@ -36,27 +36,34 @@ ThreadTracer::ThreadTracer(const char* name, uint32_t queue_capacity)
   queue_capacity_ = queue_.max_capacity();
 }
 
-bool ThreadTracer::StartSpan(const char* name, const char* category) noexcept {
+bool ThreadTracer::StartSpan(const char* name, const char* category, int64_t now) noexcept {
   if (IsTracingEnabled()) {
-    auto now = NowNs();
+    if (now == 0) {
+      now = NowNs();
+    }
     return Emit(now, TrackEvent_Type_TYPE_SLICE_BEGIN, name, category);
   }
 
   return false;
 }
 
-bool ThreadTracer::EndSpan() noexcept {
+bool ThreadTracer::EndSpan(int64_t now) noexcept {
   if (IsTracingEnabled()) {
-    auto now = NowNs();
+    if (now == 0) {
+      now = NowNs();
+    }
     return Emit(now, TrackEvent_Type_TYPE_SLICE_END);
   }
 
   return false;
 }
 
-bool ThreadTracer::InstantEvent(const char* name, const char* category) noexcept {
+bool ThreadTracer::InstantEvent(const char* name, const char* category, int64_t now) noexcept {
   if (IsTracingEnabled()) {
-    return Emit(NowNs(), TrackEvent_Type_TYPE_INSTANT, name, category);
+    if (now == 0) {
+      now = NowNs();
+    }
+    return Emit(now, TrackEvent_Type_TYPE_INSTANT, name, category);
   }
 
   return false;

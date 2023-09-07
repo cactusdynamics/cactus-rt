@@ -48,11 +48,11 @@ class ThreadTracer {
   ThreadTracer(ThreadTracer&&) = delete;
   ThreadTracer& operator=(ThreadTracer&&) = delete;
 
-  bool StartSpan(const char* /* name */, const char* /* category */ = nullptr) noexcept {
+  bool StartSpan(const char* /* name */, const char* /* category */ = nullptr, int64_t /* now */ = 0) noexcept {
     return false;
   }
 
-  bool EndSpan() noexcept {
+  bool EndSpan(int64_t /* now */ = 0) noexcept {
     return false;
   }
 
@@ -61,7 +61,7 @@ class ThreadTracer {
     return span;
   }
 
-  bool InstantEvent(const char* /* name */, const char* /* category */ = nullptr) noexcept {
+  bool InstantEvent(const char* /* name */, const char* /* category */ = nullptr, int64_t /* now */ = 0) noexcept {
     return false;
   }
 
