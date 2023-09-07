@@ -20,7 +20,7 @@ build-test-debug:
 	cmake --build build/test -j $$(nproc)
 
 test-debug: build-test-debug
-	ctest --test-dir build/test -V
+	cd build/test && ctest -V
 
 test: test-debug
 
