@@ -8,25 +8,29 @@ option(ENABLE_EXAMPLES "Build example programs" ON)
 option(ENABLE_TRACING "Enable runtime tracing support" ON)
 option(BUILD_DOCS "Build documentations" OFF)
 
+# Used for building cactus-rt when all dependencies are vendored
+option(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES "Fetch dependencies during build" ON)
+
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
-Include(FetchContent)
-
 #########################
 # External dependencies #
 #########################
 
-FetchContent_Declare(
-  quill
-  GIT_REPOSITORY https://github.com/odygrd/quill.git
-  GIT_TAG        9a270d5d6f57a3ac19451292e3a9f370fcd744b1
-  # GIT_TAG        v3.3.2
-)
+if(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES)
+  Include(FetchContent)
 
-FetchContent_MakeAvailable(quill)
+  FetchContent_Declare(
+    quill
+    GIT_REPOSITORY https://github.com/odygrd/quill.git
+    GIT_TAG        9a270d5d6f57a3ac19451292e3a9f370fcd744b1
+    # GIT_TAG        v3.3.2
+  )
+
+  FetchContent_MakeAvailable(quill)
 
 # This is needed to make sure that when building the tests, catch2's headers
 # are treated as system headers, as otherwise clang-tidy will run on them. This
@@ -34,18 +38,19 @@ FetchContent_MakeAvailable(quill)
 # is included from the tests, where as the above is for compiling catch2.
 #
 # After cmake 3.25, this shouldn't be needed anymore: https://gitlab.kitware.com/cmake/cmake/-/issues/18040
-get_target_property(QUILL_INC quill INTERFACE_INCLUDE_DIRECTORIES)
-set_target_properties(quill PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${QUILL_INC}")
+  get_target_property(QUILL_INC quill INTERFACE_INCLUDE_DIRECTORIES)
+  set_target_properties(quill PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${QUILL_INC}")
 
-FetchContent_Declare(
-  readerwriterqueue
-  GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue.git
-  GIT_TAG           v1.0.6
-)
+  FetchContent_Declare(
+    readerwriterqueue
+    GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue.git
+    GIT_TAG           v1.0.6
+  )
 
-FetchContent_MakeAvailable(readerwriterqueue)
-get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
-set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
+  FetchContent_MakeAvailable(readerwriterqueue)
+  get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
+  set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
+endif()
 
 ##########################################################
 # Helper function to setup all cactus-rt related targets #
