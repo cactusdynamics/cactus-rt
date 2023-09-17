@@ -112,7 +112,7 @@ struct ThreadConfig {
    * @brief Set the thread scheduler to use the default (non-RT) scheduler
    * @param priority The thread nice value (19 to -20)
    */
-  void SetOtherScheduler(int32_t nice) {
+  void SetOtherScheduler(int32_t nice = 0) {
     auto other_sched = std::make_shared<OtherScheduler>();
     other_sched->nice = nice;
 

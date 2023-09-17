@@ -68,7 +68,7 @@ Installation instructions
 For Debian/Ubuntu:
 
 ```bash
-$ sudo apt install build-essential cmake protobuf-compiler libgtest-dev libbenchmark-dev
+$ sudo apt install build-essential cmake protobuf-compiler libprotobuf-dev libgtest-dev libbenchmark-dev
 ```
 
 For building documentations, we need: doxygen.
