@@ -35,7 +35,7 @@ class ThreadTracer {
 
   moodycamel::ReaderWriterQueue<TrackEventInternal> queue_;
 
-  const char* name_;
+  std::string name_;
   uint64_t    track_uuid_;
 
   // TODO: relaxed memory order OK? It's not a control variable nor do any other

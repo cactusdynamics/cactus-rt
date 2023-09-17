@@ -232,7 +232,7 @@ Trace TraceAggregator::CreateThreadDescriptorPacket(const ThreadTracer& thread_t
   auto* thread_descriptor = new ThreadDescriptor();
   thread_descriptor->set_pid(getpid());
   thread_descriptor->set_tid(thread_tracer.tid_);
-  thread_descriptor->set_thread_name(thread_tracer.name_);
+  thread_descriptor->set_thread_name(thread_tracer.name_.c_str());
 
   thread_track_descriptor->set_allocated_thread(thread_descriptor);
   packet->set_allocated_track_descriptor(thread_track_descriptor);

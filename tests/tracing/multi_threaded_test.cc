@@ -92,14 +92,14 @@ TEST_F(MultiThreadTracingTest, TraceFromMultipleThreads) {
   AssertIsThreadTrackDescriptor(*cyclic_thread_traces[0], kCyclicThreadName, process_track_uuid);
   const auto cyclic_thread_track_uuid = cyclic_thread_traces[0]->track_descriptor().uuid();
 
-  AssertIsTrackEventSliceBegin(*cyclic_thread_traces[1], "CyclicThread::Loop", "cactusrt", cyclic_thread_track_uuid);
+  AssertIsTrackEventSliceBegin(*cyclic_thread_traces[1], "Loop", "cactusrt", cyclic_thread_track_uuid);
   auto sequence_id = cyclic_thread_traces[1]->trusted_packet_sequence_id();
 
   for (size_t i = 0; i < 20; i++) {
     auto begin_idx = 1 + (i * 2);
     auto end_idx = 1 + (i * 2) + 1;
 
-    AssertIsTrackEventSliceBegin(*cyclic_thread_traces[begin_idx], "CyclicThread::Loop", "cactusrt", cyclic_thread_track_uuid, sequence_id);
+    AssertIsTrackEventSliceBegin(*cyclic_thread_traces[begin_idx], "Loop", "cactusrt", cyclic_thread_track_uuid, sequence_id);
     AssertIsTrackEventSliceEnd(*cyclic_thread_traces[end_idx], cyclic_thread_track_uuid, sequence_id);
   }
 }
@@ -124,14 +124,14 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoop) {
   AssertIsThreadTrackDescriptor(*packets[1], kCyclicThreadName, process_track_uuid);
   const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventSliceBegin(*packets[2], "CyclicThread::Loop", "cactusrt", thread_track_uuid);
+  AssertIsTrackEventSliceBegin(*packets[2], "Loop", "cactusrt", thread_track_uuid);
   auto sequence_id = packets[2]->trusted_packet_sequence_id();
 
   for (size_t i = 0; i < 20; i++) {
     auto begin_idx = 2 + (i * 2);
     auto end_idx = 2 + (i * 2) + 1;
 
-    AssertIsTrackEventSliceBegin(*packets[begin_idx], "CyclicThread::Loop", "cactusrt", thread_track_uuid, sequence_id);
+    AssertIsTrackEventSliceBegin(*packets[begin_idx], "Loop", "cactusrt", thread_track_uuid, sequence_id);
     AssertIsTrackEventSliceEnd(*packets[end_idx], thread_track_uuid, sequence_id);
   }
 }
@@ -167,14 +167,14 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesSleepAndDoesNotTraceLoopIfConfi
   AssertIsThreadTrackDescriptor(*packets[1], thread_name, process_track_uuid);
   const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventSliceBegin(*packets[2], "CyclicThread::Sleep", "cactusrt", thread_track_uuid);
+  AssertIsTrackEventSliceBegin(*packets[2], "Sleep", "cactusrt", thread_track_uuid);
   auto sequence_id = packets[2]->trusted_packet_sequence_id();
 
   for (size_t i = 0; i < 19; i++) {
     auto begin_idx = 2 + (i * 2);
     auto end_idx = 2 + (i * 2) + 1;
 
-    AssertIsTrackEventSliceBegin(*packets[begin_idx], "CyclicThread::Sleep", "cactusrt", thread_track_uuid, sequence_id);
+    AssertIsTrackEventSliceBegin(*packets[begin_idx], "Sleep", "cactusrt", thread_track_uuid, sequence_id);
     AssertIsTrackEventSliceEnd(*packets[end_idx], thread_track_uuid, sequence_id);
 
     // 100 Hz = 10ms loop.
@@ -220,7 +220,7 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoopOverrun) {
   AssertIsThreadTrackDescriptor(*packets[1], thread_name, process_track_uuid);
   const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventInstant(*packets[2], "CyclicThread::LoopOverrun", "cactusrt", thread_track_uuid);
+  AssertIsTrackEventInstant(*packets[2], "LoopOverrun", "cactusrt", thread_track_uuid);
 }
 
 }  // namespace cactus_rt
