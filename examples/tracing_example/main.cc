@@ -66,7 +66,8 @@ int main() {
   thread_config.cpu_affinity = std::vector<size_t>{2};
   thread_config.SetFifoScheduler(80);
 
-  thread_config.tracer_config.trace_sleep = true;
+  // thread_config.tracer_config.trace_sleep = true;
+  thread_config.tracer_config.trace_wakeup_latency = true;
 
   cactus_rt::AppConfig app_config;
   app_config.tracer_config.trace_aggregator_cpu_affinity = {1};

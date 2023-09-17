@@ -91,6 +91,13 @@ struct ThreadTracerConfig {
    * Enabling this will cause a slight performance overhead when trace session is started.
    */
   bool trace_sleep = false;
+
+  /**
+   * @brief Trace the wakeup latency between when the thread should have woken up and when it actually woke up.
+   *
+   * Enabling this will cause a slight performance overhead when trace session is started.
+   */
+  bool trace_wakeup_latency = false;
 };
 
 /**
