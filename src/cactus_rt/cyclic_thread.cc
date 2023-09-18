@@ -17,7 +17,7 @@ void CyclicThread::Run() noexcept {
   while (!this->StopRequested()) {
     loop_start = NowNs();
     if (tracer_config.trace_wakeup_latency) {
-      Tracer().StartSpan("WakeupLatency", "cactusrt", next_wakeup_time_ns);
+      Tracer().StartSpan("Wakeup", "cactusrt", next_wakeup_time_ns);
       Tracer().EndSpan(loop_start);
     }
 
@@ -37,7 +37,7 @@ void CyclicThread::Run() noexcept {
     loop_latency = loop_end - loop_start;
     TrackLatency(wakeup_latency, loop_latency);
 
-    if (tracer_config.trace_overrun && static_cast<uint64_t>(loop_latency) >= period_ns_) {
+    if (tracer_config.trace_overrun && static_cast<uint64_t>(wakeup_latency + loop_latency) >= period_ns_) {
       Tracer().InstantEvent("LoopOverrun", "cactusrt");
 
       LOG_WARNING_LIMIT(
