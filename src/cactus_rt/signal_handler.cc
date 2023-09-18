@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 
+#include <atomic>
 #include <cstring>
 
 namespace cactus_rt {
@@ -9,7 +10,11 @@ namespace cactus_rt {
 sem_t signal_semaphore;
 
 /// @private
+std::atomic_bool signal_received = false;
+
+/// @private
 void HandleSignal(int /*sig*/) {
+  signal_received.store(true, std::memory_order_relaxed);
   // From the man page (sem_post(3)), it says:
   //
   // > sem_post() is async-signal-safe: it may be safely called within a
@@ -24,8 +29,10 @@ void HandleSignal(int /*sig*/) {
   const int ret = sem_post(&signal_semaphore);
   if (ret != 0) {
     // Suppress warn_unused_result. yay c++.
-    std::ignore = write(STDERR_FILENO, "failed to post semaphore\n", 25);
-    std::_Exit(EXIT_FAILURE);
+    std::ignore = write(STDERR_FILENO, "failed to post semaphore in signal handler\n", 43);
+
+    // TODO: should the program exit?
+    // std::_Exit(EXIT_FAILURE);
   }
 }
 
@@ -51,6 +58,10 @@ void WaitForAndHandleTerminationSignal() {
   // it can call any arbitrary function.
   while (sem_wait(&signal_semaphore) == -1) {
   }
+}
+
+bool HasTerminationSignalBeenReceived() {
+  return signal_received.load(std::memory_order_relaxed);
 }
 
 }  // namespace cactus_rt

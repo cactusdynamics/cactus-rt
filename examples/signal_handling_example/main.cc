@@ -46,6 +46,11 @@ int main() {
   // This function blocks until SIGINT or SIGTERM are received.
   cactus_rt::WaitForAndHandleTerminationSignal();
 
+  // The following commented code is an example using the polling mechanism.
+  // while (!cactus_rt::HasTerminationSignalBeenReceived()) {
+  //   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  // }
+
   app.RequestStop();
   app.Join();
 
