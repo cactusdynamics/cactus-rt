@@ -53,7 +53,7 @@ class Thread {
    * @param name The thread name
    * @param config The configuration for the thread
    */
-  Thread(const char* name, ThreadConfig config)
+  Thread(std::string name, ThreadConfig config)
       : config_(config),
         name_(name),
         cpu_affinity_(config_.cpu_affinity),

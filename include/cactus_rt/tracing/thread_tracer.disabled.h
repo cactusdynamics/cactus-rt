@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 namespace cactus_rt::tracing {
 struct EventCountData {
@@ -41,7 +42,7 @@ class TraceSpan {
 
 class ThreadTracer {
  public:
-  ThreadTracer(const char* /* name */, uint32_t /* queue_capacity */ = 16384) {}
+  ThreadTracer(std::string /* name */, uint32_t /* queue_capacity */ = 16384) {}
 
   ThreadTracer(const ThreadTracer&) = delete;
   ThreadTracer& operator=(const ThreadTracer&) = delete;

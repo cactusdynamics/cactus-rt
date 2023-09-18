@@ -10,6 +10,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include "sink.h"
@@ -20,7 +21,7 @@ namespace cactus_rt::tracing {
 class TraceAggregator {
   using Trace = cactus_tracing::vendor::perfetto::protos::Trace;
 
-  const char*         process_name_;
+  std::string         process_name_;
   std::vector<size_t> cpu_affinity_;
   uint64_t            process_track_uuid_;
   quill::Logger*      logger_;
@@ -53,7 +54,7 @@ class TraceAggregator {
   std::list<Trace> sticky_trace_packets_;
 
  public:
-  explicit TraceAggregator(const char* name, std::vector<size_t> cpu_affinity = {});
+  explicit TraceAggregator(std::string name, std::vector<size_t> cpu_affinity = {});
 
   // No copy no move
   TraceAggregator(const TraceAggregator&) = delete;

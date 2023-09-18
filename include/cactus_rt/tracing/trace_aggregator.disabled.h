@@ -2,6 +2,7 @@
 #define CACTUS_RT_TRACING_TRACE_AGGREGATOR_DISABLED_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "sink.disabled.h"
@@ -10,7 +11,7 @@
 namespace cactus_rt::tracing {
 class TraceAggregator {
  public:
-  explicit TraceAggregator(const char* /* name */, std::vector<size_t> /* cpu_affinity */) {}
+  explicit TraceAggregator(std::string /* name */, std::vector<size_t> /* cpu_affinity */) {}
 
   TraceAggregator(const TraceAggregator&) = delete;
   TraceAggregator& operator=(const TraceAggregator&) = delete;

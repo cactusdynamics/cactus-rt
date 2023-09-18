@@ -20,7 +20,7 @@ using TrackEvent = cactus_tracing::vendor::perfetto::protos::TrackEvent;
 using namespace std::chrono_literals;
 
 namespace cactus_rt::tracing {
-TraceAggregator::TraceAggregator(const char* process_name, std::vector<size_t> cpu_affinity)
+TraceAggregator::TraceAggregator(std::string process_name, std::vector<size_t> cpu_affinity)
     : process_name_(process_name),
       cpu_affinity_(cpu_affinity),
       process_track_uuid_(static_cast<uint64_t>(getpid())),

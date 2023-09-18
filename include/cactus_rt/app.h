@@ -5,6 +5,7 @@
 
 #include <list>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "config.h"
@@ -23,7 +24,7 @@ class App {
   FRIEND_TEST(SingleThreadTracingTest, QueueOverflowWillNotBlock);
 
   // The name of the app
-  const char* name_;
+  std::string name_;
 
   // Size of heap to reserve in bytes at program startup.
   size_t heap_size_;
@@ -57,7 +58,7 @@ class App {
   }
 
  public:
-  explicit App(const char* name = "RTApp", AppConfig config = AppConfig());
+  explicit App(std::string name = "RTApp", AppConfig config = AppConfig());
 
   virtual ~App();
 

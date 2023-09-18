@@ -19,7 +19,7 @@ uint64_t GenerateTrackUuid() noexcept {
 }  // namespace
 
 namespace cactus_rt::tracing {
-ThreadTracer::ThreadTracer(const char* name, uint32_t queue_capacity)
+ThreadTracer::ThreadTracer(std::string name, uint32_t queue_capacity)
     : queue_(queue_capacity),
       name_(name),
       track_uuid_(GenerateTrackUuid()),
