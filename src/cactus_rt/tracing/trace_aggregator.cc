@@ -45,7 +45,7 @@ void TraceAggregator::RegisterSink(std::shared_ptr<Sink> sink) {
 
 void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer) {
   if (tracer->tid_ == 0) {
-    LOG_WARNING(Logger(), "thread {} does not have a valid tid. this shouldn't have happened and is likely a bug", tracer->name_);
+    LOG_WARNING(Logger(), "thread {} does not have a valid tid", tracer->name_);
   }
 
   // RegisterThreadTracer is mutually exclusive with RegisterSink and writing of
@@ -125,7 +125,9 @@ void TraceAggregator::Run() {
 
       if (tracers_with_events > 0) {
         for (auto& sink : sinks_) {
-          sink->Write(trace);
+          if (!sink->Write(trace)) {
+            LOG_WARNING_LIMIT(std::chrono::milliseconds(5000), Logger(), "failed to write trace data to sink, data may be corrupted");
+          }
         }
       }
     }

@@ -27,6 +27,7 @@ void StartTracing(const char* app_name, const char* filename) {
   auto file_sink = std::make_shared<FileSink>(filename);
   trace_aggregator->RegisterSink(file_sink);
 
+  quill::start();
   trace_aggregator->Start();
 }
 
@@ -43,6 +44,9 @@ int main() {
   auto thread1_tracer = std::make_shared<ThreadTracer>("thread1");
 
   StartTracing("tracing_example_no_cactus_rt", "build/no-rt.perfetto");
+
+  trace_aggregator->RegisterThreadTracer(main_thread_tracer);
+  trace_aggregator->RegisterThreadTracer(thread1_tracer);
 
   std::thread t([thread1_tracer]() {
     for (int i = 0; i < 10; i++) {
