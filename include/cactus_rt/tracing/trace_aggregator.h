@@ -104,6 +104,9 @@ class TraceAggregator {
 
   void SetupCPUAffinityIfNecessary() const;
 
+  size_t TryDequeueOnceFromAllTracers(Trace& trace) noexcept;
+  void   WriteTrace(const Trace& trace) noexcept;
+
   Trace CreateProcessDescriptorPacket() const;
   Trace CreateThreadDescriptorPacket(const ThreadTracer& thread_tracer) const;
   void  AddTrackEventPacketToTrace(Trace& trace, const ThreadTracer& thread_tracer, const TrackEventInternal& track_event_internal) const;

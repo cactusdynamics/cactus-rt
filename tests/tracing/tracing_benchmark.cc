@@ -20,7 +20,7 @@ void BM_ThreadTracerWithSpanEnabledWithCategory(benchmark::State& state) {
   cactus_rt::tracing::EnableTracing();
   cactus_rt::tracing::ThreadTracer thread_tracer("benchmark_tracer", kQueueSize);
   for (auto _ : state) {
-    thread_tracer.WithSpan("EventName", "category");
+    benchmark::DoNotOptimize(thread_tracer.WithSpan("EventName", "category"));
   }
 }
 BENCHMARK(BM_ThreadTracerWithSpanEnabledWithCategory)->Iterations(kQueueSize / 2);
