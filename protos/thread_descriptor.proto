@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-// Adapted from https://github.com/google/perfetto/blob/v36.1/protos/perfetto/trace/track_event/thread_descriptor.proto
+// Adapted from https://github.com/google/perfetto/blob/v43.2/protos/perfetto/trace/track_event/thread_descriptor.proto
+//
+// 1. Only the three fields that describes the thread is kept as all other fields are deprecated.
 
 syntax = "proto2";
 
 package cactus_tracing.vendor.perfetto.protos;
-
 
 // Describes a thread's attributes. Emitted as part of a TrackDescriptor,
 // usually by the thread's trace writer.

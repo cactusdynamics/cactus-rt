@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-// Adapter from https://github.com/google/perfetto/blob/v36.1/protos/perfetto/trace/trace_packet.proto
+// Adapter from https://github.com/google/perfetto/blob/v43.2/protos/perfetto/trace/trace_packet.proto
 //
-// TODO: consider adding in the following fields;
-//
-// - sequence_flags, trace_packet_defaults, previous_packet_dropped, first_packet_on_sequence
-// - interned_data https://github.com/google/perfetto/issues/526
+// 1. Only the necessary fields are copied. Unnecessary fields are removed.
 
 syntax = "proto2";
 
 import "track_event.proto";
 import "track_descriptor.proto";
+import "interned_data.proto";
 
 package cactus_tracing.vendor.perfetto.protos;
 
@@ -56,6 +54,7 @@ message TracePacket {
   // The clock domain definition in ClockSnapshot can also override:
   // - The unit (default: 1ns).
   // - The absolute vs delta encoding (default: absolute timestamp).
+  // INCLUSION REASON: event timestamp
   optional uint64 timestamp = 8;
 
   // Specifies the ID of the clock used for the TracePacket |timestamp|. Can be
@@ -63,12 +62,16 @@ message TracePacket {
   // producer-defined clock id.
   // If unspecified and if no default per-sequence value has been provided via
   // TracePacketDefaults, it defaults to BuiltinClocks::BOOTTIME.
+  // INCLUSION REASON: event timestamp
   optional uint32 timestamp_clock_id = 58;
 
+  // INCLUSION REASON: trace data
   oneof data {
+    // INCLUSION REASON: track event is the span information
     TrackEvent track_event = 11;
 
     // Only used by TrackEvent.
+    // INCLUSION REASON: this describes the track
     TrackDescriptor track_descriptor = 60;
 
     // This field is emitted at periodic intervals (~10s) and
@@ -84,7 +87,73 @@ message TracePacket {
   // Uniquely identifies a producer + writer pair within the tracing session. A
   // value of zero denotes an invalid ID. Keep in sync with
   // TrustedPacket.trusted_packet_sequence_id.
+  // INCLUSION REASON: required field for the sequences
   oneof optional_trusted_packet_sequence_id {
     uint32 trusted_packet_sequence_id = 10;
   }
+
+  // Incrementally emitted interned data, valid only on the packet's sequence
+  // (packets with the same |trusted_packet_sequence_id|). The writer will
+  // usually emit new interned data in the same TracePacket that first refers to
+  // it (since the last reset of interning state). It may also be emitted
+  // proactively in advance of referring to them in later packets.
+  // INCLUSION REASON: for interning string and other data.
+  optional InternedData interned_data = 12;
+
+  enum SequenceFlags {
+    SEQ_UNSPECIFIED = 0;
+
+    // Set by the writer to indicate that it will re-emit any incremental data
+    // for the packet's sequence before referring to it again. This includes
+    // interned data as well as periodically emitted data like
+    // Process/ThreadDescriptors. This flag only affects the current packet
+    // sequence (see |trusted_packet_sequence_id|).
+    //
+    // When set, this TracePacket and subsequent TracePackets on the same
+    // sequence will not refer to any incremental data emitted before this
+    // TracePacket. For example, previously emitted interned data will be
+    // re-emitted if it is referred to again.
+    //
+    // When the reader detects packet loss (|previous_packet_dropped|), it needs
+    // to skip packets in the sequence until the next one with this flag set, to
+    // ensure intact incremental data.
+    SEQ_INCREMENTAL_STATE_CLEARED = 1;
+
+    // This packet requires incremental state, such as TracePacketDefaults or
+    // InternedData, to be parsed correctly. The trace reader should skip this
+    // packet if incremental state is not valid on this sequence, i.e. if no
+    // packet with the SEQ_INCREMENTAL_STATE_CLEARED flag has been seen on the
+    // current |trusted_packet_sequence_id|.
+    SEQ_NEEDS_INCREMENTAL_STATE = 2;
+  };
+  // INCLUSION REASON: This is required for interned data. Also the flags are supposed to be binary OR'ed
+  optional uint32 sequence_flags = 13;
+
+  // Flag set by the service if, for the current packet sequence (see
+  // |trusted_packet_sequence_id|), either:
+  // * this is the first packet, or
+  // * one or multiple packets were dropped since the last packet that the
+  //   consumer read from the sequence. This can happen if chunks in the trace
+  //   buffer are overridden before the consumer could read them when the trace
+  //   is configured in ring buffer mode.
+  //
+  // When packet loss occurs, incrementally emitted data (including interned
+  // data) on the sequence should be considered invalid up until the next packet
+  // with SEQ_INCREMENTAL_STATE_CLEARED set.
+  optional bool previous_packet_dropped = 42;
+
+  // Flag set by a producer (starting from SDK v29) if, for the current packet
+  // sequence (see |trusted_packet_sequence_id|), this is the first packet.
+  //
+  // This flag can be used for distinguishing the two situations when
+  // processing the trace:
+  // 1. There are no prior events for the sequence because of data loss, e.g.
+  //    due to ring buffer wrapping.
+  // 2. There are no prior events for the sequence because it didn't start
+  //    before this packet (= there's definitely no preceding data loss).
+  //
+  // Given that older SDK versions do not support this flag, this flag not
+  // being present for a particular sequence does not necessarily imply data
+  // loss.
+  optional bool first_packet_on_sequence = 87;
 }

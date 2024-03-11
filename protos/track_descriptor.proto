@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-// Adapted from https://github.com/google/perfetto/blob/v36.1/protos/perfetto/trace/track_event/track_descriptor.proto
+// Adapted from https://github.com/google/perfetto/blob/v43.2/protos/perfetto/trace/track_event/track_descriptor.proto
+//
+// 1. Removed chrome_process and chrome_thread
 
 syntax = "proto2";
 
@@ -82,4 +84,11 @@ message TrackDescriptor {
   // TYPE_COUNTER TrackEvents (and values provided via TrackEvent's
   // |extra_counter_values|).
   optional CounterDescriptor counter = 8;
+
+  // If true, forces Trace Processor to use separate tracks for track events
+  // and system events for the same thread.
+  // Track events timestamps in Chrome have microsecond resolution, while
+  // system events use nanoseconds. It results in broken event nesting when
+  // track events and system events share a track.
+  optional bool disallow_merging_with_system_tracks = 9;
 }

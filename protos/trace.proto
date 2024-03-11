@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-// Adapted from https://github.com/google/perfetto/blob/v36.1/protos/perfetto/trace/trace.proto
+// Adapted from https://github.com/google/perfetto/blob/v43.2/protos/perfetto/trace/trace.proto
+//
+// No changes are made other than the package name.
 
 syntax = "proto2";
 

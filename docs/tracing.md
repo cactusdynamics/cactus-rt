@@ -235,7 +235,9 @@ TODO...
 
 ### Performance and limitations
 
-TODO...
+#### Too much data causing buffer overflow and trace data drops
+
+See https://github.com/google/perfetto/issues/575#issuecomment-1699253191
 
 Advanced tuning and use cases
 -----------------------------
