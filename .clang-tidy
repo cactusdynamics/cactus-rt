@@ -11,6 +11,7 @@ cert-*,
 -bugprone-implicit-widening-of-multiplication-result,
 -bugprone-narrowing-conversions,
 -clang-diagnostic-unused-parameter,
+-misc-include-cleaner,
 -misc-non-private-member-variables-in-classes,
 -modernize-pass-by-value,
 -modernize-use-nodiscard,
@@ -19,7 +20,8 @@ cert-*,
 -readability-function-cognitive-complexity,
 -readability-identifier-length,
 -readability-isolate-declaration,
--readability-magic-numbers'
+-readability-magic-numbers,
+-readability-redundant-inline-specifier'
 # TODO: Re-enable bugprone-exception-escape when no longer throwing
 # https://github.com/isocpp/CppCoreGuidelines/issues/1589
 WarningsAsErrors: '*'

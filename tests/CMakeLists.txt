@@ -21,6 +21,7 @@ if(ENABLE_TRACING)
   add_executable(cactus_rt_tracing_tests
 
     tracing/single_threaded_test.cc
+    tracing/string_interner_test.cc
     tracing/multi_threaded_test.cc
 
     tracing/helpers/assert_helpers.cc
@@ -45,6 +46,7 @@ find_package(benchmark REQUIRED)
 
 add_executable(cactus_rt_tracing_benchmark
   tracing/tracing_benchmark.cc
+  tracing/string_interner_benchmark.cc
 )
 
 target_link_libraries(cactus_rt_tracing_benchmark

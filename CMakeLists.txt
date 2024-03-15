@@ -135,10 +135,11 @@ target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 if (ENABLE_TRACING)
   target_sources(cactus_rt
     PRIVATE
-    src/cactus_rt/tracing/tracing_enabled.cc
     src/cactus_rt/tracing/sink.cc
     src/cactus_rt/tracing/thread_tracer.cc
     src/cactus_rt/tracing/trace_aggregator.cc
+    src/cactus_rt/tracing/tracing_enabled.cc
+    src/cactus_rt/tracing/utils/string_interner.cc
   )
 
   target_link_libraries(cactus_rt

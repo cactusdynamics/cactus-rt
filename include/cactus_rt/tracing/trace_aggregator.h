@@ -17,6 +17,7 @@
 
 #include "sink.h"
 #include "thread_tracer.h"
+#include "utils/string_interner.h"
 
 namespace cactus_rt::tracing {
 
@@ -55,6 +56,11 @@ class TraceAggregator {
   //
   // The list of packets only grow here (although shouldn't grow that much).
   std::list<Trace> sticky_trace_packets_;
+
+  // These are the interners for the event name and event categories to save
+  // space on the output.
+  utils::StringInterner event_name_interner_;
+  utils::StringInterner event_category_interner_;
 
   // This is a map of trusted_sequence_id to InternedData.
   //
