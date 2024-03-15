@@ -28,6 +28,10 @@ App::App(std::string name, AppConfig config)
     SetDefaultLogFormat(logger_config_);
   }
 
+#ifdef CACTUS_RT_TRACING_ENABLED
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+#endif
+
   // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
   // logger_config_.backend_thread_notification_handler
 }
