@@ -11,11 +11,12 @@
 #include <cstring>
 #include <string>
 
-using Trace = cactus_tracing::vendor::perfetto::protos::Trace;
-using TrackDescriptor = cactus_tracing::vendor::perfetto::protos::TrackDescriptor;
-using ThreadDescriptor = cactus_tracing::vendor::perfetto::protos::ThreadDescriptor;
-using ProcessDescriptor = cactus_tracing::vendor::perfetto::protos::ProcessDescriptor;
-using TrackEvent = cactus_tracing::vendor::perfetto::protos::TrackEvent;
+using cactus_tracing::vendor::perfetto::protos::ProcessDescriptor;
+using cactus_tracing::vendor::perfetto::protos::ThreadDescriptor;
+using cactus_tracing::vendor::perfetto::protos::Trace;
+using cactus_tracing::vendor::perfetto::protos::TracePacket_SequenceFlags_SEQ_INCREMENTAL_STATE_CLEARED;
+using cactus_tracing::vendor::perfetto::protos::TrackDescriptor;
+using cactus_tracing::vendor::perfetto::protos::TrackEvent;
 
 using namespace std::chrono_literals;
 
@@ -103,12 +104,10 @@ void TraceAggregator::Run() {
     Trace trace;
     auto  num_events = TryDequeueOnceFromAllTracers(trace);
 
-    // TODO: what we should do here is:
-    // 1. While the dequeue is happening, we should check each tracer for errors/full queue problems.
-    // 2. Instead of writing the trace directly, we should put it into a bigger
-    // memory queue (bigger than the tracer queue), which would be written out
-    // in another thread. That should reduce the bottlenecks for this loop as
-    // otherwise this loop would be blocked by the writer.
+    // TODO: Instead of writing the trace directly, we should put it into a
+    // bigger memory queue (bigger than the tracer queue), which would be
+    // written out in another thread. That should reduce the bottlenecks for
+    // this loop as otherwise this loop would be blocked by the writer.
 
     if (num_events > 0) {
       WriteTrace(trace);
@@ -182,6 +181,9 @@ size_t TraceAggregator::TryDequeueOnceFromAllTracers(Trace& trace) noexcept {
       continue;
     }
 
+    // TODO: While the dequeue is happening, we should check each tracer for
+    // errors/full queue problems.
+
     num_events++;
     AddTrackEventPacketToTrace(trace, *tracer, event);
   }
@@ -248,7 +250,7 @@ void TraceAggregator::AddTrackEventPacketToTrace(
   Trace&                    trace,
   const ThreadTracer&       thread_tracer,
   const TrackEventInternal& track_event_internal
-) const {
+) {
   // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
   auto* packet = trace.add_packet();
   packet->set_timestamp(track_event_internal.timestamp);
@@ -268,6 +270,14 @@ void TraceAggregator::AddTrackEventPacketToTrace(
 
   packet->set_allocated_track_event(track_event);
   packet->set_trusted_packet_sequence_id(thread_tracer.trusted_packet_sequence_id_);
+
+  if (sequences_with_first_packet_emitted_.count(thread_tracer.trusted_packet_sequence_id_) == 0) {
+    sequences_with_first_packet_emitted_.insert(thread_tracer.trusted_packet_sequence_id_);
+
+    packet->set_first_packet_on_sequence(true);
+    packet->set_previous_packet_dropped(true);
+    packet->set_sequence_flags(TracePacket_SequenceFlags_SEQ_INCREMENTAL_STATE_CLEARED);  // TODO: may need to OR this with SEQ_NEEDS_INCREMENTAL_STATE if above needs it.
+  }
   // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 
