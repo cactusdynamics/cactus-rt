@@ -6,8 +6,6 @@
 #include <iostream>
 #include <unordered_set>
 
-using cactus_rt::tracing::utils::StringInterner;
-
 namespace cactus_rt::tracing::utils {
 
 TEST(StringInternerTest, BasicAssertions) {

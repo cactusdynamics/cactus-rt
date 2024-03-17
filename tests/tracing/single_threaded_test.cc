@@ -35,10 +35,7 @@ class SingleThreadTracingTest : public ::testing::Test {
  protected:
   void SetUp() override {
     app_.RegisterThread(regular_thread_);
-    app_.StartTraceSession();  // TODO: make each test manually start the trace session!
-
-    app_.RegisterTraceSink(sink_);
-
+    app_.StartTraceSession(sink_);  // TODO: make each test manually start the trace session!
     app_.Start();
   }
 
@@ -72,8 +69,22 @@ TEST_F(SingleThreadTracingTest, WithSpan) {
   auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
   // Third packet is the slice begin
-  AssertIsTrackEventSliceBegin(*packets[2], "TestEvent", "category", thread_track_uuid);
+  AssertIsTrackEventSliceBegin(*packets[2], thread_track_uuid);
   auto sequence_id = packets[2]->trusted_packet_sequence_id();
+
+  const auto event_names = GetInternedEventNames(*packets[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto event_name_iid = event_names.at("TestEvent");
+  ASSERT_GT(event_name_iid, 0);
+
+  const auto event_categories = GetInternedEventCategories(*packets[2]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto category_iid = event_categories.at("category");
+  ASSERT_GT(category_iid, 0);
+
+  AssertTrackEventHasIid(*packets[2], event_name_iid, category_iid);
 
   // Fourth packet is slice end
   AssertIsTrackEventSliceEnd(*packets[3], thread_track_uuid, sequence_id);
@@ -117,23 +128,94 @@ TEST_F(SingleThreadTracingTest, WithSpanNested) {
   AssertIsThreadTrackDescriptor(*packets[1], kRegularThreadName, process_track_uuid);
   auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventSliceBegin(*packets[2], "OuterEvent", "outer", thread_track_uuid);
+  // First OuterEvent, outer packet
+  AssertIsTrackEventSliceBegin(*packets[2], thread_track_uuid);
   auto sequence_id = packets[2]->trusted_packet_sequence_id();
 
-  AssertIsTrackEventSliceBegin(*packets[3], "InnerEvent1", "inner", thread_track_uuid, sequence_id);
+  auto event_names = GetInternedEventNames(*packets[2]);
+  ASSERT_EQ(event_names.size(), 1);
 
-  AssertIsTrackEventSliceBegin(*packets[4], "InnerInnerEvent1", "inner", thread_track_uuid, sequence_id);
+  const auto outer_event_iid = event_names.at("OuterEvent");
+  ASSERT_GT(outer_event_iid, 0);
+
+  auto event_categories = GetInternedEventCategories(*packets[2]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto outer_category_iid = event_categories.at("outer");
+  ASSERT_GT(outer_category_iid, 0);
+
+  AssertTrackEventHasIid(*packets[2], outer_event_iid, outer_category_iid);
+
+  // First InnerEvent1, inner packet
+  AssertIsTrackEventSliceBegin(*packets[3], thread_track_uuid, sequence_id);
+  event_names = GetInternedEventNames(*packets[3]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto inner_event1_iid = event_names.at("InnerEvent1");
+  ASSERT_GT(inner_event1_iid, 0);
+  ASSERT_NE(inner_event1_iid, outer_event_iid);
+
+  event_categories = GetInternedEventCategories(*packets[3]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto inner_category_iid = event_categories.at("inner");
+  ASSERT_GT(inner_category_iid, 0);
+  ASSERT_NE(inner_category_iid, outer_category_iid);
+
+  AssertTrackEventHasIid(*packets[3], inner_event1_iid, inner_category_iid);
+
+  AssertIsTrackEventSliceBegin(*packets[4], thread_track_uuid, sequence_id);
+  event_names = GetInternedEventNames(*packets[4]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  // First InnerInnerEvent1, inner packet
+  const auto inner_inner_event1_iid = event_names.at("InnerInnerEvent1");
+  ASSERT_GT(inner_inner_event1_iid, 0);
+  ASSERT_NE(inner_inner_event1_iid, inner_event1_iid);
+  ASSERT_NE(inner_inner_event1_iid, outer_event_iid);
+
+  event_categories = GetInternedEventCategories(*packets[4]);
+  ASSERT_EQ(event_categories.size(), 0);
+
+  AssertTrackEventHasIid(*packets[4], inner_inner_event1_iid, inner_category_iid);
+
   AssertIsTrackEventSliceEnd(*packets[5], thread_track_uuid, sequence_id);
   AssertTrackEventDuration(*packets[4], *packets[5], 1000000, 10000000);
 
-  AssertIsTrackEventSliceBegin(*packets[6], "InnerInnerEvent2", "inner", thread_track_uuid, sequence_id);
+  // First InnerInnerEvent2, inner packet
+  AssertIsTrackEventSliceBegin(*packets[6], thread_track_uuid, sequence_id);
+  event_names = GetInternedEventNames(*packets[6]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto inner_inner_event2_iid = event_names.at("InnerInnerEvent2");
+  ASSERT_GT(inner_inner_event2_iid, 0);
+  ASSERT_NE(inner_inner_event2_iid, inner_inner_event1_iid);
+  ASSERT_NE(inner_inner_event2_iid, inner_event1_iid);
+  ASSERT_NE(inner_inner_event2_iid, outer_event_iid);
+
+  AssertTrackEventHasIid(*packets[6], inner_inner_event2_iid, inner_category_iid);
+
   AssertIsTrackEventSliceEnd(*packets[7], thread_track_uuid, sequence_id);
   AssertTrackEventDuration(*packets[6], *packets[7], 1000000, 10000000);
 
   AssertIsTrackEventSliceEnd(*packets[8], thread_track_uuid, sequence_id);
   AssertTrackEventDuration(*packets[3], *packets[8], 2000000, 20000000);
 
-  AssertIsTrackEventSliceBegin(*packets[9], "InnerEvent2", "inner", thread_track_uuid, sequence_id);
+  // First InnerEvent2, inner packet
+  AssertIsTrackEventSliceBegin(*packets[9], thread_track_uuid, sequence_id);
+
+  event_names = GetInternedEventNames(*packets[9]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto inner_event2_iid = event_names.at("InnerEvent2");
+  ASSERT_GT(inner_event2_iid, 0);
+  ASSERT_NE(inner_event2_iid, inner_inner_event2_iid);
+  ASSERT_NE(inner_event2_iid, inner_inner_event1_iid);
+  ASSERT_NE(inner_event2_iid, inner_event1_iid);
+  ASSERT_NE(inner_event2_iid, outer_event_iid);
+
+  AssertTrackEventHasIid(*packets[9], inner_event2_iid, inner_category_iid);
+
   AssertIsTrackEventSliceEnd(*packets[10], thread_track_uuid, sequence_id);
   AssertTrackEventDuration(*packets[9], *packets[10], 2000000, 20000000);
 
@@ -158,7 +240,21 @@ TEST_F(SingleThreadTracingTest, InstantEvent) {
   AssertIsThreadTrackDescriptor(*packets[1], kRegularThreadName, process_track_uuid);
   auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventInstant(*packets[2], "MyCoolEvent", "instant", thread_track_uuid);
+  AssertIsTrackEventInstant(*packets[2], thread_track_uuid);
+
+  const auto event_names = GetInternedEventNames(*packets[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto event_name_iid = event_names.at("MyCoolEvent");
+  ASSERT_GT(event_name_iid, 0);
+
+  const auto event_categories = GetInternedEventCategories(*packets[2]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto category_iid = event_categories.at("instant");
+  ASSERT_GT(category_iid, 0);
+
+  AssertTrackEventHasIid(*packets[2], event_name_iid, category_iid);
 }
 
 TEST_F(SingleThreadTracingTest, StopTracingAndNoEventsAreRecorded) {
@@ -187,17 +283,15 @@ TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
   auto packets = GetPacketsFromTraces(traces);
   ASSERT_EQ(packets.size(), 4);
 
+  auto event1_thread_sequence_id1 = packets[2]->trusted_packet_sequence_id();
+
   regular_thread_->RunOneIteration([](MockRegularThread* self) {
     auto span = self->TracerForTest().WithSpan("Event2");
     WasteTime(std::chrono::microseconds(1000));
   });
 
-  // In normal API usage, we always have to re-register sinks after starting a
-  // trace session, which may not be ideal?? Alternatively could use the short
-  // hand API to log directly to file...
-  app_.StartTraceSession();
-  sink_->Clear();                 // clear the sink so we have a fresh start when restarting trace
-  app_.RegisterTraceSink(sink_);  // TODO: make it so that sinks are cached???? Doesn't make sense tho.
+  sink_->Clear();  // clear the sink so we have a fresh start when restarting trace
+  app_.StartTraceSession(sink_);
 
   regular_thread_->RunOneIteration([](MockRegularThread* self) {
     auto span = self->TracerForTest().WithSpan("Event3");
@@ -208,7 +302,7 @@ TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
 
   auto traces2 = sink_->LoggedTraces();
   auto packets2 = GetPacketsFromTraces(traces2);
-  ASSERT_EQ(packets2.size(), 4);
+  ASSERT_EQ(packets2.size(), 5);
 
   AssertIsProcessTrackDescriptor(*packets2[0], kAppName);
   const auto process_track_uuid = packets2[0]->track_descriptor().uuid();
@@ -216,13 +310,36 @@ TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
   AssertIsThreadTrackDescriptor(*packets2[1], kRegularThreadName, process_track_uuid);
   auto thread_track_uuid = packets2[1]->track_descriptor().uuid();
 
+  std::cout << "packets2: " << packets2[2]->ShortDebugString() << "\n";
+
+  // Event1 is emitted as interned data because that thread is still active and the event name got interned previously.
+  auto event_names = GetInternedEventNames(*packets2[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  auto event1_name_iid = event_names.at("Event1");
+  ASSERT_GT(event1_name_iid, 0);
+
+  auto event1_thread_sequence_id2 = packets2[2]->trusted_packet_sequence_id();
+
+  ASSERT_EQ(event1_thread_sequence_id1, event1_thread_sequence_id2);
+
   // Note Event2 is lost as designed
-  AssertIsTrackEventSliceBegin(*packets2[2], "Event3", nullptr, thread_track_uuid);
-  auto sequence_id = packets2[2]->trusted_packet_sequence_id();
+  AssertIsTrackEventSliceBegin(*packets2[3], thread_track_uuid);
+  auto sequence_id = packets2[3]->trusted_packet_sequence_id();
 
-  AssertIsTrackEventSliceEnd(*packets2[3], thread_track_uuid, sequence_id);
+  ASSERT_EQ(sequence_id, event1_thread_sequence_id2);
 
-  AssertTrackEventDuration(*packets2[2], *packets2[3], 1000000, 10000000);
+  event_names = GetInternedEventNames(*packets2[3]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto event3_name_iid = event_names.at("Event3");
+  ASSERT_GT(event3_name_iid, 0);
+
+  AssertTrackEventHasIid(*packets2[3], event3_name_iid, 0);
+
+  AssertIsTrackEventSliceEnd(*packets2[4], thread_track_uuid, sequence_id);
+
+  AssertTrackEventDuration(*packets2[3], *packets2[4], 1000000, 10000000);
 }
 
 TEST_F(SingleThreadTracingTest, DynamicallyAddingSinkWillWork) {
@@ -249,7 +366,7 @@ TEST_F(SingleThreadTracingTest, DynamicallyAddingSinkWillWork) {
   auto traces2 = sink2->LoggedTraces();
   auto packets2 = GetPacketsFromTraces(traces2);
 
-  ASSERT_EQ(packets2.size(), 3);
+  ASSERT_EQ(packets2.size(), 4);
 
   AssertIsProcessTrackDescriptor(*packets2[0], kAppName);
   const auto process_track_uuid = packets2[0]->track_descriptor().uuid();
@@ -257,7 +374,24 @@ TEST_F(SingleThreadTracingTest, DynamicallyAddingSinkWillWork) {
   AssertIsThreadTrackDescriptor(*packets2[1], kRegularThreadName, process_track_uuid);
   auto thread_track_uuid = packets2[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventInstant(*packets2[2], "Event2", nullptr, thread_track_uuid);
+  auto event_names = GetInternedEventNames(*packets2[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto event1_name_iid = event_names.at("Event1");
+  ASSERT_GT(event1_name_iid, 0);
+
+  auto sequence_id = packets2[2]->trusted_packet_sequence_id();
+
+  AssertIsTrackEventInstant(*packets2[3], thread_track_uuid, sequence_id);
+
+  event_names = GetInternedEventNames(*packets2[3]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto event2_name_iid = event_names.at("Event2");
+  ASSERT_GT(event2_name_iid, 0);
+  ASSERT_NE(event2_name_iid, event1_name_iid);
+
+  AssertTrackEventHasIid(*packets2[3], event2_name_iid, 0);
 
   auto traces = sink_->LoggedTraces();
   auto packets = GetPacketsFromTraces(traces);

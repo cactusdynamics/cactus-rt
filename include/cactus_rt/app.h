@@ -43,7 +43,7 @@ class App {
   // TODO: investigate into a weak pointer.
   std::list<std::shared_ptr<tracing::ThreadTracer>> thread_tracers_;
   std::unique_ptr<tracing::TraceAggregator>         trace_aggregator_ = nullptr;
-  std::mutex                                        tracer_mutex_;
+  std::mutex                                        aggregator_mutex_;
 
   void SetDefaultLogFormat(quill::Config& cfg) {
     // Create a handler of stdout
@@ -113,15 +113,14 @@ class App {
   /**
    * @brief Starts a new tracing session for the process. Will not start a new
    * tracing session if an existing tracing session is in progress. This
-   * function is not real-time safe. This will not register any output sinks.
-   * Use App::RegisterTraceSink() to register custom sinks.
+   * function is not real-time safe.
    */
-  bool StartTraceSession() noexcept;
+  bool StartTraceSession(std::shared_ptr<tracing::Sink> sink) noexcept;
 
   /**
    * @brief Register a custom trace sink after starting the trace session
    */
-  void RegisterTraceSink(std::shared_ptr<cactus_rt::tracing::Sink> sink) noexcept;
+  void RegisterTraceSink(std::shared_ptr<tracing::Sink> sink) noexcept;
 
   /**
    * @brief Stops the tracing session for the process. Will be no-op if tracing
@@ -159,7 +158,7 @@ class App {
    */
   void DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept;
 
-  void CreateAndStartTraceAggregator() noexcept;
+  void CreateAndStartTraceAggregator(std::shared_ptr<tracing::Sink> sink) noexcept;
 
   void StopTraceAggregator() noexcept;
 };

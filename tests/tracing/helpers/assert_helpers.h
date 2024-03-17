@@ -23,19 +23,27 @@ void AssertIsThreadTrackDescriptor(const TracePacket& packet, const char* thread
 
 void AssertIsTrackEventSliceBegin(
   const TracePacket& packet,
-  const char*        event_name,
-  const char*        category,
   uint64_t           thread_track_uuid,
   // If 0, this assertion will only check if the id is >0. Otherwise it will do an equality check
   uint32_t trusted_packet_sequence_id = 0
 );
 
+void AssertTrackEventHasIid(
+  const TracePacket& packet,
+  uint64_t           event_name_iid,
+  uint64_t           category_iid
+);
+
+void AssertTrackEventHasNoInternedData(const TracePacket& packet);
+
+std::unordered_map<std::string, uint64_t> GetInternedEventNames(const TracePacket& packet);
+
+std::unordered_map<std::string, uint64_t> GetInternedEventCategories(const TracePacket& packet);
+
 void AssertIsTrackEventSliceEnd(const TracePacket& packet, uint64_t thread_track_uuid, uint32_t trusted_packet_sequence_id);
 
 void AssertIsTrackEventInstant(
   const TracePacket& packet,
-  const char*        event_name,
-  const char*        category,
   uint64_t           thread_track_uuid,
   uint32_t           trusted_packet_sequence_id = 0
 );

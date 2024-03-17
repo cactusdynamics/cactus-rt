@@ -3,6 +3,8 @@
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 
+#include <utility>
+
 std::string ProtoToJson(const google::protobuf::Message& proto) {
   std::string json;
   google::protobuf::util::MessageToJsonString(proto, &json);
@@ -44,8 +46,6 @@ void AssertIsThreadTrackDescriptor(const TracePacket& packet, const char* thread
 
 void AssertIsTrackEventSliceBegin(
   const TracePacket& packet,
-  const char*        event_name,
-  const char*        category,
   uint64_t           thread_track_uuid,
   uint32_t           trusted_packet_sequence_id
 ) {
@@ -54,15 +54,6 @@ void AssertIsTrackEventSliceBegin(
   const auto& track_event = packet.track_event();
   ASSERT_TRUE(track_event.has_type());
   ASSERT_EQ(track_event.type(), TrackEvent_Type_TYPE_SLICE_BEGIN);
-  ASSERT_TRUE(track_event.has_name());
-  ASSERT_EQ(track_event.name(), event_name);
-
-  if (category == nullptr) {
-    ASSERT_EQ(track_event.categories_size(), 0);
-  } else {
-    ASSERT_EQ(track_event.categories_size(), 1);
-    ASSERT_EQ(track_event.categories(0), category);
-  }
 
   ASSERT_EQ(track_event.track_uuid(), thread_track_uuid);
 
@@ -72,6 +63,66 @@ void AssertIsTrackEventSliceBegin(
   } else {
     ASSERT_EQ(packet.trusted_packet_sequence_id(), trusted_packet_sequence_id);
   }
+}
+
+void AssertTrackEventHasIid(
+  const TracePacket& packet,
+  uint64_t           event_name_iid,
+  uint64_t           category_iid
+) {
+  const auto& track_event = packet.track_event();
+  ASSERT_FALSE(track_event.has_name());
+  ASSERT_TRUE(track_event.has_name_iid());
+  ASSERT_EQ(track_event.name_iid(), event_name_iid);
+
+  ASSERT_EQ(track_event.categories_size(), 0);
+  if (category_iid == 0) {
+    ASSERT_EQ(track_event.category_iids_size(), 0);
+  } else {
+    ASSERT_EQ(track_event.category_iids_size(), 1);
+    ASSERT_EQ(track_event.category_iids(0), category_iid);
+  }
+}
+
+void AssertTrackEventHasNoInternedData(const TracePacket& packet) {
+  ASSERT_FALSE(packet.has_interned_data());
+}
+
+std::unordered_map<std::string, uint64_t> GetInternedEventNames(const TracePacket& packet) {
+  std::unordered_map<std::string, uint64_t> event_names;
+
+  if (!packet.has_interned_data()) {
+    return event_names;
+  }
+
+  const auto& interned_data = packet.interned_data();
+
+  for (int i = 0; i < interned_data.event_names_size(); i++) {
+    const auto& event_name = interned_data.event_names(i);
+    if (event_name.has_name() && event_name.has_iid()) {
+      event_names.emplace(event_name.name(), event_name.iid());
+    }
+  }
+
+  return event_names;
+}
+
+std::unordered_map<std::string, uint64_t> GetInternedEventCategories(const TracePacket& packet) {
+  std::unordered_map<std::string, uint64_t> categories;
+
+  if (!packet.has_interned_data()) {
+    return categories;
+  }
+
+  const auto& interned_data = packet.interned_data();
+  for (int i = 0; i < interned_data.event_categories_size(); i++) {
+    const auto& category = interned_data.event_categories(i);
+    if (category.has_name() && category.has_iid()) {
+      categories.emplace(category.name(), category.iid());
+    }
+  }
+
+  return categories;
 }
 
 void AssertIsTrackEventSliceEnd(const TracePacket& packet, uint64_t thread_track_uuid, uint32_t trusted_packet_sequence_id) {
@@ -88,8 +139,6 @@ void AssertIsTrackEventSliceEnd(const TracePacket& packet, uint64_t thread_track
 
 void AssertIsTrackEventInstant(
   const TracePacket& packet,
-  const char*        event_name,
-  const char*        category,
   uint64_t           thread_track_uuid,
   uint32_t           trusted_packet_sequence_id
 ) {
@@ -98,15 +147,6 @@ void AssertIsTrackEventInstant(
   const auto& track_event = packet.track_event();
   ASSERT_TRUE(track_event.has_type());
   ASSERT_EQ(track_event.type(), TrackEvent_Type_TYPE_INSTANT);
-  ASSERT_TRUE(track_event.has_name());
-  ASSERT_EQ(track_event.name(), event_name);
-
-  if (category == nullptr) {
-    ASSERT_EQ(track_event.categories_size(), 0);
-  } else {
-    ASSERT_EQ(track_event.categories_size(), 1);
-    ASSERT_EQ(track_event.categories(0), category);
-  }
 
   ASSERT_EQ(track_event.track_uuid(), thread_track_uuid);
 

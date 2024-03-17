@@ -43,6 +43,10 @@ class StringInterner {
   size_t Size() const {
     return strings_.size();
   };
+
+  const std::unordered_map<std::string_view, uint64_t>& Ids() const {
+    return ids_;
+  }
 };
 }  // namespace cactus_rt::tracing::utils
 

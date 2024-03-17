@@ -38,8 +38,7 @@ class MultiThreadTracingTest : public ::testing::Test {
 
  protected:
   void SetUp() override {
-    app_.StartTraceSession();
-    app_.RegisterTraceSink(sink_);  // TODO: make this registerable before the trace session starts.
+    app_.StartTraceSession(sink_);
   }
 
   void TearDown() override {
@@ -87,19 +86,51 @@ TEST_F(MultiThreadTracingTest, TraceFromMultipleThreads) {
   AssertIsThreadTrackDescriptor(*regular_thread_traces[0], kRegularThreadName, process_track_uuid);
   const auto regular_thread_track_uuid = regular_thread_traces[0]->track_descriptor().uuid();
 
-  AssertIsTrackEventInstant(*regular_thread_traces[1], "Event1", nullptr, regular_thread_track_uuid);
+  AssertIsTrackEventInstant(*regular_thread_traces[1], regular_thread_track_uuid);
+
+  auto event_names = GetInternedEventNames(*regular_thread_traces[1]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto event1_iid = event_names.at("Event1");
+  ASSERT_GT(event1_iid, 0);
+
+  AssertTrackEventHasIid(*regular_thread_traces[1], event1_iid, 0);
+
+  const auto regular_thread_sequence_id = regular_thread_traces[1]->trusted_packet_sequence_id();
 
   AssertIsThreadTrackDescriptor(*cyclic_thread_traces[0], kCyclicThreadName, process_track_uuid);
   const auto cyclic_thread_track_uuid = cyclic_thread_traces[0]->track_descriptor().uuid();
 
-  AssertIsTrackEventSliceBegin(*cyclic_thread_traces[1], "Loop", "cactusrt", cyclic_thread_track_uuid);
+  AssertIsTrackEventSliceBegin(*cyclic_thread_traces[1], cyclic_thread_track_uuid);
+
+  event_names = GetInternedEventNames(*cyclic_thread_traces[1]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto loop_iid = event_names.at("Loop");
+  ASSERT_GT(loop_iid, 0);
+
+  auto event_categories = GetInternedEventCategories(*cyclic_thread_traces[1]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto cactusrt_category_iid = event_categories.at("cactusrt");
+  ASSERT_GT(cactusrt_category_iid, 0);
+
+  AssertTrackEventHasIid(*cyclic_thread_traces[1], loop_iid, cactusrt_category_iid);
+
   auto sequence_id = cyclic_thread_traces[1]->trusted_packet_sequence_id();
+  ASSERT_NE(regular_thread_sequence_id, sequence_id);
 
   for (size_t i = 0; i < 20; i++) {
     auto begin_idx = 1 + (i * 2);
     auto end_idx = 1 + (i * 2) + 1;
 
-    AssertIsTrackEventSliceBegin(*cyclic_thread_traces[begin_idx], "Loop", "cactusrt", cyclic_thread_track_uuid, sequence_id);
+    AssertIsTrackEventSliceBegin(*cyclic_thread_traces[begin_idx], cyclic_thread_track_uuid, sequence_id);
+    if (i != 0) {
+      // The first packet will have interned data and we checked it already with the previous block
+      AssertTrackEventHasNoInternedData(*cyclic_thread_traces[begin_idx]);
+    }
+
+    AssertTrackEventHasIid(*cyclic_thread_traces[begin_idx], loop_iid, cactusrt_category_iid);
     AssertIsTrackEventSliceEnd(*cyclic_thread_traces[end_idx], cyclic_thread_track_uuid, sequence_id);
   }
 }
@@ -124,14 +155,35 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoop) {
   AssertIsThreadTrackDescriptor(*packets[1], kCyclicThreadName, process_track_uuid);
   const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventSliceBegin(*packets[2], "Loop", "cactusrt", thread_track_uuid);
+  AssertIsTrackEventSliceBegin(*packets[2], thread_track_uuid);
+
+  auto event_names = GetInternedEventNames(*packets[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto loop_iid = event_names.at("Loop");
+  ASSERT_GT(loop_iid, 0);
+
+  auto event_categories = GetInternedEventCategories(*packets[2]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto cactusrt_category_iid = event_categories.at("cactusrt");
+  ASSERT_GT(cactusrt_category_iid, 0);
+
+  AssertTrackEventHasIid(*packets[2], loop_iid, cactusrt_category_iid);
+
   auto sequence_id = packets[2]->trusted_packet_sequence_id();
 
   for (size_t i = 0; i < 20; i++) {
     auto begin_idx = 2 + (i * 2);
     auto end_idx = 2 + (i * 2) + 1;
 
-    AssertIsTrackEventSliceBegin(*packets[begin_idx], "Loop", "cactusrt", thread_track_uuid, sequence_id);
+    AssertIsTrackEventSliceBegin(*packets[begin_idx], thread_track_uuid);
+    if (i != 0) {
+      // The first packet will have interned data and we checked it already with the previous block
+      AssertTrackEventHasNoInternedData(*packets[begin_idx]);
+    }
+
+    AssertTrackEventHasIid(*packets[begin_idx], loop_iid, cactusrt_category_iid);
     AssertIsTrackEventSliceEnd(*packets[end_idx], thread_track_uuid, sequence_id);
   }
 }
@@ -167,14 +219,36 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesSleepAndDoesNotTraceLoopIfConfi
   AssertIsThreadTrackDescriptor(*packets[1], thread_name, process_track_uuid);
   const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventSliceBegin(*packets[2], "Sleep", "cactusrt", thread_track_uuid);
+  AssertIsTrackEventSliceBegin(*packets[2], thread_track_uuid);
+
+  auto event_names = GetInternedEventNames(*packets[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto sleep_iid = event_names.at("Sleep");
+  ASSERT_GT(sleep_iid, 0);
+
+  auto event_categories = GetInternedEventCategories(*packets[2]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto cactusrt_category_iid = event_categories.at("cactusrt");
+  ASSERT_GT(cactusrt_category_iid, 0);
+
+  AssertTrackEventHasIid(*packets[2], sleep_iid, cactusrt_category_iid);
+
   auto sequence_id = packets[2]->trusted_packet_sequence_id();
 
   for (size_t i = 0; i < 19; i++) {
     auto begin_idx = 2 + (i * 2);
     auto end_idx = 2 + (i * 2) + 1;
 
-    AssertIsTrackEventSliceBegin(*packets[begin_idx], "Sleep", "cactusrt", thread_track_uuid, sequence_id);
+    AssertIsTrackEventSliceBegin(*packets[begin_idx], thread_track_uuid, sequence_id);
+    if (i != 0) {
+      // The first packet will have interned data and we checked it already with the previous block
+      AssertTrackEventHasNoInternedData(*packets[begin_idx]);
+    }
+
+    AssertTrackEventHasIid(*packets[begin_idx], sleep_iid, cactusrt_category_iid);
+
     AssertIsTrackEventSliceEnd(*packets[end_idx], thread_track_uuid, sequence_id);
 
     // 100 Hz = 10ms loop.
@@ -220,7 +294,21 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoopOverrun) {
   AssertIsThreadTrackDescriptor(*packets[1], thread_name, process_track_uuid);
   const auto thread_track_uuid = packets[1]->track_descriptor().uuid();
 
-  AssertIsTrackEventInstant(*packets[2], "LoopOverrun", "cactusrt", thread_track_uuid);
+  AssertIsTrackEventInstant(*packets[2], thread_track_uuid);
+
+  auto event_names = GetInternedEventNames(*packets[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  const auto name_iid = event_names.at("LoopOverrun");
+  ASSERT_GT(name_iid, 0);
+
+  auto event_categories = GetInternedEventCategories(*packets[2]);
+  ASSERT_EQ(event_categories.size(), 1);
+
+  const auto cactusrt_category_iid = event_categories.at("cactusrt");
+  ASSERT_GT(cactusrt_category_iid, 0);
+
+  AssertTrackEventHasIid(*packets[2], name_iid, cactusrt_category_iid);
 }
 
 }  // namespace cactus_rt

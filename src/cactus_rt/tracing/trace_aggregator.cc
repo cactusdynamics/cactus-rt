@@ -14,11 +14,17 @@
 using cactus_tracing::vendor::perfetto::protos::ProcessDescriptor;
 using cactus_tracing::vendor::perfetto::protos::ThreadDescriptor;
 using cactus_tracing::vendor::perfetto::protos::Trace;
+using cactus_tracing::vendor::perfetto::protos::TracePacket;
 using cactus_tracing::vendor::perfetto::protos::TracePacket_SequenceFlags_SEQ_INCREMENTAL_STATE_CLEARED;
+using cactus_tracing::vendor::perfetto::protos::TracePacket_SequenceFlags_SEQ_NEEDS_INCREMENTAL_STATE;
 using cactus_tracing::vendor::perfetto::protos::TrackDescriptor;
 using cactus_tracing::vendor::perfetto::protos::TrackEvent;
 
 using namespace std::chrono_literals;
+
+namespace {
+constexpr size_t kMaxInternedStrings = 10000;
+}
 
 namespace cactus_rt::tracing {
 TraceAggregator::TraceAggregator(std::string process_name, std::vector<size_t> cpu_affinity)
@@ -39,6 +45,12 @@ void TraceAggregator::RegisterSink(std::shared_ptr<Sink> sink) {
   for (const auto& trace : this->sticky_trace_packets_) {
     // TODO: deal with errors
     sink->Write(trace);
+  }
+
+  auto interned_data_trace = CreateInitialInternedDataPacket();
+  if (interned_data_trace) {
+    // TODO: deal with errors
+    sink->Write(*interned_data_trace);
   }
 
   sinks_.push_back(sink);
@@ -248,37 +260,154 @@ Trace TraceAggregator::CreateThreadDescriptorPacket(const ThreadTracer& thread_t
 
 void TraceAggregator::AddTrackEventPacketToTrace(
   Trace&                    trace,
-  const ThreadTracer&       thread_tracer,
+  ThreadTracer&             thread_tracer,
   const TrackEventInternal& track_event_internal
 ) {
   // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
+  uint32_t      sequence_flags = 0;
+  InternedData* interned_data = nullptr;
+
+  // Create trace packet
   auto* packet = trace.add_packet();
   packet->set_timestamp(track_event_internal.timestamp);
 
+  // Create track event
   auto* track_event = new TrackEvent();
   track_event->set_track_uuid(thread_tracer.track_uuid_);
   track_event->set_type(track_event_internal.type);
 
+  // Deal with the event name
   if (track_event_internal.name != nullptr) {
-    track_event->set_name(track_event_internal.name);
-  }
+    if (thread_tracer.event_name_interner_.Size() < kMaxInternedStrings) {
+      auto [new_event_name, event_name_iid] = thread_tracer.event_name_interner_.GetId(track_event_internal.name);
 
+      // If this is a never-seen-before event name, we need to emit the interned data into the data stream.
+      if (new_event_name) {
+        if (interned_data == nullptr) {
+          interned_data = new InternedData();
+        }
+
+        auto* event_name = interned_data->add_event_names();
+        event_name->set_iid(event_name_iid);
+        event_name->set_name(track_event_internal.name);
+      }
+
+      // Finally set the name_iid
+      track_event->set_name_iid(event_name_iid);
+      sequence_flags |= TracePacket_SequenceFlags_SEQ_NEEDS_INCREMENTAL_STATE;
+    } else {
+      LOG_WARNING_LIMIT(
+        std::chrono::milliseconds(5000),
+        Logger(),
+        "number of unique event names emitted in tracing is exceeding {} for thread {}, string interning is disabled. trace files may be excessively large",
+        kMaxInternedStrings,
+        thread_tracer.name_
+      );
+      track_event->set_name(track_event_internal.name);
+    }
+  }
+  // Deal with the event category. Code is slightly duplicated, which is fine
+  // for readability as we only have name and category to intern.
   // TODO: support multiple categories later?
   if (track_event_internal.category != nullptr) {
-    track_event->add_categories(track_event_internal.category);
+    if (thread_tracer.event_category_interner_.Size() < kMaxInternedStrings) {
+      auto [new_category, category_iid] = thread_tracer.event_category_interner_.GetId(track_event_internal.category);
+
+      // If this is a never-seen-before event category, we need to emit the interned data into the data stream.
+      if (new_category) {
+        if (interned_data == nullptr) {
+          interned_data = new InternedData();
+        }
+
+        auto* category = interned_data->add_event_categories();
+        category->set_iid(category_iid);
+        category->set_name(track_event_internal.category);
+      }
+
+      // Finally set the category
+      track_event->add_category_iids(category_iid);
+      sequence_flags |= TracePacket_SequenceFlags_SEQ_NEEDS_INCREMENTAL_STATE;
+    } else {
+      LOG_WARNING_LIMIT(
+        std::chrono::milliseconds(5000),
+        Logger(),
+        "number of unique event category emitted in tracing is exceeding {} for thread {}, string interning is disabled. trace files may be excessively large",
+        kMaxInternedStrings,
+        thread_tracer.name_
+      );
+      track_event->add_categories(track_event_internal.category);
+    }
   }
 
+  // Set the track event into the packet and setup packet sequence id
   packet->set_allocated_track_event(track_event);
   packet->set_trusted_packet_sequence_id(thread_tracer.trusted_packet_sequence_id_);
 
+  // Deal with "first packet"
   if (sequences_with_first_packet_emitted_.count(thread_tracer.trusted_packet_sequence_id_) == 0) {
     sequences_with_first_packet_emitted_.insert(thread_tracer.trusted_packet_sequence_id_);
 
     packet->set_first_packet_on_sequence(true);
     packet->set_previous_packet_dropped(true);
-    packet->set_sequence_flags(TracePacket_SequenceFlags_SEQ_INCREMENTAL_STATE_CLEARED);  // TODO: may need to OR this with SEQ_NEEDS_INCREMENTAL_STATE if above needs it.
+    sequence_flags |= TracePacket_SequenceFlags_SEQ_INCREMENTAL_STATE_CLEARED;
+  }
+
+  // If interned data exists, add it to the packet
+  if (interned_data != nullptr) {
+    packet->set_allocated_interned_data(interned_data);
+  }
+
+  // Write the sequence flag is needed
+  if (sequence_flags != 0) {
+    packet->set_sequence_flags(sequence_flags);
   }
   // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
+}
+
+std::optional<Trace> TraceAggregator::CreateInitialInternedDataPacket() const {
+  Trace trace;
+
+  bool wrote_interned_data = false;
+
+  for (const auto& tracer : this->tracers_) {
+    InternedData* interned_data = nullptr;
+    for (const auto& [name, name_iid] : tracer->event_name_interner_.Ids()) {
+      if (interned_data == nullptr) {
+        interned_data = new InternedData();
+      }
+
+      auto* event_name = interned_data->add_event_names();
+      event_name->set_name(name.data());
+      event_name->set_iid(name_iid);
+    }
+
+    for (const auto& [category, category_iid] : tracer->event_category_interner_.Ids()) {
+      if (interned_data == nullptr) {
+        interned_data = new InternedData();
+      }
+
+      auto* event_category = interned_data->add_event_categories();
+      event_category->set_name(category.data());
+      event_category->set_iid(category_iid);
+    }
+
+    if (interned_data != nullptr) {
+      wrote_interned_data = true;
+      TracePacket* packet = trace.add_packet();
+
+      // TODO: is it okay to not have a timestamp?
+      // packet->set_timestamp(initial_timestamp);
+
+      packet->set_allocated_interned_data(interned_data);
+      packet->set_trusted_packet_sequence_id(tracer->trusted_packet_sequence_id_);
+    }
+  }
+
+  if (wrote_interned_data) {
+    return trace;
+  }
+
+  return std::nullopt;
 }
 
 }  // namespace cactus_rt::tracing

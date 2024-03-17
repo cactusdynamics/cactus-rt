@@ -132,9 +132,35 @@ class TraceAggregator {
   size_t TryDequeueOnceFromAllTracers(Trace& trace) noexcept;
   void   WriteTrace(const Trace& trace) noexcept;
 
+  /**
+   *  Creates the initial process descriptor packet
+   */
   Trace CreateProcessDescriptorPacket() const;
+
+  /**
+   * Creates a thread descriptor packet given a thread tracer.
+   *
+   * Must be called while a lock is held.
+   */
   Trace CreateThreadDescriptorPacket(const ThreadTracer& thread_tracer) const;
-  void  AddTrackEventPacketToTrace(Trace& trace, const ThreadTracer& thread_tracer, const TrackEventInternal& track_event_internal);
+
+  /**
+   * Adds the track event packet to an existing trace.
+   *
+   * Must be called while a lock is held.
+   */
+  void AddTrackEventPacketToTrace(Trace& trace, ThreadTracer& thread_tracer, const TrackEventInternal& track_event_internal);
+
+  /**
+   * Create the initial interned data packet if a new sink joins.
+   *
+   * Must be called while a lock is held.
+   *
+   * @param initial_timestamp The initial timestamp of the track, must be before
+   * all other packets about to be written. Commonly this should be the
+   * timestamp of the sticky packets.
+   */
+  std::optional<Trace> CreateInitialInternedDataPacket() const;
 };
 }  // namespace cactus_rt::tracing
 

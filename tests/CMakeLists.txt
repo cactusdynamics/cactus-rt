@@ -46,8 +46,14 @@ find_package(benchmark REQUIRED)
 
 add_executable(cactus_rt_tracing_benchmark
   tracing/tracing_benchmark.cc
-  tracing/string_interner_benchmark.cc
 )
+
+if (ENABLE_TRACING)
+  target_sources(cactus_rt_tracing_benchmark
+    PRIVATE
+    tracing/string_interner_benchmark.cc
+  )
+endif()
 
 target_link_libraries(cactus_rt_tracing_benchmark
   PRIVATE

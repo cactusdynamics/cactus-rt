@@ -12,6 +12,7 @@
 
 #include "../experimental/lockless/atomic_message.h"
 #include "track_event_internal.h"
+#include "utils/string_interner.h"
 
 namespace cactus_rt::tracing {
 struct EventCountData {
@@ -34,6 +35,13 @@ class ThreadTracer {
   friend class TraceAggregator;
 
   moodycamel::ReaderWriterQueue<TrackEventInternal> queue_;
+
+  // The event name interning must be done per thread (per sequence). Thus it is
+  // stored here.  However, this class must NEVER call functions here (other
+  // than maybe .Size), as the memory allocation can occur. This variable is
+  // designed to be used by TraceAggregator on the non-real-time path.
+  utils::StringInterner event_name_interner_;
+  utils::StringInterner event_category_interner_;
 
   std::string name_;
   uint64_t    track_uuid_;

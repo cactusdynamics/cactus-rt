@@ -2,7 +2,8 @@
 #include <cactus_rt/tracing/utils/string_interner.h>
 
 namespace {
-
+// The for (auto _ : state) triggers the following rule...
+// NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
 using cactus_rt::tracing::utils::StringInterner;
 
 StringInterner SetupInterner() {
@@ -40,4 +41,5 @@ void BM_StringInternerStdLongString(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_StringInternerStdLongString);
+// NOLINTEND(clang-analyzer-deadcode.DeadStores)
 }  // namespace
