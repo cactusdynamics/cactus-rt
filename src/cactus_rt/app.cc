@@ -65,30 +65,29 @@ bool App::StartTraceSession(const char* output_filename) noexcept {
     return false;
   }
 
-  CreateAndStartTraceAggregator();
-  trace_aggregator_->RegisterSink(std::make_unique<FileSink>(output_filename));
+  CreateAndStartTraceAggregator(std::make_shared<FileSink>(output_filename));
   cactus_rt::tracing::EnableTracing();
 
   return true;
 }
 
-bool App::StartTraceSession() noexcept {
+bool App::StartTraceSession(std::shared_ptr<tracing::Sink> sink) noexcept {
   if (cactus_rt::tracing::IsTracingEnabled()) {
     return false;
   }
 
-  CreateAndStartTraceAggregator();
+  CreateAndStartTraceAggregator(sink);
   cactus_rt::tracing::EnableTracing();
 
   return true;
 }
 
-void App::RegisterTraceSink(std::shared_ptr<cactus_rt::tracing::Sink> sink) noexcept {
-  if (trace_aggregator_ == nullptr) {
-    return;
-  }
+void App::RegisterTraceSink(std::shared_ptr<tracing::Sink> sink) noexcept {
+  const std::scoped_lock lock(aggregator_mutex_);
 
-  trace_aggregator_->RegisterSink(sink);
+  if (trace_aggregator_ != nullptr) {
+    trace_aggregator_->RegisterSink(sink);
+  }
 }
 
 bool App::StopTraceSession() noexcept {
@@ -103,7 +102,7 @@ bool App::StopTraceSession() noexcept {
 }
 
 void App::RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept {
-  const std::scoped_lock lock(tracer_mutex_);
+  const std::scoped_lock lock(aggregator_mutex_);
 
   thread_tracers_.push_back(thread_tracer);
 
@@ -113,7 +112,7 @@ void App::RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tra
 }
 
 void App::DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept {
-  const std::scoped_lock lock(tracer_mutex_);
+  const std::scoped_lock lock(aggregator_mutex_);
 
   thread_tracers_.remove_if([thread_tracer](const std::shared_ptr<tracing::ThreadTracer>& t) {
     return t == thread_tracer;
@@ -190,8 +189,8 @@ void App::StartQuill() {
   quill::start();
 }
 
-void App::CreateAndStartTraceAggregator() noexcept {
-  const std::scoped_lock lock(tracer_mutex_);
+void App::CreateAndStartTraceAggregator(std::shared_ptr<tracing::Sink> sink) noexcept {
+  const std::scoped_lock lock(aggregator_mutex_);
 
   if (trace_aggregator_ != nullptr) {
     // TODO: error here
@@ -203,11 +202,15 @@ void App::CreateAndStartTraceAggregator() noexcept {
     trace_aggregator_->RegisterThreadTracer(tracer);
   }
 
+  if (sink != nullptr) {
+    trace_aggregator_->RegisterSink(sink);
+  }
+
   trace_aggregator_->Start();
 }
 
 void App::StopTraceAggregator() noexcept {
-  const std::scoped_lock lock(tracer_mutex_);
+  const std::scoped_lock lock(aggregator_mutex_);
 
   if (trace_aggregator_ == nullptr) {
     // TODO: error here

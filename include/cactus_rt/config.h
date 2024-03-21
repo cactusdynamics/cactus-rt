@@ -105,7 +105,7 @@ struct ThreadTracerConfig {
  */
 struct ThreadConfig {
   // A vector of CPUs this thread should run on. If empty, no CPU restrictions are set.
-  std::vector<size_t> cpu_affinity = {};
+  std::vector<size_t> cpu_affinity;
 
   // The size of the stack for this thread. Defaults to 8MB.
   size_t stack_size = 8 * 1024 * 1024;

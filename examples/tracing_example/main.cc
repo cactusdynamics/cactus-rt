@@ -16,8 +16,19 @@ void WasteTime(std::chrono::microseconds duration) {
 class ExampleRTThread : public CyclicThread {
   int64_t loop_counter_ = 0;
 
+  static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
+    cactus_rt::CyclicThreadConfig thread_config;
+    thread_config.period_ns = 1'000'000;
+    thread_config.cpu_affinity = std::vector<size_t>{2};
+    thread_config.SetFifoScheduler(80);
+
+    // thread_config.tracer_config.trace_sleep = true;
+    thread_config.tracer_config.trace_wakeup_latency = true;
+    return thread_config;
+  }
+
  public:
-  ExampleRTThread(const char* name, cactus_rt::CyclicThreadConfig config) : CyclicThread(name, config) {}
+  ExampleRTThread() : CyclicThread("ExampleRTThread", CreateThreadConfig()) {}
 
   int64_t GetLoopCounter() const {
     return loop_counter_;
@@ -60,21 +71,38 @@ class ExampleRTThread : public CyclicThread {
   }
 };
 
+class SecondRTThread : public CyclicThread {
+  static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
+    cactus_rt::CyclicThreadConfig thread_config;
+    thread_config.period_ns = 3'000'000;
+    thread_config.cpu_affinity = {1};
+    thread_config.SetFifoScheduler(60);
+
+    // thread_config.tracer_config.trace_sleep = true;
+    thread_config.tracer_config.trace_wakeup_latency = true;
+    return thread_config;
+  }
+
+ public:
+  SecondRTThread() : CyclicThread("SecondRTThread", CreateThreadConfig()) {}
+
+ protected:
+  bool Loop(int64_t /*now*/) noexcept final {
+    const auto span = Tracer().WithSpan("Sense");
+    WasteTime(std::chrono::microseconds(2000));
+    return false;
+  }
+};
+
 int main() {
-  cactus_rt::CyclicThreadConfig thread_config;
-  thread_config.period_ns = 1'000'000;
-  thread_config.cpu_affinity = std::vector<size_t>{2};
-  thread_config.SetFifoScheduler(80);
-
-  // thread_config.tracer_config.trace_sleep = true;
-  thread_config.tracer_config.trace_wakeup_latency = true;
-
   cactus_rt::AppConfig app_config;
-  app_config.tracer_config.trace_aggregator_cpu_affinity = {1};
+  app_config.tracer_config.trace_aggregator_cpu_affinity = {0};  // doesn't work yet
 
-  auto thread = std::make_shared<ExampleRTThread>("ExampleRTThread", thread_config);
+  auto thread1 = std::make_shared<ExampleRTThread>();
+  auto thread2 = std::make_shared<SecondRTThread>();
   App  app("TracingExampleApp", app_config);
-  app.RegisterThread(thread);
+  app.RegisterThread(thread1);
+  app.RegisterThread(thread2);
 
   std::cout << "Testing RT loop for 15 seconds with two trace sessions.\n";
 
@@ -97,6 +125,6 @@ int main() {
   app.Join();
   // Don't need to stop the trace session as the app destructor will take care of it.
 
-  std::cout << "Number of loops executed: " << thread->GetLoopCounter() << "\n";
+  std::cout << "Number of loops executed: " << thread1->GetLoopCounter() << "\n";
   return 0;
 }

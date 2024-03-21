@@ -13,6 +13,7 @@ protobuf_generate_cpp(
   process_descriptor.proto
   counter_descriptor.proto
   track_event.proto
+  interned_data.proto
   source_location.proto
 )
 

@@ -235,7 +235,57 @@ TODO...
 
 ### Performance and limitations
 
-TODO...
+#### Too much data causing buffer overflow and trace data drops
+
+#### String interning
+
+Perfetto allows event names and event categories to be interned by assigning
+each unique string with an id and emitting the id rather than the string to save
+space in the output trace files. This feature is implemented via the
+`interned_data`, `name_iid`, and `category_iids` fields. A few details worth
+noting:
+
+1. Perfetto uses `trusted_packet_sequence_id` to identify a single sequence. A
+   single sequence must have monotonically increasing timestamps for its
+   packets. Both Perfetto upstream and cactus-rt's implementation of the tracer
+   gives a sequence id per thread. In cactus-rt, this is especially important
+   as when we pop the data from the queue originating from multiple threads.
+2. The `iid`s on their own are not sufficient to identify the string being
+   interned as it is not "globally" unique. It is only unique per sequence
+   (i.e. thus `(trusted_packet_sequence_id, iid)` is sufficient to identify an
+   interned string). This, along with (1), implies we have to intern strings on
+   a per-thread interner.
+
+### Other notes
+
+#### Perfetto SDK (upstream) can grab a lock when buffer is full
+
+- It seems that trace events are emitted via the `TRACE_EVENT` macro, which starts [here with `TRACE_EVENT_BEGIN`](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/track_event.h#L354).
+- This then calls [`PERFETTO_INTERNAL_TRACK_EVENT_WITH_METHOD`](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/internal/track_event_macros.h#L115).
+  - This also calls `perfetto_track_event::internal::isDynamicCategory`
+- This calls [`perfetto_track_event::TrackEvent::TraceForCategory`](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/internal/track_event_data_source.h#L376), which eventually calls:
+  - [`WriteTrackEventImpl`](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/internal/track_event_data_source.h#L874) which creates the protobuf packet via protozero.
+    - This [calls](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/internal/track_event_data_source.h#L901) [`TrackEventInternal::WriteEvent`](https://github.com/google/perfetto/blob/v43.2/src/tracing/internal/track_event_internal.cc#L528)
+    - which [calls](https://github.com/google/perfetto/blob/v43.2/src/tracing/internal/track_event_internal.cc#L537) [`NewTracePacket`](https://github.com/google/perfetto/blob/v43.2/src/tracing/internal/track_event_internal.cc#L470)
+    - which [calls](https://github.com/google/perfetto/blob/v43.2/src/tracing/internal/track_event_internal.cc#L479) [`TraceWriterBase::NewTracePacket`](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/trace_writer_base.h#L41-L61), **which might be [`TraceWriterImpl::NewTracePacket`](https://github.com/google/perfetto/blob/v43.2/src/tracing/core/trace_writer_impl.cc#L119).**
+
+From the other side:
+
+- `SharedMemoryArbiterImpl::GetNewChunk` grabs [a lock](https://github.com/google/perfetto/blob/v43.2/src/tracing/core/shared_memory_arbiter_impl.cc#L106-L110)
+  - [called from](https://github.com/google/perfetto/blob/v43.2/src/tracing/core/trace_writer_impl.cc#L242) `TraceWriterImpl::GetNewBuffer`.
+  - **This is called from [`TraceWriterImpl::NewTracePacket`](https://github.com/google/perfetto/blob/v43.2/src/tracing/core/trace_writer_impl.cc#L151).** This is called if the chunk is too full for the data.
+
+This means that there is a small chance that a lock can be taken, and an even smaller chance that a priority inversion could take place. This means it is not suitable for hard real-time applications and a custom tracing library must be written.
+
+#### Perfetto SDK string interning
+
+- `WriteTrackEventImpl` [calls](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/internal/track_event_data_source.h#L907) `TrackEventInternal::WriteEventName` which calls [`InternedEventName::Get`](https://github.com/google/perfetto/blob/v43.2/src/tracing/internal/track_event_internal.cc#L506), and which is implemented in [here](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/track_event_interned_data_index.h#L183).
+  - In here there's memory allocation due to [`LookupAndInsert`](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/track_event_interned_data_index.h#L99-L144) (called from [here](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/track_event_interned_data_index.h#L189)) using a `std::map`.
+  - Also `GetOrCreateIndex` [calls `new`](https://github.com/google/perfetto/blob/v43.2/include/perfetto/tracing/track_event_interned_data_index.h#L243). Likely this means another allocation potential on the hot path.
+
+This means Perfetto uses memory allocation on the hot path, which is not acceptable for cactus-rt due to real-time constraints.
+
+#### Perfetto SDK data dropping counter
 
 Advanced tuning and use cases
 -----------------------------

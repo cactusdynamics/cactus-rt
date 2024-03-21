@@ -16,7 +16,9 @@
 
 syntax = "proto2";
 
-// Adapted from https://github.com/google/perfetto/blob/v36.1/protos/perfetto/trace/track_event/counter_descriptor.proto
+// Adapted from https://github.com/google/perfetto/blob/v43.2/protos/perfetto/trace/track_event/counter_descriptor.proto
+//
+// No changes are made other than the package name.
 
 package cactus_tracing.vendor.perfetto.protos;
 

@@ -24,11 +24,16 @@ test-debug: build-test-debug
 
 test: test-debug
 
-benchmark: build-test-debug
-	build/test/tests/cactus_rt_tracing_benchmark
+build-test-release:
+	cmake -Bbuild/benchmark -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_EXAMPLES=OFF -DBUILD_TESTING=ON -DENABLE_CLANG_TIDY=$(ENABLE_CLANG_TIDY) -DENABLE_TRACING=$(ENABLE_TRACING)
+	cmake --build build/benchmark -j $$(nproc)
+
+benchmark: build-test-release
+	build/benchmark/tests/cactus_rt_tracing_benchmark
 
 clean:
 	test ! -d build/test || cmake --build build/test --target clean
+	test ! -d build/benchmark || cmake --build build/benchmark --target clean
 	test ! -d build/debug || cmake --build build/debug --target clean
 	test ! -d build/release || cmake --build build/release --target clean
 
