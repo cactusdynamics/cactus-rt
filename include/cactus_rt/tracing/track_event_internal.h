@@ -31,12 +31,6 @@ namespace cactus_rt::tracing {
  * an arbitrary number of categories. This is by design as it makes the system
  * easier to deal with for real-time use cases.
  *
- * TODO: we also do not support interned name and category for now. This is
- * something that can be considered at a later point. It is also possible that
- * this structure can continue to take const char* for name and category. The
- * Tracer can then compare it with a list of known pointers and emit the
- * correponding interned ids.
- *
  * @private
  */
 struct TrackEventInternal {
@@ -46,14 +40,6 @@ struct TrackEventInternal {
   TrackEventType type;
   const char*    name = nullptr;
   const char*    category = nullptr;
-
-  // std::variant is real time safe but boost::variant is not. See
-  // https://youtu.be/Tof5pRedskI?t=1851
-  // boost::variant: if the constructor of the object fails, it will rollback
-  // the value to before, which means there is a backup must be taken with
-  // memory allocation (strong-exception guarantee).
-  // std::variant does not have strong-exception guarantee so no allocation.
-  std::optional<std::variant<int64_t, double>> counter_value = std::nullopt;
 
   TrackEventInternal() = default;
   TrackEventInternal(
