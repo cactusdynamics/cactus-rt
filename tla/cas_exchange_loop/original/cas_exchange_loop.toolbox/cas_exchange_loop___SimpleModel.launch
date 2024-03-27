@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
+    <stringAttribute key="configurationName" value="SimpleModel"/>
+    <intAttribute key="distributedFPSetCount" value="0"/>
+    <stringAttribute key="distributedNetworkInterface" value="192.168.75.1"/>
+    <intAttribute key="distributedNodesCount" value="1"/>
+    <stringAttribute key="distributedTLC" value="off"/>
+    <intAttribute key="fpIndex" value="23"/>
+    <intAttribute key="maxHeapSize" value="25"/>
+    <stringAttribute key="modelBehaviorInit" value=""/>
+    <stringAttribute key="modelBehaviorNext" value=""/>
+    <stringAttribute key="modelBehaviorSpec" value="Spec"/>
+    <intAttribute key="modelBehaviorSpecType" value="1"/>
+    <stringAttribute key="modelBehaviorVars" value="reader_local_pointer, write_index, pc, chosen_element, g_atomic_pointer, read_index, writer_expected_ptr, writer_local_pointer, g_writer_written_data_for_assertion, exchanged, g_storage_pointer, reader_local_data, g_memory"/>
+    <stringAttribute key="modelComments" value=""/>
+    <booleanAttribute key="modelCorrectnessCheckDeadlock" value="true"/>
+    <listAttribute key="modelCorrectnessInvariants">
+        <listEntry value="1InvariantNoMemoryLeak"/>
+    </listAttribute>
+    <listAttribute key="modelCorrectnessProperties">
+        <listEntry value="1Termination"/>
+        <listEntry value="0WriterWroteDataBeforeReaderAtLeastOnce"/>
+    </listAttribute>
+    <intAttribute key="modelEditorOpenTabs" value="0"/>
+    <stringAttribute key="modelExpressionEval" value=""/>
+    <listAttribute key="modelParameterConstants">
+        <listEntry value="defaultInitValue;;defaultInitValue;1;0"/>
+        <listEntry value="kObjectSize;;2;0;0"/>
+        <listEntry value="EMPTY;;EMPTY;1;0"/>
+        <listEntry value="NULLPTR;;NULLPTR;1;0"/>
+        <listEntry value="kMemoryCapacity;;3;0;0"/>
+        <listEntry value="ObjectElements;;{e1, e2};1;0"/>
+    </listAttribute>
+    <listAttribute key="modelParameterDefinitions">
+        <listEntry value="UninitializedElement;;UninitializedElement;1;0"/>
+    </listAttribute>
+    <intAttribute key="modelVersion" value="20191005"/>
+    <intAttribute key="numberOfWorkers" value="8"/>
+    <stringAttribute key="result.mail.address" value=""/>
+    <stringAttribute key="specName" value="cas_exchange_loop"/>
+    <stringAttribute key="tlcResourcesProfile" value="local custom"/>
+    <listAttribute key="traceExploreExpressions">
+        <listEntry value="1MemoryUsage"/>
+        <listEntry value="1Cardinality({local_data[i]: i \in 1..kObjectSize})"/>
+    </listAttribute>
+</launchConfiguration>
