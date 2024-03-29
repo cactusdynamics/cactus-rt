@@ -2,10 +2,10 @@
 <launchConfiguration type="org.lamport.tla.toolbox.tool.tlc.modelCheck">
     <stringAttribute key="configurationName" value="SimpleModel"/>
     <intAttribute key="distributedFPSetCount" value="0"/>
-    <stringAttribute key="distributedNetworkInterface" value="192.168.75.1"/>
+    <stringAttribute key="distributedNetworkInterface" value="172.17.0.1"/>
     <intAttribute key="distributedNodesCount" value="1"/>
     <stringAttribute key="distributedTLC" value="off"/>
-    <intAttribute key="fpIndex" value="23"/>
+    <intAttribute key="fpIndex" value="103"/>
     <intAttribute key="maxHeapSize" value="25"/>
     <stringAttribute key="modelBehaviorInit" value=""/>
     <stringAttribute key="modelBehaviorNext" value=""/>
@@ -19,9 +19,8 @@
     </listAttribute>
     <listAttribute key="modelCorrectnessProperties">
         <listEntry value="1Termination"/>
-        <listEntry value="0WriterWroteDataBeforeReaderAtLeastOnce"/>
     </listAttribute>
-    <intAttribute key="modelEditorOpenTabs" value="0"/>
+    <intAttribute key="modelEditorOpenTabs" value="8"/>
     <stringAttribute key="modelExpressionEval" value=""/>
     <listAttribute key="modelParameterConstants">
         <listEntry value="defaultInitValue;;defaultInitValue;1;0"/>
@@ -40,7 +39,6 @@
     <stringAttribute key="specName" value="cas_exchange_loop"/>
     <stringAttribute key="tlcResourcesProfile" value="local custom"/>
     <listAttribute key="traceExploreExpressions">
-        <listEntry value="1MemoryUsage"/>
-        <listEntry value="1Cardinality({local_data[i]: i \in 1..kObjectSize})"/>
+        <listEntry value="0MemoryUsage"/>
     </listAttribute>
 </launchConfiguration>

@@ -7,7 +7,7 @@ in  Real-time 101 - Part II: The real-time audio developer's toolbox
 (https://youtu.be/PoZAo2Vikbo?t=297).
 
 The original idea for this algorithm is for the writer to be on the slow
-(non-real-time) path and reader to be on the fast (real-time) path. 
+(non-real-time) path and reader to be on the fast (real-time) path.
 
 The idea is to use an atomic pointer and a heap-allocated object that's always
 tracked. The atomic pointer will point to nullptr if the fast-path reader is
@@ -33,8 +33,23 @@ following properties:
 1. No memory leak occurs (InvariantNoMemoryLeak)
 2. No torn read occurs on the fast path (assertions in reader process)
 3. No use after free (assertions in readers and writers)
-4. No data race occurs (TODO)
-5. The data is passed from the writer to the reader successfully at the end.
+4. No data race occurs (TODO. Is this necessary given that we already have
+   multiple step writing and data race detection? Also see 
+   https://groups.google.com/g/tlaplus/c/2uum_SHipJ0/m/jf04a9p7AwAJ)
+5. The data is passed from the writer to the reader successfully at the end
+   (assertion in the reader, specifically the ReaderStorePtr, and manually
+   checked by producing a counter example. See: 
+   https://groups.google.com/g/tlaplus/c/gVdl99UIkLU/m/aMkOQhieAQAJ.
+   TODO: Figure out a better way).
+
+This model only specifies a single iteration of the CAS exchange loop as
+described. As a result, it starts from a valid starting state. The spec then
+goes on to describe a single writer/reader iteration in any arbitrary order.
+This means it is possible for the writer to occur after the reader. This makes
+the 5th property above (temporal property) difficult to write. It may be
+possible to constrain it such that the writer does not run if the reader already
+finished. That said, it's not really easy to define when the "reader is finished"
+without missing some cases, so it's left here as is.
 
  ***************************************************************************)
 
@@ -50,7 +65,8 @@ CONSTANT kMemoryCapacity
 
 (***************************************************************************
 An Object is something we store in the memory. Each object consists of multiple
-ObjectElements, as we need to model torn writes/reads.
+ObjectElements, as we need to model torn writes/reads. Each object also consists
+of the same ObjectElements, to more easily detect torn reads.
 
 For modeling purposes, these should be model values like {e0, e1}. Two
 elements is likely enough.
@@ -76,13 +92,14 @@ An uninitialized object element.
 UninitializedElement == CHOOSE e: e \notin ObjectElements
 
 (***************************************************************************
-Ways to create objects
+Ways to create objects. Objects are sequences of multiple of the
+same ObjectElements.
  ***************************************************************************)
 ObjectWithValue(value) == [i \in 1..kObjectSize |-> value]
 DefaultObject == ObjectWithValue(UninitializedElement)
 
 \* Pick a random object element for the initial state. Could theoretically make
-\* the initial be different objects. 
+\* the initial be different objects.
 InitialObject == ObjectWithValue(CHOOSE e \in ObjectElements: TRUE)
 
 (* --algorithm cas_exchange_loop
@@ -107,21 +124,26 @@ variables
     reader_local_data = DefaultObject;
 begin
     ReaderExchangePtr:
-        assert g_atomic_pointer # NULLPTR;
+        assert g_atomic_pointer # NULLPTR; \* Assert that the atomic pointer is not null when we start. i.e. the writer didn't write nullptr
         reader_local_pointer := g_atomic_pointer;
         g_atomic_pointer := NULLPTR;
 
     ReaderCopyObject:
         while read_index <= kObjectSize do
-            assert g_memory[reader_local_pointer] # EMPTY;
-            assert DataIsNotTorn(g_memory[reader_local_pointer]);
+            assert g_memory[reader_local_pointer] # EMPTY; \* Asserts no read to an invalid pointer
+            assert DataIsNotTorn(g_memory[reader_local_pointer]); \* Assert the write wasn't torn when this read occurs
             reader_local_data[read_index] := g_memory[reader_local_pointer][read_index];
             ReaderReadObjectInc:
                 read_index := read_index + 1;
         end while;
 
     ReaderStorePtr:
-        assert DataIsNotTorn(reader_local_data);
+        assert DataIsNotTorn(reader_local_data); \* Assert the read data is not torn when we read it
+        \* Either the read happened before the write and the g_writer_written_data_for_assertion is empty.
+        \* Or the write happened before the read and we have g_writer_written_data_for_assertion as the intended write.
+        \* In which case we assert that the read data is indeed what was written.
+        \* Thereby we confirmed that the data written by the writer was properly transmitted to the reader.
+        \* We need to use a temporal property to to ensure that the second branch of this \/ condition happens.
         assert \/ g_writer_written_data_for_assertion = EMPTY
                \/ g_writer_written_data_for_assertion = reader_local_data;
         g_atomic_pointer := reader_local_pointer;
@@ -139,7 +161,7 @@ begin
     \* with a default initialized object.
     \*
     \* If this CHOOSE ever fails, it means we have run out of memory and likely
-    \* there was a memory leak. 
+    \* there was a memory leak.
     WriterAllocateObject:
         assert Cardinality({i \in DOMAIN g_memory : g_memory[i] = EMPTY}) > 0; \* Check OOM
 
@@ -194,7 +216,7 @@ begin
 end process;
 
 end algorithm; *)
-\* BEGIN TRANSLATION (chksum(pcal) = "68798429" /\ chksum(tla) = "4d4ee443")
+\* BEGIN TRANSLATION (chksum(pcal) = "68798429" /\ chksum(tla) = "d128285c")
 CONSTANT defaultInitValue
 VARIABLES g_storage_pointer, g_memory, g_atomic_pointer, 
           g_writer_written_data_for_assertion, pc
@@ -236,7 +258,7 @@ Init == (* Global variables *)
 
 ReaderExchangePtr == /\ pc["reader"] = "ReaderExchangePtr"
                      /\ Assert(g_atomic_pointer # NULLPTR, 
-                               "Failure of assertion at line 110, column 9.")
+                               "Failure of assertion at line 127, column 9.")
                      /\ reader_local_pointer' = g_atomic_pointer
                      /\ g_atomic_pointer' = NULLPTR
                      /\ pc' = [pc EXCEPT !["reader"] = "ReaderCopyObject"]
@@ -250,9 +272,9 @@ ReaderExchangePtr == /\ pc["reader"] = "ReaderExchangePtr"
 ReaderCopyObject == /\ pc["reader"] = "ReaderCopyObject"
                     /\ IF read_index <= kObjectSize
                           THEN /\ Assert(g_memory[reader_local_pointer] # EMPTY, 
-                                         "Failure of assertion at line 116, column 13.")
+                                         "Failure of assertion at line 133, column 13.")
                                /\ Assert(DataIsNotTorn(g_memory[reader_local_pointer]), 
-                                         "Failure of assertion at line 117, column 13.")
+                                         "Failure of assertion at line 134, column 13.")
                                /\ reader_local_data' = [reader_local_data EXCEPT ![read_index] = g_memory[reader_local_pointer][read_index]]
                                /\ pc' = [pc EXCEPT !["reader"] = "ReaderReadObjectInc"]
                           ELSE /\ pc' = [pc EXCEPT !["reader"] = "ReaderStorePtr"]
@@ -278,10 +300,10 @@ ReaderReadObjectInc == /\ pc["reader"] = "ReaderReadObjectInc"
 
 ReaderStorePtr == /\ pc["reader"] = "ReaderStorePtr"
                   /\ Assert(DataIsNotTorn(reader_local_data), 
-                            "Failure of assertion at line 124, column 9.")
+                            "Failure of assertion at line 141, column 9.")
                   /\ Assert(\/ g_writer_written_data_for_assertion = EMPTY
                             \/ g_writer_written_data_for_assertion = reader_local_data, 
-                            "Failure of assertion at line 125, column 9.")
+                            "Failure of assertion at line 147, column 9.")
                   /\ g_atomic_pointer' = reader_local_pointer
                   /\ pc' = [pc EXCEPT !["reader"] = "Done"]
                   /\ UNCHANGED << g_storage_pointer, g_memory, 
@@ -296,7 +318,7 @@ reader == ReaderExchangePtr \/ ReaderCopyObject \/ ReaderReadObjectInc
 
 WriterAllocateObject == /\ pc["writer"] = "WriterAllocateObject"
                         /\ Assert(Cardinality({i \in DOMAIN g_memory : g_memory[i] = EMPTY}) > 0, 
-                                  "Failure of assertion at line 144, column 9.")
+                                  "Failure of assertion at line 166, column 9.")
                         /\ writer_local_pointer' = (CHOOSE i \in DOMAIN g_memory: g_memory[i] = EMPTY)
                         /\ g_memory' = [g_memory EXCEPT ![writer_local_pointer'] = DefaultObject]
                         /\ pc' = [pc EXCEPT !["writer"] = "WriterChooseObjectElement"]
@@ -323,7 +345,7 @@ WriterChooseObjectElement == /\ pc["writer"] = "WriterChooseObjectElement"
 WriterWriteObject == /\ pc["writer"] = "WriterWriteObject"
                      /\ IF write_index <= kObjectSize
                            THEN /\ Assert(g_memory[writer_local_pointer] # EMPTY, 
-                                          "Failure of assertion at line 171, column 13.")
+                                          "Failure of assertion at line 193, column 13.")
                                 /\ g_memory' = [g_memory EXCEPT ![writer_local_pointer][write_index] = chosen_element]
                                 /\ pc' = [pc EXCEPT !["writer"] = "WriterWriteObjectLoopInc"]
                            ELSE /\ pc' = [pc EXCEPT !["writer"] = "WriterCASLoop"]
@@ -389,7 +411,7 @@ WriterUpdateStoragePointer == /\ pc["writer"] = "WriterUpdateStoragePointer"
 
 WriterDeleteOldData == /\ pc["writer"] = "WriterDeleteOldData"
                        /\ Assert(g_memory[writer_local_pointer] # EMPTY, 
-                                 "Failure of assertion at line 192, column 9.")
+                                 "Failure of assertion at line 214, column 9.")
                        /\ g_memory' = [g_memory EXCEPT ![writer_local_pointer] = EMPTY]
                        /\ pc' = [pc EXCEPT !["writer"] = "Done"]
                        /\ UNCHANGED << g_storage_pointer, g_atomic_pointer, 
@@ -417,16 +439,9 @@ Spec == /\ Init /\ [][Next]_vars
 
 Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
-\* END TRANSLATION 
-
-WriterWroteDataBeforeReaderAtLeastOnce ==
-    <>(
-          /\ (reader_local_data # DefaultObject)
-          /\ <>(g_writer_written_data_for_assertion # EMPTY)
-          /\ <>(g_writer_written_data_for_assertion = reader_local_data)
-      )
+\* END TRANSLATION
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Mar 23 17:13:26 EDT 2024 by shuhao
+\* Last modified Fri Mar 29 10:07:45 EDT 2024 by shuhao
 \* Created Sat Mar 23 11:26:21 EDT 2024 by shuhao
