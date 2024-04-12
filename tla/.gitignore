@@ -3,3 +3,5 @@
 !**/*.toolbox/*Model.launch
 
 states/
+*.dot
+*.out
