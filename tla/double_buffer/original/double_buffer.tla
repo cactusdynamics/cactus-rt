@@ -105,17 +105,10 @@ begin
                     \* Asserts no torn reads, as it's possible for the writer to write to the same slot if we don't assert.
                     assert DataIsNotTorn(g_slots[FlipIndex(reader_slot_idx.idx)]);
 
+                    \* If we got new data, the data we are reading should be larger than the known maximum data as we are always incrementing forward.
                     assert
                         \/ ~reader_got_new_data
                         \/ g_slots[FlipIndex(reader_slot_idx.idx)][reader_data_read_idx] > reader_maximum_data;
-
-                    \* Assert the data we are reading is always greater than maximum data we have read thus far.
-                    \* If it is equal or lower, this means we have read old data.
-                    \* If simple model was ran, we can see a double exchange after the write, causing old data to be read.
-                    \* assert 
-                    \*     \/ g_slots[FlipIndex(reader_slot_idx.idx)][reader_data_read_idx] = 0 \* This is the initial value... we ignore it as this case is hit if the reader executes 100% before the writer.
-                    \*    \/ g_slots[FlipIndex(reader_slot_idx.idx)][reader_data_read_idx] > reader_maximum_data;
-                        \* \/ (reader_maximum_data = g_writer_maximum_data /\ g_slots[FlipIndex(reader_slot_idx.idx)][reader_data_read_idx] = reader_maximum_data)
 
                     reader_local_data[reader_data_read_idx] := g_slots[FlipIndex(reader_slot_idx.idx)][reader_data_read_idx];
                     reader_data_read_idx := reader_data_read_idx + 1;
@@ -128,9 +121,7 @@ begin
                 assert DataIsNotTorn(reader_local_data);
 
                 \* Assert the data we read is the data wrote at the time of the exchange index.
-                assert 
-                    \/ reader_local_data = ObjectWithValue(reader_maximum_data)
-                    \/ reader_local_data = ObjectWithValue(0);
+                assert reader_local_data = ObjectWithValue(reader_maximum_data)
         end while;
 end process;
 
@@ -163,7 +154,7 @@ end process;
 
 
 end algorithm; *)
-\* BEGIN TRANSLATION (chksum(pcal) = "24e6e222" /\ chksum(tla) = "98556c2c")
+\* BEGIN TRANSLATION (chksum(pcal) = "e7d07132" /\ chksum(tla) = "da8a2207")
 CONSTANT defaultInitValue
 VARIABLES g_slots, g_idx, g_writer_maximum_data, pc
 
@@ -280,7 +271,7 @@ ReaderReadDataLoop == /\ pc["reader"] = "ReaderReadDataLoop"
                                            "Failure of assertion at line 106, column 21.")
                                  /\ Assert(\/ ~reader_got_new_data
                                            \/ g_slots[FlipIndex(reader_slot_idx.idx)][reader_data_read_idx] > reader_maximum_data, 
-                                           "Failure of assertion at line 108, column 21.")
+                                           "Failure of assertion at line 109, column 21.")
                                  /\ reader_local_data' = [reader_local_data EXCEPT ![reader_data_read_idx] = g_slots[FlipIndex(reader_slot_idx.idx)][reader_data_read_idx]]
                                  /\ reader_data_read_idx' = reader_data_read_idx + 1
                                  /\ pc' = [pc EXCEPT !["reader"] = "ReaderReadDataLoop"]
@@ -298,10 +289,9 @@ ReaderReadDataLoop == /\ pc["reader"] = "ReaderReadDataLoop"
 ReaderAfterReadData == /\ pc["reader"] = "ReaderAfterReadData"
                        /\ reader_maximum_data' = reader_maximum_data_tentative
                        /\ Assert(DataIsNotTorn(reader_local_data), 
-                                 "Failure of assertion at line 128, column 17.")
-                       /\ Assert(\/ reader_local_data = ObjectWithValue(reader_maximum_data')
-                                 \/ reader_local_data = ObjectWithValue(0), 
-                                 "Failure of assertion at line 131, column 17.")
+                                 "Failure of assertion at line 121, column 17.")
+                       /\ Assert(reader_local_data = ObjectWithValue(reader_maximum_data'), 
+                                 "Failure of assertion at line 124, column 17.")
                        /\ pc' = [pc EXCEPT !["reader"] = "ReaderOuterLoop"]
                        /\ UNCHANGED << g_slots, g_idx, g_writer_maximum_data, 
                                        reader_outer_loop_idx, reader_slot_idx, 
@@ -391,5 +381,5 @@ Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Apr 04 19:28:44 EDT 2024 by shuhao
+\* Last modified Thu Apr 04 19:46:55 EDT 2024 by shuhao
 \* Created Wed Apr 03 20:06:15 EDT 2024 by shuhao
