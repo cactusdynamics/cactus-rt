@@ -1,0 +1,8 @@
+#ifndef CACTUS_RT_EXPERIMENTAL_LOCKLESS_SPSC_REALTIME_WRITABLE_VALUE_
+#define CACTUS_RT_EXPERIMENTAL_LOCKLESS_SPSC_REALTIME_WRITABLE_VALUE_
+
+namespace cactus_rt::experimental::lockless::spsc {
+
+}
+
+#endif
