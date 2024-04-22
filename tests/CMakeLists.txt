@@ -4,6 +4,9 @@ enable_testing()
 
 add_executable(cactus_rt_tests
   utils_test.cc
+  experimental/lockless/atomic_bitset_test.cc
+  experimental/lockless/spsc/realtime_readable_value_test.cc
+  experimental/lockless/spsc/realtime_writable_value_test.cc
 )
 
 target_link_libraries(cactus_rt_tests
