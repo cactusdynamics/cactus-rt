@@ -82,6 +82,8 @@ function(setup_cactus_rt_target_options target_name)
     -Wdouble-promotion
     -Wformat=2
     -Wimplicit-fallthrough
+
+    -fPIC
   )
 
   target_compile_features(${target_name}
