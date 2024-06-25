@@ -31,8 +31,6 @@ class Thread {
   quill::Logger*                         logger_;
   std::shared_ptr<tracing::ThreadTracer> tracer_;
 
-  std::atomic_bool stop_requested_ = false;
-
   // Non-owning App pointer. Used only for notifying that the thread has
   // started/stopped for tracing purposes.
   App* app_ = nullptr;
@@ -122,6 +120,8 @@ class Thread {
   inline tracing::ThreadTracer& Tracer() { return *tracer_; }
   inline int64_t                StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
   inline const ThreadConfig&    Config() const noexcept { return config_; }
+
+  std::atomic_bool stop_requested_ = false;
 
   /**
    * Override this method to do work. If this is a real-time thread, once this
