@@ -1,6 +1,7 @@
 #ifndef CACTUS_TRACING_STRING_INTERNER_H_
 #define CACTUS_TRACING_STRING_INTERNER_H_
 
+#include <cstdint>
 #include <list>
 #include <string>
 #include <string_view>
