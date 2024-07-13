@@ -34,11 +34,11 @@ following properties:
 2. No torn read occurs on the fast path (assertions in reader process)
 3. No use after free (assertions in readers and writers)
 4. No data race occurs (TODO. Is this necessary given that we already have
-   multiple step writing and data race detection? Also see 
+   multiple step writing and data race detection? Also see
    https://groups.google.com/g/tlaplus/c/2uum_SHipJ0/m/jf04a9p7AwAJ)
 5. The data is passed from the writer to the reader successfully at the end
    (assertion in the reader, specifically the ReaderStorePtr, and manually
-   checked by producing a counter example. See: 
+   checked by producing a counter example. See:
    https://groups.google.com/g/tlaplus/c/gVdl99UIkLU/m/aMkOQhieAQAJ.
    TODO: Figure out a better way).
 
@@ -154,6 +154,7 @@ variables
     writer_local_pointer, \* newBiquad in original
     chosen_element,       \* A shortcut variable to choose a single element from ObjectElements so it is stationary in the write loop. May be replaced with `with`?
     writer_expected_ptr,  \* expected in the origin
+    tmp_storage_ptr,      \* A pointer needed to store the pointer in storage_pointer so it can be freed.
     exchanged = FALSE,    \* A variable to indicate if the exchange is successful.
     write_index = 1;      \* Used to model writing through the data in multiple steps.
 begin
@@ -201,22 +202,23 @@ begin
             writer_expected_ptr := g_storage_pointer;
             WriterCASCAS:
                 if (writer_expected_ptr = g_atomic_pointer) then
-                    g_atomic_pointer := writer_local_pointer || writer_local_pointer := g_atomic_pointer;
+                    g_atomic_pointer := writer_local_pointer;
                     g_writer_written_data_for_assertion := ObjectWithValue(chosen_element); \* Not a part of the algorithm. Not implementable in real-life. Used for assertion instead.
                     exchanged := TRUE;
                 end if;
         end while;
 
     WriterUpdateStoragePointer:
+        tmp_storage_ptr := g_storage_pointer;
         g_storage_pointer := writer_local_pointer;
 
     WriterDeleteOldData:
-        assert g_memory[writer_local_pointer] # EMPTY; \* Check double free
-        g_memory[writer_local_pointer] := EMPTY;
+        assert g_memory[tmp_storage_ptr] # EMPTY; \* Check double free
+        g_memory[tmp_storage_ptr] := EMPTY;
 end process;
 
 end algorithm; *)
-\* BEGIN TRANSLATION (chksum(pcal) = "68798429" /\ chksum(tla) = "d128285c")
+\* BEGIN TRANSLATION (chksum(pcal) = "caa390f4" /\ chksum(tla) = "477b52cc")
 CONSTANT defaultInitValue
 VARIABLES g_storage_pointer, g_memory, g_atomic_pointer, 
           g_writer_written_data_for_assertion, pc
@@ -229,12 +231,13 @@ DataIsNotTorn(data) == Cardinality({data[i] : i \in 1..kObjectSize}) = 1
 
 VARIABLES reader_local_pointer, read_index, reader_local_data, 
           writer_local_pointer, chosen_element, writer_expected_ptr, 
-          exchanged, write_index
+          tmp_storage_ptr, exchanged, write_index
 
 vars == << g_storage_pointer, g_memory, g_atomic_pointer, 
            g_writer_written_data_for_assertion, pc, reader_local_pointer, 
            read_index, reader_local_data, writer_local_pointer, 
-           chosen_element, writer_expected_ptr, exchanged, write_index >>
+           chosen_element, writer_expected_ptr, tmp_storage_ptr, exchanged, 
+           write_index >>
 
 ProcSet == {"reader"} \cup {"writer"}
 
@@ -251,6 +254,7 @@ Init == (* Global variables *)
         /\ writer_local_pointer = defaultInitValue
         /\ chosen_element = defaultInitValue
         /\ writer_expected_ptr = defaultInitValue
+        /\ tmp_storage_ptr = defaultInitValue
         /\ exchanged = FALSE
         /\ write_index = 1
         /\ pc = [self \in ProcSet |-> CASE self = "reader" -> "ReaderExchangePtr"
@@ -266,8 +270,8 @@ ReaderExchangePtr == /\ pc["reader"] = "ReaderExchangePtr"
                                      g_writer_written_data_for_assertion, 
                                      read_index, reader_local_data, 
                                      writer_local_pointer, chosen_element, 
-                                     writer_expected_ptr, exchanged, 
-                                     write_index >>
+                                     writer_expected_ptr, tmp_storage_ptr, 
+                                     exchanged, write_index >>
 
 ReaderCopyObject == /\ pc["reader"] = "ReaderCopyObject"
                     /\ IF read_index <= kObjectSize
@@ -284,8 +288,8 @@ ReaderCopyObject == /\ pc["reader"] = "ReaderCopyObject"
                                     g_writer_written_data_for_assertion, 
                                     reader_local_pointer, read_index, 
                                     writer_local_pointer, chosen_element, 
-                                    writer_expected_ptr, exchanged, 
-                                    write_index >>
+                                    writer_expected_ptr, tmp_storage_ptr, 
+                                    exchanged, write_index >>
 
 ReaderReadObjectInc == /\ pc["reader"] = "ReaderReadObjectInc"
                        /\ read_index' = read_index + 1
@@ -295,8 +299,8 @@ ReaderReadObjectInc == /\ pc["reader"] = "ReaderReadObjectInc"
                                        g_writer_written_data_for_assertion, 
                                        reader_local_pointer, reader_local_data, 
                                        writer_local_pointer, chosen_element, 
-                                       writer_expected_ptr, exchanged, 
-                                       write_index >>
+                                       writer_expected_ptr, tmp_storage_ptr, 
+                                       exchanged, write_index >>
 
 ReaderStorePtr == /\ pc["reader"] = "ReaderStorePtr"
                   /\ Assert(DataIsNotTorn(reader_local_data), 
@@ -311,14 +315,14 @@ ReaderStorePtr == /\ pc["reader"] = "ReaderStorePtr"
                                   reader_local_pointer, read_index, 
                                   reader_local_data, writer_local_pointer, 
                                   chosen_element, writer_expected_ptr, 
-                                  exchanged, write_index >>
+                                  tmp_storage_ptr, exchanged, write_index >>
 
 reader == ReaderExchangePtr \/ ReaderCopyObject \/ ReaderReadObjectInc
              \/ ReaderStorePtr
 
 WriterAllocateObject == /\ pc["writer"] = "WriterAllocateObject"
                         /\ Assert(Cardinality({i \in DOMAIN g_memory : g_memory[i] = EMPTY}) > 0, 
-                                  "Failure of assertion at line 166, column 9.")
+                                  "Failure of assertion at line 167, column 9.")
                         /\ writer_local_pointer' = (CHOOSE i \in DOMAIN g_memory: g_memory[i] = EMPTY)
                         /\ g_memory' = [g_memory EXCEPT ![writer_local_pointer'] = DefaultObject]
                         /\ pc' = [pc EXCEPT !["writer"] = "WriterChooseObjectElement"]
@@ -326,8 +330,8 @@ WriterAllocateObject == /\ pc["writer"] = "WriterAllocateObject"
                                         g_writer_written_data_for_assertion, 
                                         reader_local_pointer, read_index, 
                                         reader_local_data, chosen_element, 
-                                        writer_expected_ptr, exchanged, 
-                                        write_index >>
+                                        writer_expected_ptr, tmp_storage_ptr, 
+                                        exchanged, write_index >>
 
 WriterChooseObjectElement == /\ pc["writer"] = "WriterChooseObjectElement"
                              /\ \E elem \in ObjectElements:
@@ -339,13 +343,14 @@ WriterChooseObjectElement == /\ pc["writer"] = "WriterChooseObjectElement"
                                              reader_local_pointer, read_index, 
                                              reader_local_data, 
                                              writer_local_pointer, 
-                                             writer_expected_ptr, exchanged, 
+                                             writer_expected_ptr, 
+                                             tmp_storage_ptr, exchanged, 
                                              write_index >>
 
 WriterWriteObject == /\ pc["writer"] = "WriterWriteObject"
                      /\ IF write_index <= kObjectSize
                            THEN /\ Assert(g_memory[writer_local_pointer] # EMPTY, 
-                                          "Failure of assertion at line 193, column 13.")
+                                          "Failure of assertion at line 194, column 13.")
                                 /\ g_memory' = [g_memory EXCEPT ![writer_local_pointer][write_index] = chosen_element]
                                 /\ pc' = [pc EXCEPT !["writer"] = "WriterWriteObjectLoopInc"]
                            ELSE /\ pc' = [pc EXCEPT !["writer"] = "WriterCASLoop"]
@@ -355,7 +360,7 @@ WriterWriteObject == /\ pc["writer"] = "WriterWriteObject"
                                      reader_local_pointer, read_index, 
                                      reader_local_data, writer_local_pointer, 
                                      chosen_element, writer_expected_ptr, 
-                                     exchanged, write_index >>
+                                     tmp_storage_ptr, exchanged, write_index >>
 
 WriterWriteObjectLoopInc == /\ pc["writer"] = "WriterWriteObjectLoopInc"
                             /\ write_index' = write_index + 1
@@ -367,7 +372,8 @@ WriterWriteObjectLoopInc == /\ pc["writer"] = "WriterWriteObjectLoopInc"
                                             reader_local_data, 
                                             writer_local_pointer, 
                                             chosen_element, 
-                                            writer_expected_ptr, exchanged >>
+                                            writer_expected_ptr, 
+                                            tmp_storage_ptr, exchanged >>
 
 WriterCASLoop == /\ pc["writer"] = "WriterCASLoop"
                  /\ IF exchanged = FALSE
@@ -379,25 +385,27 @@ WriterCASLoop == /\ pc["writer"] = "WriterCASLoop"
                                  g_writer_written_data_for_assertion, 
                                  reader_local_pointer, read_index, 
                                  reader_local_data, writer_local_pointer, 
-                                 chosen_element, exchanged, write_index >>
+                                 chosen_element, tmp_storage_ptr, exchanged, 
+                                 write_index >>
 
 WriterCASCAS == /\ pc["writer"] = "WriterCASCAS"
                 /\ IF (writer_expected_ptr = g_atomic_pointer)
-                      THEN /\ /\ g_atomic_pointer' = writer_local_pointer
-                              /\ writer_local_pointer' = g_atomic_pointer
+                      THEN /\ g_atomic_pointer' = writer_local_pointer
                            /\ g_writer_written_data_for_assertion' = ObjectWithValue(chosen_element)
                            /\ exchanged' = TRUE
                       ELSE /\ TRUE
                            /\ UNCHANGED << g_atomic_pointer, 
                                            g_writer_written_data_for_assertion, 
-                                           writer_local_pointer, exchanged >>
+                                           exchanged >>
                 /\ pc' = [pc EXCEPT !["writer"] = "WriterCASLoop"]
                 /\ UNCHANGED << g_storage_pointer, g_memory, 
                                 reader_local_pointer, read_index, 
-                                reader_local_data, chosen_element, 
-                                writer_expected_ptr, write_index >>
+                                reader_local_data, writer_local_pointer, 
+                                chosen_element, writer_expected_ptr, 
+                                tmp_storage_ptr, write_index >>
 
 WriterUpdateStoragePointer == /\ pc["writer"] = "WriterUpdateStoragePointer"
+                              /\ tmp_storage_ptr' = g_storage_pointer
                               /\ g_storage_pointer' = writer_local_pointer
                               /\ pc' = [pc EXCEPT !["writer"] = "WriterDeleteOldData"]
                               /\ UNCHANGED << g_memory, g_atomic_pointer, 
@@ -410,16 +418,16 @@ WriterUpdateStoragePointer == /\ pc["writer"] = "WriterUpdateStoragePointer"
                                               write_index >>
 
 WriterDeleteOldData == /\ pc["writer"] = "WriterDeleteOldData"
-                       /\ Assert(g_memory[writer_local_pointer] # EMPTY, 
-                                 "Failure of assertion at line 214, column 9.")
-                       /\ g_memory' = [g_memory EXCEPT ![writer_local_pointer] = EMPTY]
+                       /\ Assert(g_memory[tmp_storage_ptr] # EMPTY, 
+                                 "Failure of assertion at line 216, column 9.")
+                       /\ g_memory' = [g_memory EXCEPT ![tmp_storage_ptr] = EMPTY]
                        /\ pc' = [pc EXCEPT !["writer"] = "Done"]
                        /\ UNCHANGED << g_storage_pointer, g_atomic_pointer, 
                                        g_writer_written_data_for_assertion, 
                                        reader_local_pointer, read_index, 
                                        reader_local_data, writer_local_pointer, 
                                        chosen_element, writer_expected_ptr, 
-                                       exchanged, write_index >>
+                                       tmp_storage_ptr, exchanged, write_index >>
 
 writer == WriterAllocateObject \/ WriterChooseObjectElement
              \/ WriterWriteObject \/ WriterWriteObjectLoopInc
@@ -443,5 +451,5 @@ Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
 =============================================================================
 \* Modification History
-\* Last modified Fri Mar 29 10:07:45 EDT 2024 by shuhao
+\* Last modified Thu Jul 11 18:35:37 EDT 2024 by shuhao
 \* Created Sat Mar 23 11:26:21 EDT 2024 by shuhao
