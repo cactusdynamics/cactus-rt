@@ -24,21 +24,21 @@ class AtomicBitset {
    */
   AtomicBitset() : data_(0) {}
 
-  void Set(const size_t i, const std::memory_order order = std::memory_order_seq_cst);
+  void Set(size_t i, std::memory_order order = std::memory_order_seq_cst);
 
-  void SetRange(const std::initializer_list<size_t> indices, const std::memory_order order = std::memory_order_seq_cst);
+  void SetRange(std::initializer_list<size_t> indices, std::memory_order order = std::memory_order_seq_cst);
 
-  void Reset(const size_t i, const std::memory_order order = std::memory_order_seq_cst);
+  void Reset(size_t i, std::memory_order order = std::memory_order_seq_cst);
 
-  void ResetRange(const std::initializer_list<size_t> indices, const std::memory_order order = std::memory_order_seq_cst);
+  void ResetRange(std::initializer_list<size_t> indices, std::memory_order order = std::memory_order_seq_cst);
 
-  void Flip(const size_t t, const std::memory_order order = std::memory_order_seq_cst);
+  void Flip(size_t i, std::memory_order order = std::memory_order_seq_cst);
 
-  void FlipRange(const std::initializer_list<size_t> indices, const std::memory_order order = std::memory_order_seq_cst);
+  void FlipRange(std::initializer_list<size_t> indices, std::memory_order order = std::memory_order_seq_cst);
 
-  void SetValue(const size_t i, const bool value, const std::memory_order order = std::memory_order_seq_cst);
+  void SetValue(size_t i, bool value, std::memory_order order = std::memory_order_seq_cst);
 
-  bool Test(const size_t i, const std::memory_order order = std::memory_order_seq_cst) const;
+  bool Test(size_t i, std::memory_order order = std::memory_order_seq_cst) const;
 
   T Value(const std::memory_order order = std::memory_order_seq_cst) const {
     return data_.load(order);

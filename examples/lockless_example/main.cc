@@ -24,7 +24,7 @@ struct Pose {
   double pitch = 0.0;
   double yaw = 0.0;
 
-  Pose() {}
+  Pose() = default;
 
   Pose(double xx, double yy, double zz, double ro, double pi, double ya) : valid(true),
                                                                            x(xx),
@@ -81,7 +81,7 @@ class RTThread : public CyclicThread {
       return true;
     }
 
-    Pose new_pose = ctx_.target_pose.Read();
+    const Pose new_pose = ctx_.target_pose.Read();
     if (!new_pose.valid) {
       return false;
     }

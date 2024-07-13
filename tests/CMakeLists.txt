@@ -18,6 +18,14 @@ target_link_libraries(cactus_rt_tests
 
 setup_cactus_rt_target_options(cactus_rt_tests)
 
+target_compile_definitions(cactus_rt_tests
+  PRIVATE
+  $<$<CONFIG:Debug>:DEBUG_BUILD>
+  $<$<CONFIG:RelWithDebInfo>:RELEASE_BUILD>
+  $<$<CONFIG:Release>:RELEASE_BUILD>
+  $<$<CONFIG:MinSizeRel>:RELEASE_BUILD>
+)
+
 gtest_discover_tests(cactus_rt_tests)
 
 if(ENABLE_TRACING)
