@@ -5,12 +5,10 @@
 #include <cerrno>
 #include <cstring>
 #include <ctime>
-#include <iostream>
 #include <stdexcept>
 
 #include "cactus_rt/app.h"
 #include "cactus_rt/config.h"
-#include "cactus_rt/linux/sched_ext.h"
 
 namespace cactus_rt {
 

@@ -4,7 +4,7 @@ name: cactus-rt
 
 jobs:
   build-and-test:
-    runs-on: [self-hosted, jammy, real-time]
+    runs-on: [self-hosted, noble, real-time]
     env:
       CACTUS_RT_BUILD_DIR: build
     steps:
@@ -29,7 +29,7 @@ jobs:
       #   run: docker/scripts/04-example.sh
 
   build-and-test-no-tracing:
-    runs-on: [self-hosted, jammy, real-time]
+    runs-on: [self-hosted, noble, real-time]
     env:
       CACTUS_RT_BUILD_DIR: build
       ENABLE_TRACING: "OFF"
@@ -53,4 +53,3 @@ jobs:
 
       # - name: Run example
       #   run: docker/scripts/04-example.sh
-

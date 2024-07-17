@@ -12,7 +12,6 @@
 #include "config.h"
 #include "quill/Quill.h"
 #include "tracing/thread_tracer.h"
-#include "tracing/trace_aggregator.h"
 
 namespace cactus_rt {
 

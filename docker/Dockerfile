@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 RUN set -xe; \
     export DEBIAN_FRONTEND=noninteractive; \

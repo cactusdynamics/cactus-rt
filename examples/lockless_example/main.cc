@@ -61,7 +61,7 @@ struct Context {
  */
 class RTThread : public CyclicThread {
   Context& ctx_;
-  Pose     current_target_pose_ = {};
+  Pose     current_target_pose_;
 
   static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
     cactus_rt::CyclicThreadConfig thread_config;
