@@ -78,4 +78,11 @@ void Thread::Start(int64_t start_monotonic_time_ns, App* app) {
 int Thread::Join() const {
   return pthread_join(thread_, nullptr);
 }
+
+Thread::~Thread() {
+  if (app_ != nullptr) {
+    app_->DeregisterThreadTracer(tracer_);
+  }
+}
+
 }  // namespace cactus_rt

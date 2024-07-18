@@ -98,7 +98,7 @@ class Thread {
 
   // The constructors and destructors are needed because we need to delete
   // objects of type Thread polymorphically, through the map in the App class.
-  virtual ~Thread() = default;
+  virtual ~Thread();
 
   // Copy constructors are not allowed
   Thread(const Thread&) = delete;
