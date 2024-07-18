@@ -87,7 +87,7 @@ void TraceAggregator::DeregisterThreadTracer(const std::shared_ptr<ThreadTracer>
   const std::scoped_lock lock(mutex_);
 
   tracers_.remove_if([tracer](const std::shared_ptr<tracing::ThreadTracer>& t) {
-    return t == tracer;
+    return t.get() == tracer.get();
   });
 }
 

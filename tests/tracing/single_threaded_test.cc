@@ -1,4 +1,5 @@
 #include <cactus_rt/rt.h>
+#include <google/protobuf/text_format.h>
 #include <gtest/gtest.h>
 #include <quill/detail/LogManager.h>
 
@@ -266,6 +267,7 @@ TEST_F(SingleThreadTracingTest, StopTracingAndNoEventsAreRecorded) {
 
   auto traces = sink_->LoggedTraces();
   auto packets = GetPacketsFromTraces(traces);
+
   ASSERT_EQ(packets.size(), 1);
 
   AssertIsProcessTrackDescriptor(*packets[0], kAppName);
@@ -309,8 +311,6 @@ TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
 
   AssertIsThreadTrackDescriptor(*packets2[1], kRegularThreadName, process_track_uuid);
   auto thread_track_uuid = packets2[1]->track_descriptor().uuid();
-
-  std::cout << "packets2: " << packets2[2]->ShortDebugString() << "\n";
 
   // Event1 is emitted as interned data because that thread is still active and the event name got interned previously.
   auto event_names = GetInternedEventNames(*packets2[2]);

@@ -5,10 +5,11 @@
 #include <cerrno>
 #include <cstring>
 #include <ctime>
+#include <memory>
 #include <stdexcept>
 
-#include "cactus_rt/app.h"
 #include "cactus_rt/config.h"
+#include "cactus_rt/tracing/thread_tracer.h"
 
 namespace cactus_rt {
 
@@ -17,10 +18,11 @@ void* Thread::RunThread(void* data) {
   thread->config_.scheduler->SetSchedAttr();
 
   thread->tracer_->SetTid();
-  if (thread->app_ != nullptr) {
-    thread->app_->RegisterThreadTracer(thread->tracer_);
+  auto trace_aggregator = thread->trace_aggregator_.lock();
+  if (trace_aggregator) {
+    trace_aggregator->RegisterThreadTracer(thread->tracer_);
   } else {
-    LOG_WARNING(thread->Logger(), "thread {} does not have trace_aggregator_ and tracing is disabled. Did you all App::RegisterThread?", thread->name_);
+    LOG_WARNING(thread->Logger(), "thread {} does not have trace_aggregator_ and tracing is enabled. Did you all App::RegisterThread?", thread->name_);
   }
   quill::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
 
@@ -30,9 +32,9 @@ void* Thread::RunThread(void* data) {
   return nullptr;
 }
 
-void Thread::Start(int64_t start_monotonic_time_ns, App* app) {
+void Thread::Start(int64_t start_monotonic_time_ns, std::weak_ptr<tracing::TraceAggregator> trace_aggregator) {
   start_monotonic_time_ns_ = start_monotonic_time_ns;
-  app_ = app;
+  trace_aggregator_ = std::move(trace_aggregator);
 
   pthread_attr_t attr;
 
@@ -80,8 +82,9 @@ int Thread::Join() const {
 }
 
 Thread::~Thread() {
-  if (app_ != nullptr) {
-    app_->DeregisterThreadTracer(tracer_);
+  auto trace_aggregator = trace_aggregator_.lock();
+  if (trace_aggregator) {
+    trace_aggregator->DeregisterThreadTracer(tracer_);
   }
 }
 

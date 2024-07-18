@@ -12,6 +12,7 @@
 #include "config.h"
 #include "quill/Quill.h"
 #include "tracing/thread_tracer.h"
+#include "tracing/trace_aggregator.h"
 
 namespace cactus_rt {
 
@@ -43,10 +44,7 @@ class Thread {
 
   friend class App;
 
-  // Non-owning App pointer. Used only for notifying that the thread has
-  // started/stopped for tracing purposes. Set by Thread::Start and read at
-  // the beginning of Thread::RunThread.
-  App* app_ = nullptr;
+  std::weak_ptr<tracing::TraceAggregator> trace_aggregator_;
 
   /**
    * Starts the thread in the background.
@@ -54,7 +52,7 @@ class Thread {
    * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
    * @param app The application that started this thread.
    */
-  void Start(int64_t start_monotonic_time_ns, App* app);
+  void Start(int64_t start_monotonic_time_ns, std::weak_ptr<tracing::TraceAggregator> trace_aggregator);
 
  public:
   /**

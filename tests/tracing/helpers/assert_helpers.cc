@@ -3,8 +3,6 @@
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
 
-#include <utility>
-
 std::string ProtoToJson(const google::protobuf::Message& proto) {
   std::string json;
   google::protobuf::util::MessageToJsonString(proto, &json);

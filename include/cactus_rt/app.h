@@ -42,7 +42,7 @@ class App {
   //
   // TODO: investigate into a weak pointer.
   std::list<std::shared_ptr<tracing::ThreadTracer>> thread_tracers_;
-  std::unique_ptr<tracing::TraceAggregator>         trace_aggregator_ = nullptr;
+  std::shared_ptr<tracing::TraceAggregator>         trace_aggregator_ = nullptr;
   std::mutex                                        aggregator_mutex_;
 
   void SetDefaultLogFormat(quill::Config& cfg) {
@@ -148,16 +148,6 @@ class App {
   void StartQuill();
 
  private:
-  /**
-   * @brief Register a thread tracer. Should only be called from Thread::RunThread.
-   */
-  void RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept;
-
-  /**
-   * @brief Remove a thread tracer. Should only be called from Thread::~Thread().
-   */
-  void DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept;
-
   void CreateAndStartTraceAggregator(std::shared_ptr<tracing::Sink> sink) noexcept;
 
   void StopTraceAggregator() noexcept;

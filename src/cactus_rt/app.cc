@@ -43,7 +43,7 @@ void App::Start() {
 
   auto start_monotonic_time_ns = NowNs();
   for (auto& thread : threads_) {
-    thread->Start(start_monotonic_time_ns, this);
+    thread->Start(start_monotonic_time_ns, trace_aggregator_);
   }
 }
 
@@ -98,28 +98,6 @@ bool App::StopTraceSession() noexcept {
   StopTraceAggregator();
 
   return true;
-}
-
-void App::RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept {
-  const std::scoped_lock lock(aggregator_mutex_);
-
-  thread_tracers_.push_back(thread_tracer);
-
-  if (trace_aggregator_ != nullptr) {
-    trace_aggregator_->RegisterThreadTracer(thread_tracer);
-  }
-}
-
-void App::DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept {
-  const std::scoped_lock lock(aggregator_mutex_);
-
-  thread_tracers_.remove_if([thread_tracer](const std::shared_ptr<tracing::ThreadTracer>& t) {
-    return t == thread_tracer;
-  });
-
-  if (trace_aggregator_ != nullptr) {
-    trace_aggregator_->DeregisterThreadTracer(thread_tracer);
-  }
 }
 
 void App::LockMemory() const {
@@ -196,7 +174,7 @@ void App::CreateAndStartTraceAggregator(std::shared_ptr<tracing::Sink> sink) noe
     return;
   }
 
-  trace_aggregator_ = std::make_unique<tracing::TraceAggregator>(name_, tracer_config_.trace_aggregator_cpu_affinity);
+  trace_aggregator_ = std::make_shared<tracing::TraceAggregator>(name_, tracer_config_.trace_aggregator_cpu_affinity);
   for (auto tracer : thread_tracers_) {
     trace_aggregator_->RegisterThreadTracer(tracer);
   }
