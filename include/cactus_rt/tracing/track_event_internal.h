@@ -3,8 +3,6 @@
 
 #ifdef CACTUS_RT_TRACING_ENABLED
 #include <cstdint>
-#include <optional>
-#include <variant>
 
 #include "track_event.pb.h"
 

@@ -4,7 +4,6 @@
 #include <quill/Quill.h>
 
 #include <memory>
-#include <string>
 
 #include "cactus_rt/scheduler.h"
 

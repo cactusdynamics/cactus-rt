@@ -156,7 +156,7 @@ endif()
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY clang-tidy clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
+    find_program(CLANG_TIDY clang-tidy clang-tidy-18 clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
   else()
     message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
   endif()

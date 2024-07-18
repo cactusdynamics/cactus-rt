@@ -24,7 +24,7 @@ class TraceAggregator {
 
   void DeregisterThreadTracer(const std::shared_ptr<ThreadTracer>& /* tracer */) {}
 
-  void Start(){};
+  void Start() {};
 
   void RequestStop() noexcept {}
 

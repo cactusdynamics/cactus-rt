@@ -1,7 +1,5 @@
 #include "cactus_rt/tracing/thread_tracer.h"
 
-#include <mutex>
-
 #include "cactus_rt/tracing/tracing_enabled.h"
 #include "cactus_rt/utils.h"
 
