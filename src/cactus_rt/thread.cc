@@ -30,8 +30,9 @@ void* Thread::RunThread(void* data) {
   return nullptr;
 }
 
-void Thread::Start(int64_t start_monotonic_time_ns) {
+void Thread::Start(int64_t start_monotonic_time_ns, App* app) {
   start_monotonic_time_ns_ = start_monotonic_time_ns;
+  app_ = app;
 
   pthread_attr_t attr;
 

@@ -32,10 +32,6 @@ class Thread {
 
   std::atomic_bool stop_requested_ = false;
 
-  // Non-owning App pointer. Used only for notifying that the thread has
-  // started/stopped for tracing purposes.
-  App* app_ = nullptr;
-
   pthread_t thread_;
   int64_t   start_monotonic_time_ns_ = 0;
 
@@ -44,6 +40,21 @@ class Thread {
    * performs necessary setup for RT.
    */
   static void* RunThread(void* data);
+
+  friend class App;
+
+  // Non-owning App pointer. Used only for notifying that the thread has
+  // started/stopped for tracing purposes. Set by Thread::Start and read at
+  // the beginning of Thread::RunThread.
+  App* app_ = nullptr;
+
+  /**
+   * Starts the thread in the background.
+   *
+   * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
+   * @param app The application that started this thread.
+   */
+  void Start(int64_t start_monotonic_time_ns, App* app);
 
  public:
   /**
@@ -72,13 +83,6 @@ class Thread {
   inline const std::string& Name() { return name_; }
 
   /**
-   * Starts the thread in the background.
-   *
-   * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
-   */
-  void Start(int64_t start_monotonic_time_ns);
-
-  /**
    * Joins the thread.
    *
    * @returns the return value of pthread_join
@@ -90,16 +94,6 @@ class Thread {
    */
   void RequestStop() noexcept {
     stop_requested_ = true;
-  }
-
-  /**
-   * @brief Sets the trace_aggregator_ pointer so the thread can notify the
-   *        trace_aggregator_ when it starts. This should only be called by App.
-   *
-   * @private
-   */
-  inline void SetApp(App* app) {
-    app_ = app;
   }
 
   // The constructors and destructors are needed because we need to delete
