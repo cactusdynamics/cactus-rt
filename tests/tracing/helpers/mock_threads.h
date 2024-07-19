@@ -14,6 +14,7 @@ extern const char* kCyclicThreadName;
 class MockRegularThread : public cactus_rt::Thread {
   static cactus_rt::ThreadConfig MakeConfig();
 
+  std::atomic_bool                                       started_ = false;
   std::condition_variable                                cv_;
   std::mutex                                             mutex_;
   std::optional<std::function<void(MockRegularThread*)>> f_ = std::nullopt;
@@ -26,6 +27,10 @@ class MockRegularThread : public cactus_rt::Thread {
   // Tracer is a protected method and therefore not accessible by f_.
   inline cactus_rt::tracing::ThreadTracer& TracerForTest() noexcept {
     return Tracer();
+  }
+
+  inline bool Started() const noexcept {
+    return started_;
   }
 
  protected:

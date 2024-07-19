@@ -1,5 +1,7 @@
 #include "mock_threads.h"
 
+#include <atomic>
+
 #include "utils.h"
 
 using namespace std::chrono_literals;
@@ -38,6 +40,7 @@ void MockRegularThread::RunOneIteration(std::function<void(MockRegularThread*)>&
 }
 
 void MockRegularThread::Run() {
+  started_ = true;
   while (!StopRequested()) {
     {
       std::unique_lock lock(mutex_);

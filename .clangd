@@ -1,0 +1,9 @@
+---
+CompileFlags:
+  CompilationDatabase: build/debug
+---
+If:
+  PathMatch: tests/.*
+
+CompileFlags:
+  CompilationDatabase: build/test
