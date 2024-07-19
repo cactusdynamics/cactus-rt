@@ -2,7 +2,9 @@
 #include <gtest/gtest.h>
 #include <quill/detail/LogManager.h>
 
+#include <chrono>
 #include <memory>
+#include <thread>
 
 #include "helpers/assert_helpers.h"
 #include "helpers/mock_sink.h"
@@ -37,6 +39,9 @@ class SingleThreadTracingTest : public ::testing::Test {
     app_.RegisterThread(regular_thread_);
     app_.StartTraceSession(sink_);  // TODO: make each test manually start the trace session!
     app_.Start();
+    while (!regular_thread_->Started()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));  // Not that efficient but OK
+    }
   }
 
   void TearDown() override {
@@ -266,9 +271,12 @@ TEST_F(SingleThreadTracingTest, StopTracingAndNoEventsAreRecorded) {
 
   auto traces = sink_->LoggedTraces();
   auto packets = GetPacketsFromTraces(traces);
-  ASSERT_EQ(packets.size(), 1);
+  ASSERT_EQ(packets.size(), 2);
 
   AssertIsProcessTrackDescriptor(*packets[0], kAppName);
+  const auto process_track_uuid = packets[0]->track_descriptor().uuid();
+
+  AssertIsThreadTrackDescriptor(*packets[1], kRegularThreadName, process_track_uuid);
 }
 
 TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
@@ -309,8 +317,6 @@ TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
 
   AssertIsThreadTrackDescriptor(*packets2[1], kRegularThreadName, process_track_uuid);
   auto thread_track_uuid = packets2[1]->track_descriptor().uuid();
-
-  std::cout << "packets2: " << packets2[2]->ShortDebugString() << "\n";
 
   // Event1 is emitted as interned data because that thread is still active and the event name got interned previously.
   auto event_names = GetInternedEventNames(*packets2[2]);
