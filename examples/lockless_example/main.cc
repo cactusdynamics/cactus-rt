@@ -2,7 +2,6 @@
 #include <cactus_rt/rt.h>
 
 #include <chrono>
-#include <iostream>
 
 using cactus_rt::App;
 using cactus_rt::CyclicThread;

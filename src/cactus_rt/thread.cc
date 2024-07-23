@@ -20,19 +20,20 @@ void* Thread::RunThread(void* data) {
   if (thread->app_ != nullptr) {
     thread->app_->RegisterThreadTracer(thread->tracer_);
   } else {
-    LOG_WARNING(thread->Logger(), "thread {} does not have trace_aggregator_ and tracing is disabled. Did you all App::RegisterThread?", thread->name_);
+    LOG_WARNING(thread->Logger(), "thread {} does not have app_ and tracing is disabled for this thread. Did you call App::RegisterThread?", thread->name_);
   }
+
   quill::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
 
   thread->BeforeRun();
   thread->Run();
   thread->AfterRun();
+
   return nullptr;
 }
 
-void Thread::Start(int64_t start_monotonic_time_ns, App* app) {
+void Thread::Start(int64_t start_monotonic_time_ns) {
   start_monotonic_time_ns_ = start_monotonic_time_ns;
-  app_ = app;
 
   pthread_attr_t attr;
 

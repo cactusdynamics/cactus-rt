@@ -15,6 +15,7 @@ using FileSink = cactus_rt::tracing::FileSink;
 namespace cactus_rt {
 
 void App::RegisterThread(std::shared_ptr<Thread> thread) {
+  thread->SetApp(this);
   threads_.push_back(thread);
 }
 
@@ -43,7 +44,7 @@ void App::Start() {
 
   auto start_monotonic_time_ns = NowNs();
   for (auto& thread : threads_) {
-    thread->Start(start_monotonic_time_ns, this);
+    thread->Start(start_monotonic_time_ns);
   }
 }
 

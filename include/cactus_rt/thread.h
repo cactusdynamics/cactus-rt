@@ -48,14 +48,6 @@ class Thread {
   // the beginning of Thread::RunThread.
   App* app_ = nullptr;
 
-  /**
-   * Starts the thread in the background.
-   *
-   * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
-   * @param app The application that started this thread.
-   */
-  void Start(int64_t start_monotonic_time_ns, App* app);
-
  public:
   /**
    * Creates a new thread.
@@ -91,6 +83,10 @@ class Thread {
 
   /**
    * Requests the thread to stop with an atomic.
+   *
+   * Note: currently a single thread object is only designed to run once. If you
+   * need to run another thread, create another object from your Thread class
+   * until a workaround is found.
    */
   void RequestStop() noexcept {
     stop_requested_ = true;
@@ -109,6 +105,27 @@ class Thread {
   // Move constructors are not allowed because of the atomic_bool for now.
   Thread(Thread&&) noexcept = delete;
   Thread& operator=(Thread&&) noexcept = delete;
+
+  /**
+   * Starts the thread in the background.
+   *
+   * Note: for the time being, a single thread is supposed to only be started
+   * once. If you want to start another thread, create another Thread object
+   * from the same class.
+   *
+   * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
+   */
+  void Start(int64_t start_monotonic_time_ns);
+
+  /**
+   * @brief Sets the trace_aggregator_ pointer so the thread can notify the
+   *        trace_aggregator_ when it starts. This should only be called by App.
+   *
+   * @private
+   */
+  inline void SetApp(App* app) {
+    app_ = app;
+  }
 
  protected:
   inline quill::Logger*         Logger() const { return logger_; }

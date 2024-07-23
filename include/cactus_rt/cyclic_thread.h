@@ -2,7 +2,6 @@
 #define CACTUS_RT_CYCLIC_THREAD_
 
 #include "thread.h"
-#include "utils.h"
 
 namespace cactus_rt {
 class CyclicThread : public Thread {

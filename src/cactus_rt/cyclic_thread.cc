@@ -1,5 +1,7 @@
 #include "cactus_rt/cyclic_thread.h"
 
+#include "cactus_rt/utils.h"
+
 namespace cactus_rt {
 
 void CyclicThread::Run() noexcept {
