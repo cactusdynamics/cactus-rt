@@ -7,19 +7,16 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "config.h"
 #include "quill/Quill.h"
 #include "tracing/thread_tracer.h"
+#include "tracing/trace_aggregator.h"
 
 namespace cactus_rt {
 
 /// @private
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack space should be plenty
-
-// Necessary forward declaration
-class App;
 
 class Thread {
   ThreadConfig        config_;
@@ -28,7 +25,7 @@ class Thread {
   size_t              stack_size_;
 
   quill::Logger*                         logger_;
-  std::shared_ptr<tracing::ThreadTracer> tracer_;
+  std::shared_ptr<tracing::ThreadTracer> tracer_ = nullptr;
 
   std::atomic_bool stop_requested_ = false;
 
@@ -41,12 +38,10 @@ class Thread {
    */
   static void* RunThread(void* data);
 
-  friend class App;
-
-  // Non-owning App pointer. Used only for notifying that the thread has
-  // started/stopped for tracing purposes. Set by Thread::Start and read at
+  // Non-owning TraceAggregator pointer. Used only for notifying that the thread
+  // has started/stopped for tracing purposes. Set by Thread::Start and read at
   // the beginning of Thread::RunThread.
-  App* app_ = nullptr;
+  std::weak_ptr<tracing::TraceAggregator> trace_aggregator_;
 
  public:
   /**
@@ -60,8 +55,7 @@ class Thread {
         name_(name),
         cpu_affinity_(config_.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
-        logger_(quill::create_logger(name_)),
-        tracer_(std::make_shared<tracing::ThreadTracer>(name, config_.tracer_config.queue_size)) {
+        logger_(quill::create_logger(name_)) {
     if (!config.scheduler) {
       throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
     }
@@ -123,12 +117,16 @@ class Thread {
    *
    * @private
    */
-  inline void SetApp(App* app) {
-    app_ = app;
+  inline void SetTraceAggregator(std::weak_ptr<tracing::TraceAggregator> trace_aggregator) {
+    trace_aggregator_ = trace_aggregator;
   }
 
  protected:
-  inline quill::Logger*         Logger() const { return logger_; }
+  inline quill::Logger* Logger() const { return logger_; }
+
+  /**
+   * Gets the current tracer object. Should only ever be called from within the thread itself.
+   */
   inline tracing::ThreadTracer& Tracer() { return *tracer_; }
   inline int64_t                StartMonotonicTimeNs() const { return start_monotonic_time_ns_; }
   inline const ThreadConfig&    Config() const noexcept { return config_; }

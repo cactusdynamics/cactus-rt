@@ -41,6 +41,8 @@ class StringInterner {
   std::pair<bool, uint64_t> GetId(const std::string_view& s);
   std::pair<bool, uint64_t> GetId(const char* s);
 
+  void Reset();
+
   size_t Size() const {
     return strings_.size();
   };

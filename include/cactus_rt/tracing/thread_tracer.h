@@ -1,6 +1,7 @@
 #ifndef CACTUS_TRACING_THREAD_TRACER_H_
 #define CACTUS_TRACING_THREAD_TRACER_H_
 
+#include <atomic>
 #ifndef CACTUS_RT_TRACING_ENABLED
 #include "thread_tracer.disabled.h"
 #else
@@ -35,6 +36,8 @@ class ThreadTracer {
   friend class TraceAggregator;
 
   moodycamel::ReaderWriterQueue<TrackEventInternal> queue_;
+
+  std::atomic_bool thread_done_;
 
   // The event name interning must be done per thread (per sequence). Thus it is
   // stored here.  However, this class must NEVER call functions here (other
@@ -83,6 +86,26 @@ class ThreadTracer {
    * @private
    */
   void SetTid() noexcept { tid_ = gettid(); }
+
+  /**
+   * @brief This marks this thread tracer as "done" and thus the trace
+   *        aggregator will try to remove it after flushing the data.
+   *
+   * @private
+   */
+  void MarkDone() noexcept {
+    thread_done_.store(true, std::memory_order_release);
+  }
+
+  /**
+   * @brief Checks if this thread tracer is done. Should only be called from
+   *        TraceAggregator.
+   *
+   * @private
+   */
+  bool IsDone() noexcept {
+    return thread_done_.load(std::memory_order_acquire);
+  }
 
  private:
   template <typename... Args>

@@ -77,6 +77,10 @@ class ThreadTracer {
 
   void SetTid() noexcept {}
 
+  void MarkDone() noexcept {}
+
+  void IsDone() noexcept {}
+
  private:
   template <typename... Args>
   bool Emit(Args&&... /* args */) noexcept {

@@ -16,4 +16,10 @@ std::pair<bool, uint64_t> StringInterner::GetId(const std::string_view& s) {
 std::pair<bool, uint64_t> StringInterner::GetId(const char* s) {
   return GetId(std::string_view{s});
 }
+
+void StringInterner::Reset() {
+  current_id_ = 0;
+  ids_ = std::unordered_map<std::string_view, uint64_t>();
+  strings_ = std::list<std::string>();
+}
 }  // namespace cactus_rt::tracing::utils

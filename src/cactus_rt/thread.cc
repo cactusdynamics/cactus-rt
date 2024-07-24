@@ -5,10 +5,11 @@
 #include <cerrno>
 #include <cstring>
 #include <ctime>
+#include <memory>
 #include <stdexcept>
 
-#include "cactus_rt/app.h"
 #include "cactus_rt/config.h"
+#include "cactus_rt/tracing/thread_tracer.h"
 
 namespace cactus_rt {
 
@@ -16,9 +17,11 @@ void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
   thread->config_.scheduler->SetSchedAttr();
 
+  thread->tracer_ = std::make_shared<tracing::ThreadTracer>(thread->name_, thread->config_.tracer_config.queue_size);
   thread->tracer_->SetTid();
-  if (thread->app_ != nullptr) {
-    thread->app_->RegisterThreadTracer(thread->tracer_);
+
+  if (auto trace_aggregator = thread->trace_aggregator_.lock()) {
+    trace_aggregator->RegisterThreadTracer(thread->tracer_);
   } else {
     LOG_WARNING(thread->Logger(), "thread {} does not have app_ and tracing is disabled for this thread. Did you call App::RegisterThread?", thread->name_);
   }
@@ -28,6 +31,9 @@ void* Thread::RunThread(void* data) {
   thread->BeforeRun();
   thread->Run();
   thread->AfterRun();
+
+  thread->tracer_->MarkDone();
+  thread->tracer_ = nullptr;
 
   return nullptr;
 }

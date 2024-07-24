@@ -1,6 +1,5 @@
 #include <cactus_rt/tracing.h>
 
-#include <list>
 #include <memory>
 #include <thread>
 
@@ -25,18 +24,15 @@ void StartTracing(const char* app_name, const char* filename) {
 
   // Create the file sink so the data aggregated by the TraceAggregator will be written to somewhere.
   auto file_sink = std::make_shared<FileSink>(filename);
-  trace_aggregator->RegisterSink(file_sink);
 
   quill::start();
-  trace_aggregator->Start();
+  trace_aggregator->Start(file_sink);
 }
 
 void StopTracing() {
   cactus_rt::tracing::DisableTracing();
 
-  trace_aggregator->RequestStop();
-  trace_aggregator->Join();
-  trace_aggregator = nullptr;  // Destroy the trace aggregator and free all resources.
+  trace_aggregator->Stop();
 }
 
 int main() {

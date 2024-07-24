@@ -3,7 +3,6 @@
 
 #include <gtest/gtest_prod.h>
 
-#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -36,14 +35,7 @@ class App {
 
   std::vector<std::shared_ptr<Thread>> threads_;
 
-  // We need to cache the list thread tracers here because the trace_aggregator
-  // can be dynamically created and stopped. When a new trace aggregator is
-  // created, it needs to know about all the thread tracers.
-  //
-  // TODO: investigate into a weak pointer.
-  std::list<std::shared_ptr<tracing::ThreadTracer>> thread_tracers_;
-  std::unique_ptr<tracing::TraceAggregator>         trace_aggregator_ = nullptr;
-  std::mutex                                        aggregator_mutex_;
+  std::shared_ptr<tracing::TraceAggregator> trace_aggregator_;
 
   void SetDefaultLogFormat(quill::Config& cfg) {
     // Create a handler of stdout
@@ -118,11 +110,6 @@ class App {
   bool StartTraceSession(std::shared_ptr<tracing::Sink> sink) noexcept;
 
   /**
-   * @brief Register a custom trace sink after starting the trace session
-   */
-  void RegisterTraceSink(std::shared_ptr<tracing::Sink> sink) noexcept;
-
-  /**
    * @brief Stops the tracing session for the process. Will be no-op if tracing
    * is not enabled. This function is not real-time safe.
    *
@@ -148,18 +135,6 @@ class App {
   void StartQuill();
 
  private:
-  /**
-   * @brief Register a thread tracer. Should only be called from Thread::RunThread.
-   */
-  void RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept;
-
-  /**
-   * @brief Remove a thread tracer. Should only be called from Thread::~Thread().
-   */
-  void DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept;
-
-  void CreateAndStartTraceAggregator(std::shared_ptr<tracing::Sink> sink) noexcept;
-
   void StopTraceAggregator() noexcept;
 };
 }  // namespace cactus_rt
