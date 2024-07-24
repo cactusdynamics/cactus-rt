@@ -26,6 +26,7 @@ struct EventCountData {
 // Required forward declarations
 class TraceSpan;
 class TraceAggregator;
+class TraceAggregatorManager;
 
 /**
  * @brief A tracer for a single thread. Creates a single track in the trace
@@ -33,6 +34,8 @@ class TraceAggregator;
  */
 class ThreadTracer {
   friend class TraceAggregator;
+  friend class TraceAggregator2;
+  friend class TraceAggregatorManager;
 
   moodycamel::ReaderWriterQueue<TrackEventInternal> queue_;
 
