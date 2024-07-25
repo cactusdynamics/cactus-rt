@@ -1,5 +1,11 @@
 #include "cactus_rt/tracing/trace_aggregator.h"
 
+#include <interned_data.pb.h>
+
+#include <atomic>
+#include <memory>
+#include <mutex>
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -11,10 +17,10 @@
 #include <cstring>
 #include <string>
 
+using cactus_tracing::vendor::perfetto::protos::InternedData;
 using cactus_tracing::vendor::perfetto::protos::ProcessDescriptor;
 using cactus_tracing::vendor::perfetto::protos::ThreadDescriptor;
 using cactus_tracing::vendor::perfetto::protos::Trace;
-using cactus_tracing::vendor::perfetto::protos::TracePacket;
 using cactus_tracing::vendor::perfetto::protos::TracePacket_SequenceFlags_SEQ_INCREMENTAL_STATE_CLEARED;
 using cactus_tracing::vendor::perfetto::protos::TracePacket_SequenceFlags_SEQ_NEEDS_INCREMENTAL_STATE;
 using cactus_tracing::vendor::perfetto::protos::TrackDescriptor;
@@ -24,36 +30,34 @@ using namespace std::chrono_literals;
 
 namespace {
 constexpr size_t kMaxInternedStrings = 10000;
+
+// TODO: refactor this elsewhere so it is usable everywhere.
+void SetupCPUAffinityIfNecessary(const std::vector<size_t>& cpu_affinity) {
+  if (cpu_affinity.empty()) {
+    return;
+  }
+
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  for (auto cpu : cpu_affinity) {
+    CPU_SET(cpu, &cpuset);
+  }
+
+  const int ret = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (ret == 0) {
+    return;
+  }
+
+  throw std::runtime_error{std::string("cannot set affinity for trace aggregator: ") + std::strerror(errno)};
 }
+
+}  // namespace
 
 namespace cactus_rt::tracing {
-TraceAggregator::TraceAggregator(std::string process_name, std::vector<size_t> cpu_affinity)
+TraceAggregator::TraceAggregator(std::string process_name)
     : process_name_(process_name),
-      cpu_affinity_(cpu_affinity),
       process_track_uuid_(static_cast<uint64_t>(getpid())),
       logger_(quill::create_logger("__trace_aggregator__")) {
-  this->sticky_trace_packets_.push_back(CreateProcessDescriptorPacket());
-}
-
-void TraceAggregator::RegisterSink(std::shared_ptr<Sink> sink) {
-  // RegisterSink is mutually exclusive with RegisterThreadTracer and writing
-  // metric data from queues to the sinks. This is because we need to ensure the
-  // first trace packets on any new sink must be the track descriptors for all
-  // known tracks. We also need to ensure that writing to sinks only happen on
-  // one thread with mutual exclusion to avoid data race.
-  const std::scoped_lock lock(mutex_);
-  for (const auto& trace : this->sticky_trace_packets_) {
-    // TODO: deal with errors
-    sink->Write(trace);
-  }
-
-  auto interned_data_trace = CreateInitialInternedDataPacket();
-  if (interned_data_trace) {
-    // TODO: deal with errors
-    sink->Write(*interned_data_trace);
-  }
-
-  sinks_.push_back(sink);
 }
 
 void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer) {
@@ -69,18 +73,12 @@ void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer)
   // writing to sinks here, only a single thread may do it at a time thus also
   // requiring the lock.
   const std::scoped_lock lock(mutex_);
-
   tracers_.push_back(tracer);
 
-  auto trace = CreateThreadDescriptorPacket(*tracer);
-  for (auto& sink : sinks_) {
-    // TODO: deal with errors
-    sink->Write(trace);
+  if (session_ != nullptr) {
+    auto trace = CreateThreadDescriptorPacket(*tracer);
+    session_->sink->Write(trace);
   }
-
-  // Move the trace packet to the sticky packets so newly registered sinks gets
-  // this packet when they get registered.
-  this->sticky_trace_packets_.push_back(std::move(trace));
 }
 
 void TraceAggregator::DeregisterThreadTracer(const std::shared_ptr<ThreadTracer>& tracer) {
@@ -91,18 +89,44 @@ void TraceAggregator::DeregisterThreadTracer(const std::shared_ptr<ThreadTracer>
   });
 }
 
-void TraceAggregator::Start() {
-  // TODO: CPU affinity!
-  std::thread thread{&TraceAggregator::Run, this};
-  thread_.swap(thread);
+void TraceAggregator::Start(std::shared_ptr<Sink> sink, std::vector<size_t> cpu_affinity) {
+  const std::scoped_lock lock(mutex_);
+
+  if (session_ == nullptr) {
+    session_ = std::make_unique<SessionState>(sink, cpu_affinity);
+    sink->Write(CreateProcessDescriptorPacket());
+
+    for (const auto& tracer : tracers_) {
+      sink->Write(CreateThreadDescriptorPacket(*tracer));
+    }
+
+    std::thread thread{&TraceAggregator::Run, this};
+    session_->thread.swap(thread);
+  }
 }
 
-void TraceAggregator::RequestStop() noexcept {
-  stop_requested_.store(true, std::memory_order_relaxed);
-}
+void TraceAggregator::Stop() noexcept {
+  // We need to manually lock/unlock as we cannot hold the lock while joining...
+  mutex_.lock();
 
-void TraceAggregator::Join() noexcept {
-  thread_.join();
+  if (session_ != nullptr) {
+    session_->stop_requested.store(true, std::memory_order_relaxed);
+    mutex_.unlock();
+    // Technically there's a data race on session_. But if we hold the lock while joining it can lead to dead lock.
+    // TODO: fix this issue somehow?
+    session_->thread.join();
+    mutex_.lock();
+    session_ = nullptr;  // Delete it to reset the session state!
+
+    // Technically, the TraceAggregator also owns the event_name_interner_ for all tracers.
+    // TODO: maybe move the interner into the TraceAggregator instead of having it on the ThreadTracer for simplicity.
+    for (const auto& tracer : tracers_) {
+      tracer->event_name_interner_.Reset();
+      tracer->event_category_interner_.Reset();
+    }
+  }
+
+  mutex_.unlock();
 }
 
 quill::Logger* TraceAggregator::Logger() noexcept {
@@ -110,9 +134,9 @@ quill::Logger* TraceAggregator::Logger() noexcept {
 }
 
 void TraceAggregator::Run() {
-  SetupCPUAffinityIfNecessary();
+  ::SetupCPUAffinityIfNecessary(session_->cpu_affinity);
 
-  while (!StopRequested()) {
+  while (!session_->stop_requested.load(std::memory_order_relaxed)) {
     Trace trace;
     auto  num_events = TryDequeueOnceFromAllTracers(trace);
 
@@ -156,29 +180,6 @@ void TraceAggregator::Run() {
   }
 }
 
-bool TraceAggregator::StopRequested() const noexcept {
-  return stop_requested_.load(std::memory_order_relaxed);
-}
-
-void TraceAggregator::SetupCPUAffinityIfNecessary() const {
-  if (cpu_affinity_.empty()) {
-    return;
-  }
-
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  for (auto cpu : cpu_affinity_) {
-    CPU_SET(cpu, &cpuset);
-  }
-
-  const int ret = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (ret == 0) {
-    return;
-  }
-
-  throw std::runtime_error{std::string("cannot set affinity for trace aggregator: ") + std::strerror(errno)};
-}
-
 size_t TraceAggregator::TryDequeueOnceFromAllTracers(Trace& trace) noexcept {
   // This lock is needed because we are accessing the tracer_, which can race
   // with other threads that are registering a thread tracer. This is NOT for
@@ -186,10 +187,15 @@ size_t TraceAggregator::TryDequeueOnceFromAllTracers(Trace& trace) noexcept {
   const std::scoped_lock lock(mutex_);
   size_t                 num_events = 0;
 
+  std::vector<const ThreadTracer*> done_tracers;
+
   for (auto& tracer : tracers_) {
     TrackEventInternal event;
     if (!tracer->queue_.try_dequeue(event)) {
       // No event in this queue.
+      if (tracer->IsDone()) {
+        done_tracers.push_back(tracer.get());
+      }
       continue;
     }
 
@@ -197,7 +203,19 @@ size_t TraceAggregator::TryDequeueOnceFromAllTracers(Trace& trace) noexcept {
     // errors/full queue problems.
 
     num_events++;
-    AddTrackEventPacketToTrace(trace, *tracer, event);
+    AddTrackEventPacketToTraceInternal(trace, *tracer, event);
+  }
+
+  if (!done_tracers.empty()) {
+    tracers_.remove_if([&done_tracers](const std::shared_ptr<ThreadTracer>& tracer) {
+      for (const auto* done_tracer : done_tracers) {
+        if (tracer.get() == done_tracer) {
+          return true;
+        }
+      }
+
+      return false;
+    });
   }
 
   return num_events;
@@ -210,10 +228,8 @@ void TraceAggregator::WriteTrace(const Trace& trace) noexcept {
   const std::scoped_lock lock(mutex_);
 
   // TODO: better handle error by maybe emitting an error signal and calling an error callback?
-  for (auto& sink : sinks_) {
-    if (!sink->Write(trace)) {
-      LOG_WARNING_LIMIT(std::chrono::milliseconds(5000), Logger(), "failed to write trace data to sink, data may be corrupted");
-    }
+  if (!session_->sink->Write(trace)) {
+    LOG_WARNING_LIMIT(std::chrono::milliseconds(5000), Logger(), "failed to write trace data to sink, data may be corrupted");
   }
 }
 
@@ -258,7 +274,7 @@ Trace TraceAggregator::CreateThreadDescriptorPacket(const ThreadTracer& thread_t
   return trace;
 }
 
-void TraceAggregator::AddTrackEventPacketToTrace(
+void TraceAggregator::AddTrackEventPacketToTraceInternal(
   Trace&                    trace,
   ThreadTracer&             thread_tracer,
   const TrackEventInternal& track_event_internal
@@ -344,8 +360,8 @@ void TraceAggregator::AddTrackEventPacketToTrace(
   packet->set_trusted_packet_sequence_id(thread_tracer.trusted_packet_sequence_id_);
 
   // Deal with "first packet"
-  if (sequences_with_first_packet_emitted_.count(thread_tracer.trusted_packet_sequence_id_) == 0) {
-    sequences_with_first_packet_emitted_.insert(thread_tracer.trusted_packet_sequence_id_);
+  if (session_->sequences_with_first_packet_emitted.count(thread_tracer.trusted_packet_sequence_id_) == 0) {
+    session_->sequences_with_first_packet_emitted.insert(thread_tracer.trusted_packet_sequence_id_);
 
     packet->set_first_packet_on_sequence(true);
     packet->set_previous_packet_dropped(true);
@@ -362,52 +378,6 @@ void TraceAggregator::AddTrackEventPacketToTrace(
     packet->set_sequence_flags(sequence_flags);
   }
   // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
-}
-
-std::optional<Trace> TraceAggregator::CreateInitialInternedDataPacket() const {
-  Trace trace;
-
-  bool wrote_interned_data = false;
-
-  for (const auto& tracer : this->tracers_) {
-    InternedData* interned_data = nullptr;
-    for (const auto& [name, name_iid] : tracer->event_name_interner_.Ids()) {
-      if (interned_data == nullptr) {
-        interned_data = new InternedData();
-      }
-
-      auto* event_name = interned_data->add_event_names();
-      event_name->set_name(name.data());
-      event_name->set_iid(name_iid);
-    }
-
-    for (const auto& [category, category_iid] : tracer->event_category_interner_.Ids()) {
-      if (interned_data == nullptr) {
-        interned_data = new InternedData();
-      }
-
-      auto* event_category = interned_data->add_event_categories();
-      event_category->set_name(category.data());
-      event_category->set_iid(category_iid);
-    }
-
-    if (interned_data != nullptr) {
-      wrote_interned_data = true;
-      TracePacket* packet = trace.add_packet();
-
-      // TODO: is it okay to not have a timestamp?
-      // packet->set_timestamp(initial_timestamp);
-
-      packet->set_allocated_interned_data(interned_data);
-      packet->set_trusted_packet_sequence_id(tracer->trusted_packet_sequence_id_);
-    }
-  }
-
-  if (wrote_interned_data) {
-    return trace;
-  }
-
-  return std::nullopt;
 }
 
 }  // namespace cactus_rt::tracing

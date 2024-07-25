@@ -11,7 +11,7 @@
 namespace cactus_rt::tracing {
 class TraceAggregator {
  public:
-  explicit TraceAggregator(std::string /* name */, std::vector<size_t> /* cpu_affinity */) {}
+  explicit TraceAggregator(std::string /* name */) {}
 
   TraceAggregator(const TraceAggregator&) = delete;
   TraceAggregator& operator=(const TraceAggregator&) = delete;
@@ -24,11 +24,9 @@ class TraceAggregator {
 
   void DeregisterThreadTracer(const std::shared_ptr<ThreadTracer>& /* tracer */) {}
 
-  void Start() {};
+  void Start(std::shared_ptr<Sink> /* sink */, std::vector<size_t> /* cpu_affinity */ = {}){};
 
-  void RequestStop() noexcept {}
-
-  void Join() noexcept {}
+  void Stop() noexcept {}
 };
 }  // namespace cactus_rt::tracing
 #endif

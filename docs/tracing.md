@@ -191,45 +191,45 @@ reading a single global atomic boolean variable. This variable controls all
 traces from all threads within the process.
 
 Upon enabling tracing via `App::StartTraceSession`, `cactus_rt` also creates and
-starts the `TraceAggregator` threads and registers the appropriate sinks. The
-`App` object caches a list of known `ThreadTracers` from all the threads that
-currently exists and this is passed to the newly created `TraceAggregator`.
-Perfetto's file format specification indicates that the track descriptor packets
-must be first written before the actual trace event packets. Thus, after the
-creation of the `TraceAggregator` and `Sink` registration, a
+starts the `TraceAggregator` thread.  Perfetto's file format specification
+indicates that the track descriptor packets must be first written before the
+actual trace event packets. Thus, after starting the `TraceAggregator`, a
 [`ProcessDescriptor`](https://perfetto.dev/docs/reference/trace-packet-proto#ProcessDescriptor)
-packet is first written. Upon the registration of each of the cached
-`ThreadTracers` as passed through by `App`, a
+packet is first written. A
 [`ThreadDescriptor`](https://perfetto.dev/docs/reference/trace-packet-proto#ThreadDescriptor)
-packet is emitted for each thread. Then, the main loop of the `TraceAggregator`
-can run which will write track event packets to the sinks.
+packet is emitted for each thread that is known to the `TraceAggregator`. Then,
+the main loop of the `TraceAggregator` can run which will write track event
+packets to the sinks.
 
 When tracing is disabled via `App::StopTraceSession`, the tracing enabled atomic
 bool will be set to false. The system will request the `TraceAggregator` thread
 to drain all data from the existing `ThreadTracers` and stop. Once this is done,
-the file is closed and the `TraceAggregator` is destroyed to save resources.
+the file is closed and the `TraceAggregator` states (interned data, sequence
+states) are reset so they can be launched again.
 
 #### Dynamic thread creation
 
 Each `Thread` owns a `ThreadTracer`. However, when a thread starts, it must
-notify the `App` and `TraceAggregator` (if tracing is enabled and it exists) of
-its existence and thread id so a
+notify the `TraceAggregator` (if tracing is enabled and it exists) of its
+existence and thread id so a
 [`ThreadDescriptor`](https://perfetto.dev/docs/reference/trace-packet-proto#ThreadDescriptor)
 packet can be written to the data stream before any trace event data is written.
-If tracing is not enabled and thus `TraceAggregator` is not present, the `App`
-will cache the `ThreadTracers` and will pass it onto the `TraceAggregator`
-if/when tracing is enabled.
+If tracing is not enabled right now, the `TraceAggregator` will cache the
+`ThreadTracers` so that once tracing is enabled, the `ThreadDescriptor` packet
+is written out.
 
-The `Thread` is able to communicate with the `App` by storing a non-owning
-pointer to the `App`. This pointer is setup during `App::RegisterThread` so
-there's no explicit dependency between `Thread` and `App` during construction.
-This decision may be revisited in the future.
+The `Thread` is able to communicate with the `TraceAggregator` by storing a
+`weak_ptr` to the `TraceAggregator`. This pointer is set up during
+`App::RegisterThread` so there's no explicit dependency between `Thread` and
+`App` during construction.  This decision may be revisited in the future.
+
+#### Ownership structure
+
+The structure is not ideal and has some problems, but works for the most part.
+
+![Trace architecture](imgs/tracing-ownership-structure.svg)
 
 #### Cleanup after thread shutdown
-
-TODO...
-
-#### Dynamic sink registration
 
 TODO...
 
@@ -255,6 +255,9 @@ noting:
    (i.e. thus `(trusted_packet_sequence_id, iid)` is sufficient to identify an
    interned string). This, along with (1), implies we have to intern strings on
    a per-thread interner.
+3. When a tracing session stops, the string interner states for all known thread
+   tracers are reset. This means a subsequent session will not have the same
+   string iids.
 
 ### Other notes
 

@@ -21,7 +21,8 @@ cert-*,
 -readability-identifier-length,
 -readability-isolate-declaration,
 -readability-magic-numbers,
--readability-redundant-inline-specifier'
+-readability-redundant-inline-specifier,
+-readability-use-anyofallof'
 # TODO: Re-enable bugprone-exception-escape when no longer throwing
 # https://github.com/isocpp/CppCoreGuidelines/issues/1589
 WarningsAsErrors: '*'

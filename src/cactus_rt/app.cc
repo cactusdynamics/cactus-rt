@@ -4,8 +4,10 @@
 #include <sys/mman.h>
 
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 
+#include "cactus_rt/tracing/trace_aggregator.h"
 #include "cactus_rt/tracing/tracing_enabled.h"
 #include "cactus_rt/utils.h"
 #include "quill/Quill.h"
@@ -15,7 +17,7 @@ using FileSink = cactus_rt::tracing::FileSink;
 namespace cactus_rt {
 
 void App::RegisterThread(std::shared_ptr<Thread> thread) {
-  thread->SetApp(this);
+  thread->SetTraceAggregator(trace_aggregator_);
   threads_.push_back(thread);
 }
 
@@ -23,7 +25,8 @@ App::App(std::string name, AppConfig config)
     : name_(name),
       heap_size_(config.heap_size),
       logger_config_(config.logger_config),
-      tracer_config_(config.tracer_config) {
+      tracer_config_(config.tracer_config),
+      trace_aggregator_(std::make_shared<tracing::TraceAggregator>(name)) {
   if (logger_config_.default_handlers.empty()) {
     SetDefaultLogFormat(logger_config_);
   }
@@ -65,7 +68,7 @@ bool App::StartTraceSession(const char* output_filename) noexcept {
     return false;
   }
 
-  CreateAndStartTraceAggregator(std::make_shared<FileSink>(output_filename));
+  trace_aggregator_->Start(std::make_shared<FileSink>(output_filename));
   cactus_rt::tracing::EnableTracing();
 
   return true;
@@ -76,18 +79,10 @@ bool App::StartTraceSession(std::shared_ptr<tracing::Sink> sink) noexcept {
     return false;
   }
 
-  CreateAndStartTraceAggregator(sink);
+  trace_aggregator_->Start(sink);
   cactus_rt::tracing::EnableTracing();
 
   return true;
-}
-
-void App::RegisterTraceSink(std::shared_ptr<tracing::Sink> sink) noexcept {
-  const std::scoped_lock lock(aggregator_mutex_);
-
-  if (trace_aggregator_ != nullptr) {
-    trace_aggregator_->RegisterSink(sink);
-  }
 }
 
 bool App::StopTraceSession() noexcept {
@@ -99,28 +94,6 @@ bool App::StopTraceSession() noexcept {
   StopTraceAggregator();
 
   return true;
-}
-
-void App::RegisterThreadTracer(std::shared_ptr<tracing::ThreadTracer> thread_tracer) noexcept {
-  const std::scoped_lock lock(aggregator_mutex_);
-
-  thread_tracers_.push_back(thread_tracer);
-
-  if (trace_aggregator_ != nullptr) {
-    trace_aggregator_->RegisterThreadTracer(thread_tracer);
-  }
-}
-
-void App::DeregisterThreadTracer(const std::shared_ptr<tracing::ThreadTracer>& thread_tracer) noexcept {
-  const std::scoped_lock lock(aggregator_mutex_);
-
-  thread_tracers_.remove_if([thread_tracer](const std::shared_ptr<tracing::ThreadTracer>& t) {
-    return t == thread_tracer;
-  });
-
-  if (trace_aggregator_ != nullptr) {
-    trace_aggregator_->DeregisterThreadTracer(thread_tracer);
-  }
 }
 
 void App::LockMemory() const {
@@ -189,36 +162,7 @@ void App::StartQuill() {
   quill::start();
 }
 
-void App::CreateAndStartTraceAggregator(std::shared_ptr<tracing::Sink> sink) noexcept {
-  const std::scoped_lock lock(aggregator_mutex_);
-
-  if (trace_aggregator_ != nullptr) {
-    // TODO: error here
-    return;
-  }
-
-  trace_aggregator_ = std::make_unique<tracing::TraceAggregator>(name_, tracer_config_.trace_aggregator_cpu_affinity);
-  for (auto tracer : thread_tracers_) {
-    trace_aggregator_->RegisterThreadTracer(tracer);
-  }
-
-  if (sink != nullptr) {
-    trace_aggregator_->RegisterSink(sink);
-  }
-
-  trace_aggregator_->Start();
-}
-
 void App::StopTraceAggregator() noexcept {
-  const std::scoped_lock lock(aggregator_mutex_);
-
-  if (trace_aggregator_ == nullptr) {
-    // TODO: error here
-    return;
-  }
-
-  trace_aggregator_->RequestStop();
-  trace_aggregator_->Join();
-  trace_aggregator_ = nullptr;
+  trace_aggregator_->Stop();
 }
 }  // namespace cactus_rt

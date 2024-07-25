@@ -302,15 +302,22 @@ TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
   app_.StartTraceSession(sink_);
 
   regular_thread_->RunOneIteration([](MockRegularThread* self) {
-    auto span = self->TracerForTest().WithSpan("Event3");
-    WasteTime(std::chrono::microseconds(1000));
+    {
+      auto span = self->TracerForTest().WithSpan("Event3");
+      WasteTime(std::chrono::microseconds(1000));
+    }
+
+    {
+      auto span = self->TracerForTest().WithSpan("Event1");
+      WasteTime(std::chrono::microseconds(1000));
+    }
   });
 
   app_.StopTraceSession();
 
   auto traces2 = sink_->LoggedTraces();
   auto packets2 = GetPacketsFromTraces(traces2);
-  ASSERT_EQ(packets2.size(), 5);
+  ASSERT_EQ(packets2.size(), 6);
 
   AssertIsProcessTrackDescriptor(*packets2[0], kAppName);
   const auto process_track_uuid = packets2[0]->track_descriptor().uuid();
@@ -318,91 +325,41 @@ TEST_F(SingleThreadTracingTest, RestartTracingStartsNewSession) {
   AssertIsThreadTrackDescriptor(*packets2[1], kRegularThreadName, process_track_uuid);
   auto thread_track_uuid = packets2[1]->track_descriptor().uuid();
 
-  // Event1 is emitted as interned data because that thread is still active and the event name got interned previously.
+  AssertIsTrackEventSliceBegin(*packets2[2], thread_track_uuid);
+
+  // Since we started a new trace session, the interned data is reset. So the first event is only expected to have Event3 on it.
+  // Note Event2 is lost as designed
   auto event_names = GetInternedEventNames(*packets2[2]);
+  ASSERT_EQ(event_names.size(), 1);
+
+  auto event3_name_iid = event_names.at("Event3");
+  ASSERT_GT(event3_name_iid, 0);
+
+  auto sequence_id = packets2[2]->trusted_packet_sequence_id();
+
+  ASSERT_EQ(event1_thread_sequence_id1, sequence_id);
+
+  AssertTrackEventHasIid(*packets2[2], event3_name_iid, 0);
+
+  AssertIsTrackEventSliceEnd(*packets2[3], thread_track_uuid, sequence_id);
+
+  AssertTrackEventDuration(*packets2[2], *packets2[3], 1000000, 10000000);
+
+  // Now let's check if Event1 will be properly written out again.
+
+  AssertIsTrackEventSliceBegin(*packets2[4], thread_track_uuid);
+
+  event_names = GetInternedEventNames(*packets2[4]);
   ASSERT_EQ(event_names.size(), 1);
 
   auto event1_name_iid = event_names.at("Event1");
   ASSERT_GT(event1_name_iid, 0);
 
-  auto event1_thread_sequence_id2 = packets2[2]->trusted_packet_sequence_id();
+  AssertTrackEventHasIid(*packets2[4], event1_name_iid, 0);
 
-  ASSERT_EQ(event1_thread_sequence_id1, event1_thread_sequence_id2);
+  AssertIsTrackEventSliceEnd(*packets2[5], thread_track_uuid, sequence_id);
 
-  // Note Event2 is lost as designed
-  AssertIsTrackEventSliceBegin(*packets2[3], thread_track_uuid);
-  auto sequence_id = packets2[3]->trusted_packet_sequence_id();
-
-  ASSERT_EQ(sequence_id, event1_thread_sequence_id2);
-
-  event_names = GetInternedEventNames(*packets2[3]);
-  ASSERT_EQ(event_names.size(), 1);
-
-  const auto event3_name_iid = event_names.at("Event3");
-  ASSERT_GT(event3_name_iid, 0);
-
-  AssertTrackEventHasIid(*packets2[3], event3_name_iid, 0);
-
-  AssertIsTrackEventSliceEnd(*packets2[4], thread_track_uuid, sequence_id);
-
-  AssertTrackEventDuration(*packets2[3], *packets2[4], 1000000, 10000000);
-}
-
-TEST_F(SingleThreadTracingTest, DynamicallyAddingSinkWillWork) {
-  regular_thread_->RunOneIteration([](MockRegularThread* self) {
-    const auto span = self->TracerForTest().WithSpan("Event1");
-    WasteTime(std::chrono::microseconds(1000));
-  });
-
-  // This is kind of a hack to ensure the data from the previous only made it to
-  // sink_. If we don't wait for a bit, there's a race condition where sink2
-  // could get these data.
-  // Unfortunately this has to be implemented via a sleep. This is not idea but
-  // it is the best option for now.
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-  auto sink2 = std::make_shared<MockSink>();
-  app_.RegisterTraceSink(sink2);
-
-  regular_thread_->RunOneIteration([](MockRegularThread* self) {
-    self->TracerForTest().InstantEvent("Event2");
-  });
-
-  app_.StopTraceSession();
-  auto traces2 = sink2->LoggedTraces();
-  auto packets2 = GetPacketsFromTraces(traces2);
-
-  ASSERT_EQ(packets2.size(), 4);
-
-  AssertIsProcessTrackDescriptor(*packets2[0], kAppName);
-  const auto process_track_uuid = packets2[0]->track_descriptor().uuid();
-
-  AssertIsThreadTrackDescriptor(*packets2[1], kRegularThreadName, process_track_uuid);
-  auto thread_track_uuid = packets2[1]->track_descriptor().uuid();
-
-  auto event_names = GetInternedEventNames(*packets2[2]);
-  ASSERT_EQ(event_names.size(), 1);
-
-  const auto event1_name_iid = event_names.at("Event1");
-  ASSERT_GT(event1_name_iid, 0);
-
-  auto sequence_id = packets2[2]->trusted_packet_sequence_id();
-
-  AssertIsTrackEventInstant(*packets2[3], thread_track_uuid, sequence_id);
-
-  event_names = GetInternedEventNames(*packets2[3]);
-  ASSERT_EQ(event_names.size(), 1);
-
-  const auto event2_name_iid = event_names.at("Event2");
-  ASSERT_GT(event2_name_iid, 0);
-  ASSERT_NE(event2_name_iid, event1_name_iid);
-
-  AssertTrackEventHasIid(*packets2[3], event2_name_iid, 0);
-
-  auto traces = sink_->LoggedTraces();
-  auto packets = GetPacketsFromTraces(traces);
-
-  ASSERT_EQ(packets.size(), 5);
+  AssertTrackEventDuration(*packets2[4], *packets2[5], 1000000, 10000000);
 }
 
 TEST_F(SingleThreadTracingTest, QueueOverflowWillNotBlock) {
