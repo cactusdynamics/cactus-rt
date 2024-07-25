@@ -1,7 +1,6 @@
 #ifndef CACTUS_TRACING_THREAD_TRACER_H_
 #define CACTUS_TRACING_THREAD_TRACER_H_
 
-#include <atomic>
 #ifndef CACTUS_RT_TRACING_ENABLED
 #include "thread_tracer.disabled.h"
 #else
@@ -9,6 +8,7 @@
 #include <readerwriterqueue.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <cstdint>
 
 #include "../experimental/lockless/atomic_message.h"

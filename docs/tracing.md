@@ -219,7 +219,7 @@ If tracing is not enabled right now, the `TraceAggregator` will cache the
 is written out.
 
 The `Thread` is able to communicate with the `TraceAggregator` by storing a
-`weak_ptr` to the `TraceAggregator`. This pointer is setup during
+`weak_ptr` to the `TraceAggregator`. This pointer is set up during
 `App::RegisterThread` so there's no explicit dependency between `Thread` and
 `App` during construction.  This decision may be revisited in the future.
 
@@ -255,7 +255,7 @@ noting:
    (i.e. thus `(trusted_packet_sequence_id, iid)` is sufficient to identify an
    interned string). This, along with (1), implies we have to intern strings on
    a per-thread interner.
-3. When a tracing session stop, the string interner states for all known thread
+3. When a tracing session stops, the string interner states for all known thread
    tracers are reset. This means a subsequent session will not have the same
    string iids.
 
