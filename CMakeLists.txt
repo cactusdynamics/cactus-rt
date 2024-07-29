@@ -6,6 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
 option(ENABLE_EXAMPLES "Build example programs" ON)
 option(ENABLE_TRACING "Enable runtime tracing support" ON)
+option(ENABLE_ROS2 "Enables ROS2 support" OFF)
 option(BUILD_DOCS "Build documentations" OFF)
 
 # Used for building cactus-rt when all dependencies are vendored
@@ -104,8 +105,10 @@ endfunction()
 # Cactus RT library #
 #####################
 
-if (ENABLE_TRACING)
-  add_subdirectory(protos)
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  if (ENABLE_TRACING)
+    add_subdirectory(protos)
+  endif()
 endif()
 
 add_library(cactus_rt
@@ -133,28 +136,28 @@ target_link_libraries(cactus_rt
 # Use a bounded queue
 target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
-if (ENABLE_TRACING)
-  target_sources(cactus_rt
-    PRIVATE
-    src/cactus_rt/tracing/sink.cc
-    src/cactus_rt/tracing/thread_tracer.cc
-    src/cactus_rt/tracing/trace_aggregator.cc
-    src/cactus_rt/tracing/tracing_enabled.cc
-    src/cactus_rt/tracing/utils/string_interner.cc
-  )
-
-  target_link_libraries(cactus_rt
-    PUBLIC
-    cactus_tracing_embedded_perfetto_protos
-  )
-
-  target_compile_definitions(cactus_rt
-    PUBLIC
-    CACTUS_RT_TRACING_ENABLED=1
-  )
-endif()
-
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  if (ENABLE_TRACING)
+    target_sources(cactus_rt
+      PRIVATE
+      src/cactus_rt/tracing/sink.cc
+      src/cactus_rt/tracing/thread_tracer.cc
+      src/cactus_rt/tracing/trace_aggregator.cc
+      src/cactus_rt/tracing/tracing_enabled.cc
+      src/cactus_rt/tracing/utils/string_interner.cc
+    )
+
+    target_link_libraries(cactus_rt
+      PUBLIC
+      cactus_tracing_embedded_perfetto_protos
+    )
+
+    target_compile_definitions(cactus_rt
+      PUBLIC
+      CACTUS_RT_TRACING_ENABLED=1
+    )
+  endif()
+
   if (ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY clang-tidy clang-tidy-18 clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
   else()
@@ -163,6 +166,11 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 endif()
 
 setup_cactus_rt_target_options(cactus_rt)
+
+# ROS 2 build support
+if (ENABLE_ROS2)
+  include(cmake/ros2.cmake)
+endif()
 
 # Build tests, examples, docs, only if this project is not embedded in another
 # project.
