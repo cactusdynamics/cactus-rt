@@ -16,7 +16,7 @@ void Ros2Adapter::TimerCallback() {
 }
 
 void Ros2Adapter::DrainQueues() {
-  std::scoped_lock lock(mut_);
+  const std::scoped_lock lock(mut_);
 
   for (const auto& publisher : publishers_) {
     // Hopefully the thread is not publishing so quickly that a single

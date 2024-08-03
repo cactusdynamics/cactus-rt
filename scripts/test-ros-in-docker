@@ -1,0 +1,12 @@
+#!/bin/bash
+
+IMAGE_NAME=cactus-rt-ros2-test
+
+cd docker
+docker build --build-arg base_image=ros:jazzy-ros-base-noble . -t $IMAGE_NAME
+cd ..
+docker run --rm \
+  -v $(pwd):/workspace/src/cactus-rt \
+  $IMAGE_NAME \
+  -- \
+  "/workspace/src/cactus-rt/docker/scripts/run-ros2.sh"

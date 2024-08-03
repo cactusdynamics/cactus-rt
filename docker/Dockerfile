@@ -1,4 +1,6 @@
-FROM ubuntu:noble
+ARG base_image=ubuntu:noble
+
+FROM ${base_image}
 
 RUN set -xe; \
     export DEBIAN_FRONTEND=noninteractive; \

@@ -1,4 +1,10 @@
-on: [push]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 name: cactus-rt
 
@@ -53,3 +59,13 @@ jobs:
 
       # - name: Run example
       #   run: docker/scripts/04-example.sh
+
+  build-and-test-ros:
+    runs-on: [self-hosted, noble, real-time]
+    env:
+      image_name: ${{ github.workflow }}-ci-${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Test ROS in docker
+        run: scripts/test-ros-in-docker
