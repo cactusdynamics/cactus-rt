@@ -165,12 +165,12 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   endif()
 endif()
 
-setup_cactus_rt_target_options(cactus_rt)
-
 # ROS 2 build support
 if (ENABLE_ROS2)
   include(cmake/ros2.cmake)
 endif()
+
+setup_cactus_rt_target_options(cactus_rt)
 
 # Build tests, examples, docs, only if this project is not embedded in another
 # project.

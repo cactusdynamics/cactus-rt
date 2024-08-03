@@ -71,10 +71,21 @@ class App {
   void RegisterThread(std::shared_ptr<Thread> thread);
 
   /**
+   * @brief Sets up the trace aggregator. Call this before starting the thread
+   * if you don't want to call RegisterThread and maintain tracing capabilities.
+   */
+  void SetupTraceAggregator(Thread& thread);
+
+  /**
    * @brief Starts the app by locking the memory and reserving the memory. Also
    * start all the threads in registration order.
+   *
+   * @param start_monotonic_time_ns The start time of the monotonic clock, if
+   * you prefer to set a time. Mostly used for child class of App to keep a
+   * consistent start time. Leave as default or pass -1 for the function to
+   * automatically determine a time (i.e. most situations).
    */
-  virtual void Start();
+  virtual void Start(int64_t start_monotonic_time_ns = -1);
 
   /**
    * @brief sends RequestStop to all threads in registration order.
