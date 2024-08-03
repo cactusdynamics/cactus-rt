@@ -16,8 +16,12 @@ using FileSink = cactus_rt::tracing::FileSink;
 
 namespace cactus_rt {
 
+void App::SetupTraceAggregator(Thread& thread) {
+  thread.SetTraceAggregator(trace_aggregator_);
+}
+
 void App::RegisterThread(std::shared_ptr<Thread> thread) {
-  thread->SetTraceAggregator(trace_aggregator_);
+  SetupTraceAggregator(*thread);
   threads_.push_back(thread);
 }
 
@@ -40,12 +44,15 @@ App::~App() {
   quill::flush();
 }
 
-void App::Start() {
+void App::Start(int64_t start_monotonic_time_ns) {
   LockMemory();
   ReserveHeap();
   StartQuill();
 
-  auto start_monotonic_time_ns = NowNs();
+  if (start_monotonic_time_ns == -1) {
+    start_monotonic_time_ns = NowNs();
+  }
+
   for (auto& thread : threads_) {
     thread->Start(start_monotonic_time_ns);
   }

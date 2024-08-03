@@ -1,0 +1,4 @@
+---
+cmake-args:
+  - "-DENABLE_ROS2=ON"
+  - "-DENABLE_EXAMPLES=OFF"
