@@ -13,6 +13,7 @@ using cactus_rt::ros2::App;
 struct RealtimeData {
   int64_t data;
 
+  RealtimeData() = default;
   explicit RealtimeData(int64_t d) : data(d) {}
 };
 using RosData = std_msgs::msg::Int64;
