@@ -17,6 +17,8 @@ void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
   thread->config_.scheduler->SetSchedAttr();
 
+  pthread_setname_np(pthread_self(), thread->name_.c_str());
+
   thread->tracer_ = std::make_shared<tracing::ThreadTracer>(thread->name_, thread->config_.tracer_config.queue_size);
   thread->tracer_->SetTid();
 
