@@ -4,10 +4,10 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int64.hpp>
 #include <thread>
-
-#include "cactus_rt/ros2/subscription.h"
+#include <type_traits>
 
 using cactus_rt::CyclicThread;
 using cactus_rt::ros2::App;
@@ -21,13 +21,20 @@ struct RealtimeData {
 };
 using RosData = std_msgs::msg::Int64;
 
-namespace {
-RealtimeData ROS2ToRealtimeConverterFunc(const RosData& ros_data) {
-  // A bit of a silly example, but gets the point across.
-  RealtimeData rt_data(ros_data.data);
-  return rt_data;
-}
-}  // namespace
+template <>
+struct rclcpp::TypeAdapter<RealtimeData, RosData> {
+  using is_specialized = std::true_type;
+  using custom_type = RealtimeData;
+  using ros_message_type = RosData;
+
+  static void convert_to_ros_message(const custom_type& source, ros_message_type& destination) {
+    destination.data = source.data;
+  }
+
+  static void convert_to_custom(const ros_message_type& source, custom_type& destination) {
+    destination.data = source.data;
+  }
+};
 
 class RealtimeROS2SubscriberThread : public CyclicThread, public cactus_rt::ros2::Ros2ThreadMixin {
   int64_t loop_counter_ = 0;
@@ -49,7 +56,7 @@ class RealtimeROS2SubscriberThread : public CyclicThread, public cactus_rt::ros2
   RealtimeROS2SubscriberThread(const char* name) : CyclicThread(name, CreateThreadConfig()) {}
 
   void InitializeForRos2() override {
-    subscription_ = ros2_adapter_->CreateSubscriptionForLatestValue<RealtimeData, RosData>("/hello", rclcpp::QoS(10), ROS2ToRealtimeConverterFunc);
+    subscription_ = ros2_adapter_->CreateSubscriptionForLatestValue<RealtimeData, RosData>("/hello", rclcpp::QoS(10));
   }
 
   int64_t GetLoopCounter() const {
@@ -67,7 +74,7 @@ class RealtimeROS2SubscriberThread : public CyclicThread, public cactus_rt::ros2
         data = subscription_->ReadLatest();
       }
 
-      LOG_INFO(Logger(), "Loop {}: {}", loop_counter_, data.value.data);
+      LOG_INFO(Logger(), "Loop {}: {} {}", loop_counter_, data.id, data.value.data);
     }
     return false;
   }

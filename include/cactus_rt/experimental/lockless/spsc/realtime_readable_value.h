@@ -56,6 +56,7 @@ class RealtimeReadableValue {
    * and free a previous storage pointer.
    */
   void Write(const T& new_value) {
+    // TODO: make this perfect forwarding.
     auto new_ptr = std::make_unique<T>(new_value);
     T*   expected;
 
