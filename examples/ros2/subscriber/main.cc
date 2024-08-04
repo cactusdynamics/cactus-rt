@@ -7,8 +7,11 @@
 #include <std_msgs/msg/int64.hpp>
 #include <thread>
 
+#include "cactus_rt/ros2/subscription.h"
+
 using cactus_rt::CyclicThread;
 using cactus_rt::ros2::App;
+using cactus_rt::ros2::StampedValue;
 
 struct RealtimeData {
   int64_t data;
@@ -19,15 +22,17 @@ struct RealtimeData {
 using RosData = std_msgs::msg::Int64;
 
 namespace {
-void RealtimeToROS2ConverterFunc(const RealtimeData& rt_data, RosData& ros_data) {
+RealtimeData ROS2ToRealtimeConverterFunc(const RosData& ros_data) {
   // A bit of a silly example, but gets the point across.
-  ros_data.data = rt_data.data;
+  RealtimeData rt_data(ros_data.data);
+  return rt_data;
 }
 }  // namespace
 
-class RealtimeROS2PublisherThread : public CyclicThread, public cactus_rt::ros2::Ros2ThreadMixin {
-  int64_t                                                            loop_counter_ = 0;
-  std::shared_ptr<cactus_rt::ros2::Publisher<RealtimeData, RosData>> publisher_;
+class RealtimeROS2SubscriberThread : public CyclicThread, public cactus_rt::ros2::Ros2ThreadMixin {
+  int64_t loop_counter_ = 0;
+
+  std::shared_ptr<cactus_rt::ros2::SubscriptionLatest<RealtimeData, RosData>> subscription_;
 
   static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
     cactus_rt::CyclicThreadConfig thread_config;
@@ -41,10 +46,10 @@ class RealtimeROS2PublisherThread : public CyclicThread, public cactus_rt::ros2:
   }
 
  public:
-  RealtimeROS2PublisherThread(const char* name) : CyclicThread(name, CreateThreadConfig()) {}
+  RealtimeROS2SubscriberThread(const char* name) : CyclicThread(name, CreateThreadConfig()) {}
 
   void InitializeForRos2() override {
-    publisher_ = ros2_adapter_->CreatePublisher<RealtimeData, RosData>("/hello", rclcpp::QoS(10), RealtimeToROS2ConverterFunc);
+    subscription_ = ros2_adapter_->CreateSubscriptionForLatestValue<RealtimeData, RosData>("/hello", rclcpp::QoS(10), ROS2ToRealtimeConverterFunc);
   }
 
   int64_t GetLoopCounter() const {
@@ -54,11 +59,15 @@ class RealtimeROS2PublisherThread : public CyclicThread, public cactus_rt::ros2:
  protected:
   bool Loop(int64_t /*now*/) noexcept final {
     loop_counter_++;
-    if (loop_counter_ % 1000 == 0) {
-      LOG_INFO(Logger(), "Loop {}", loop_counter_);
+    if (loop_counter_ % 10 == 0) {
+      StampedValue<RealtimeData> data;
 
-      const auto span = Tracer().WithSpan("Publish");
-      publisher_->Publish(loop_counter_);
+      {
+        const auto span = Tracer().WithSpan("ReadLatest");
+        data = subscription_->ReadLatest();
+      }
+
+      LOG_INFO(Logger(), "Loop {}: {}", loop_counter_, data.value.data);
     }
     return false;
   }
@@ -67,13 +76,13 @@ class RealtimeROS2PublisherThread : public CyclicThread, public cactus_rt::ros2:
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
 
-  App app("RTROS2Publisher");
-  app.StartTraceSession("build/data.perfetto");
+  App app("RTROS2Subscriber");
+  app.StartTraceSession("build/subscriber.perfetto");
 
-  auto thread = app.CreateROS2EnabledThread<RealtimeROS2PublisherThread>("RTROS2PublisherThread");
+  auto thread = app.CreateROS2EnabledThread<RealtimeROS2SubscriberThread>("RTROS2SubscriberThread");
   app.RegisterThread(thread);
 
-  constexpr unsigned int time = 30;
+  constexpr unsigned int time = 60;
   std::cout << "Testing RT loop for " << time << " seconds.\n";
 
   app.Start();

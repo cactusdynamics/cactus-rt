@@ -3,18 +3,13 @@
 
 #include <readerwriterqueue.h>
 
-#include <functional>
 #include <optional>
 #include <rclcpp/rclcpp.hpp>
 
+#include "types.h"
+
 namespace cactus_rt::ros2 {
 class Ros2Adapter;
-
-template <typename RealtimeT, typename RosT>
-using RealtimeToROS2Converter = std::function<void(const RealtimeT&, RosT&)>;
-
-template <typename RealtimeT, typename RosT>
-using Ros2ToRealtimeConverter = std::function<RealtimeT(const RosT&)>;
 
 class IPublisher {
   friend class Ros2Adapter;
@@ -23,7 +18,7 @@ class IPublisher {
   virtual void FullyDrainAndPublishToRos() = 0;
 
  public:
-  virtual ~IPublisher() = 0;
+  virtual ~IPublisher() = default;
 };
 
 template <typename RealtimeT, typename RosT>
@@ -35,6 +30,7 @@ class Publisher : public IPublisher {
   bool DequeueAndPublishToRos() override {
     RealtimeT rt_msg;
 
+    // 1 copy
     const bool has_data = queue_.try_dequeue(rt_msg);
     if (!has_data) {
       return false;
@@ -42,11 +38,13 @@ class Publisher : public IPublisher {
 
     if (converter_) {
       auto loaned_msg = publisher_->borrow_loaned_message();
+      // 1 copy
       converter_.value()(rt_msg, loaned_msg.get());
       publisher_->publish(std::move(loaned_msg));
     } else {
       if constexpr (std::is_same_v<RealtimeT, RosT>) {
         const auto* ros_msg = static_cast<const RosT*>(rt_msg);
+        // 1 copy
         publisher_->publish(*ros_msg);
       } else {
         throw std::invalid_argument{"converter not specified but RealtimeT and RosT are not the same?!"};
@@ -76,8 +74,6 @@ class Publisher : public IPublisher {
     std::optional<RealtimeToROS2Converter<RealtimeT, RosT>> converter,
     moodycamel::ReaderWriterQueue<RealtimeT>&&              queue
   ) : publisher_(publisher), converter_(converter), queue_(std::move(queue)) {}
-
-  ~Publisher() override = default;
 
   template <typename... Args>
   bool Publish(Args&&... args) noexcept {

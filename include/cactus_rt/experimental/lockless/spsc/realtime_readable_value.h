@@ -36,12 +36,20 @@ class RealtimeReadableValue {
    * This atomically reads the value. It returns a copy of the data.
    */
   T Read() {
+    // TODO: static assert that T is a POD.
+
     // TODO: need to figure out the atomic memory order here!
     T* data_ptr = atomic_ptr_.exchange(nullptr);
     T  data = *data_ptr;
     atomic_ptr_.store(data_ptr);
     return data;
   }
+
+  // TODO: maybe create a "loan" method that would not cause a copy in read, but
+  // can hold the data for longer.
+
+  // TODO: possibly create a Write method with a timeout that will simply fail
+  // if the RT threads holds on too long.
 
   /**
    * This atomically writes the value. It will copy the value into the storage

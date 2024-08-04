@@ -47,6 +47,7 @@ class RealtimeWritableValue {
   }
 
   void Write(const T& new_value) {
+    // TODO: static assert that T is a POD
     auto i = idx_.fetch_or(kBusyMask) & kIdxMask;
     buf_[i] = new_value;
     idx_.store((i & kIdxMask) | kNewDataMask);

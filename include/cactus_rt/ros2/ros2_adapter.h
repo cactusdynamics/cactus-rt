@@ -12,7 +12,10 @@
 #include <type_traits>
 #include <utility>
 
-#include "publisher.h"
+#include "./publisher.h"
+#include "./subscription.h"
+#include "cactus_rt/ros2/subscription.h"
+#include "cactus_rt/ros2/types.h"
 
 namespace cactus_rt::ros2 {
 
@@ -36,8 +39,9 @@ class Ros2Adapter {
   // This means that during the timer callback, no subscribers, publishers, services, and etc. can be changed.
   std::mutex mut_;
 
-  // Publisher data
-  std::vector<std::shared_ptr<IPublisher>> publishers_;
+  // Publishers and subscriptions
+  std::vector<std::shared_ptr<IPublisher>>    publishers_;
+  std::vector<std::shared_ptr<ISubscription>> subscriptions_;
 
  public:
   Ros2Adapter(const std::string& name_, const Config& config);
@@ -71,6 +75,25 @@ class Ros2Adapter {
     const std::scoped_lock lock(mut_);
     publishers_.push_back(publisher_bundle);
     return publisher_bundle;
+  }
+
+  template <typename RealtimeT, typename RosT>
+  std::shared_ptr<SubscriptionLatest<RealtimeT, RosT>> CreateSubscriptionForLatestValue(
+    const std::string&                                      topic_name,
+    const rclcpp::QoS&                                      qos,
+    std::optional<Ros2ToRealtimeConverter<RealtimeT, RosT>> converter
+  ) {
+    if (!converter) {
+      if constexpr (!(std::is_trivial_v<RosT> && std::is_standard_layout_v<RosT> && std::is_same_v<RosT, RealtimeT>)) {
+        throw std::invalid_argument("RosT and RealtimeT must be the same and must be a plain object for converter not to be specified");
+      }
+    }
+
+    auto subscription_bundle = SubscriptionLatest<RealtimeT, RosT>::Create(*this->ros_node_, topic_name, qos, converter);
+
+    const std::scoped_lock lock(mut_);
+    subscriptions_.push_back(subscription_bundle);
+    return subscription_bundle;
   }
 
  private:
