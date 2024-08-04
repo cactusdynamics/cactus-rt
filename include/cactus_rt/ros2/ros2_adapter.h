@@ -21,7 +21,7 @@ class Ros2Adapter {
     /**
      * The time interval for which the adapter node is polling for publisher data.
      */
-    std::chrono::microseconds timer_interval = std::chrono::microseconds(200'000);
+    std::chrono::microseconds timer_interval = std::chrono::milliseconds(100);
   };
 
  private:
@@ -46,13 +46,13 @@ class Ros2Adapter {
     return ros_node_;
   }
 
-  template <typename RealtimeT, typename RosT>
-  std::shared_ptr<Publisher<RealtimeT, RosT>> CreatePublisher(
+  template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
+  std::shared_ptr<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>> CreatePublisher(
     const std::string& topic_name,
     const rclcpp::QoS& qos,
     size_t             rt_queue_size = 1000
   ) {
-    auto publisher = Publisher<RealtimeT, RosT>::Create(*ros_node_, topic_name, qos, rt_queue_size);
+    auto publisher = Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(*ros_node_, topic_name, qos, rt_queue_size);
 
     const std::scoped_lock lock(mut_);
     publishers_.push_back(publisher);
