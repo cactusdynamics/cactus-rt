@@ -93,15 +93,13 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
   }
 };
 
-int main(int argc, char* argv[]) {
-  rclcpp::init(argc, argv);
-
+int main(int argc, const char* argv[]) {
   const cactus_rt::AppConfig app_config;
 
   cactus_rt::ros2::Ros2Adapter::Config ros2_adapter_config;
   ros2_adapter_config.timer_interval = std::chrono::milliseconds(50);
 
-  cactus_rt::ros2::App app("ComplexDataROS2Publisher", app_config, ros2_adapter_config);
+  cactus_rt::ros2::App app(argc, argv, "ComplexDataROS2Publisher", app_config, ros2_adapter_config);
   app.StartTraceSession("build/publisher.perfetto");
 
   constexpr std::chrono::seconds time(30);
@@ -112,9 +110,12 @@ int main(int argc, char* argv[]) {
 
   app.Start();
 
-  std::this_thread::sleep_for(time);
+  std::thread t([&app, &time]() {
+    std::this_thread::sleep_for(time);
+    app.RequestStop();
+  });
+  t.detach();
 
-  app.RequestStop();
   app.Join();
 
   std::cout << "Done\n";

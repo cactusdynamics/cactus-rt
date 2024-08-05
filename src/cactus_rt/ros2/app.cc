@@ -3,11 +3,8 @@
 #include <rclcpp/executors/single_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include "cactus_rt//utils.h"
-#include "cactus_rt/app.h"
-#include "cactus_rt/config.h"
-#include "cactus_rt/ros2/ros2_adapter.h"
-#include "cactus_rt/thread.h"
+#include "cactus_rt/signal_handler.h"
+#include "cactus_rt/utils.h"
 
 namespace cactus_rt::ros2 {
 
@@ -34,11 +31,35 @@ void Ros2ExecutorThread::Run() {
   executor_->remove_node(node_ptr);
 }
 
-App::App(std::string name, cactus_rt::AppConfig config, Ros2Adapter::Config ros2_adapter_config)
-    : cactus_rt::App(name, config),
-      ros2_adapter_(std::make_shared<Ros2Adapter>(name, ros2_adapter_config)) {
+App::App(
+  int                  argc,
+  const char*          argv[],  // NOLINT
+  std::string          name,
+  cactus_rt::AppConfig config,
+  Ros2Adapter::Config  ros2_adapter_config
+) : cactus_rt::App(name, config) {
+  rclcpp::init(argc, argv, rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::None);
+
+  cactus_rt::SetUpTerminationSignalHandler();
+
+  signal_handling_thread_ = std::thread([this]() {
+    cactus_rt::WaitForAndHandleTerminationSignal();
+
+    RequestStop();
+    Join();
+    rclcpp::shutdown();
+  });
+
+  signal_handling_thread_.detach();
+
+  // Must initialize rclcpp before making the Ros2Adapter;
+  ros2_adapter_ = std::make_shared<Ros2Adapter>(name, ros2_adapter_config);
   ros2_executor_thread_ = CreateROS2EnabledThread<Ros2ExecutorThread>();
   SetupTraceAggregator(*ros2_executor_thread_);
+}
+
+App::~App() {
+  rclcpp::shutdown();
 }
 
 void App::Start(int64_t start_monotonic_time_ns) {

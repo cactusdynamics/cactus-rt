@@ -4,6 +4,8 @@
 
 #include <atomic>
 #include <cstring>
+#include <stdexcept>
+#include <string>
 
 namespace cactus_rt {
 /// @private

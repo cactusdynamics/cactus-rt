@@ -6,8 +6,6 @@
 #include <csignal>
 #include <vector>
 
-#include "app.h"
-
 /// Namespace comment is needed for doxygen to generate cross references correctly.
 namespace cactus_rt {
 /**
