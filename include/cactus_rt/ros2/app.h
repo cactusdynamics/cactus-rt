@@ -41,15 +41,22 @@ class Ros2ExecutorThread : public cactus_rt::Thread, public cactus_rt::ros2::Ros
 };
 
 class App : public cactus_rt::App {
-  std::shared_ptr<Ros2Adapter>        ros2_adapter_;
+  std::shared_ptr<Ros2Adapter> ros2_adapter_;
+
   std::shared_ptr<Ros2ExecutorThread> ros2_executor_thread_;
 
+  std::thread signal_handling_thread_;
+
  public:
-  explicit App(
+  App(
+    int                  argc,
+    const char*          argv[],  // NOLINT
     std::string          name = "RTROS2App",
     cactus_rt::AppConfig config = cactus_rt::AppConfig(),
     Ros2Adapter::Config  ros2_adapter_config = Ros2Adapter::Config()
   );
+
+  ~App() override;
 
   template <typename ThreadT, typename... Args>
   std::shared_ptr<ThreadT> CreateROS2EnabledThread(Args&&... args) {

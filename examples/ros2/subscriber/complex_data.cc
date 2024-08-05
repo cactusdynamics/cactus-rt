@@ -78,10 +78,8 @@ class RTROS2SubscriberThread : public cactus_rt::CyclicThread, public cactus_rt:
   }
 };
 
-int main(int argc, char* argv[]) {
-  rclcpp::init(argc, argv);
-
-  cactus_rt::ros2::App app("SimpleDataROS2Subscriber");
+int main(int argc, const char* argv[]) {
+  cactus_rt::ros2::App app(argc, argv, "SimpleDataROS2Subscriber");
   app.StartTraceSession("build/subscriber.perfetto");
 
   constexpr std::chrono::seconds time(30);
@@ -92,9 +90,12 @@ int main(int argc, char* argv[]) {
 
   app.Start();
 
-  std::this_thread::sleep_for(time);
+  std::thread t([&app, &time]() {
+    std::this_thread::sleep_for(time);
+    app.RequestStop();
+  });
+  t.detach();
 
-  app.RequestStop();
   app.Join();
 
   std::cout << "Done\n";
