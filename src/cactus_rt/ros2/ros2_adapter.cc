@@ -2,8 +2,6 @@
 
 #include <readerwriterqueue.h>
 
-#include <rclcpp/logging.hpp>
-
 namespace cactus_rt::ros2 {
 
 Ros2Adapter::Ros2Adapter(const std::string& name, const Ros2Adapter::Config& config)
@@ -17,8 +15,6 @@ void Ros2Adapter::TimerCallback() {
 
 void Ros2Adapter::DrainQueues() {
   const std::scoped_lock lock(mut_);
-
-  const auto& logger = this->ros_node_->get_logger();
 
   for (const auto& publisher : publishers_) {
     // Hopefully the thread is not publishing so quickly that a single

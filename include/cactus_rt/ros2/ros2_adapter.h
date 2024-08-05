@@ -59,12 +59,12 @@ class Ros2Adapter {
     return publisher;
   }
 
-  template <typename RealtimeT, typename RosT>
-  std::shared_ptr<SubscriptionLatest<RealtimeT, RosT>> CreateSubscriptionForLatestValue(
+  template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
+  std::shared_ptr<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>> CreateSubscriptionForLatestValue(
     const std::string& topic_name,
     const rclcpp::QoS& qos
   ) {
-    auto subscriber = SubscriptionLatest<RealtimeT, RosT>::Create(*this->ros_node_, topic_name, qos);
+    auto subscriber = SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(*this->ros_node_, topic_name, qos);
 
     const std::scoped_lock lock(mut_);
     subscriptions_.push_back(subscriber);

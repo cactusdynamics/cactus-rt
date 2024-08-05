@@ -8,15 +8,15 @@
 using RealtimeType = std_msgs::msg::Int64;
 using RosType = std_msgs::msg::Int64;
 
-class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::ros2::Ros2ThreadMixin {
-  int64_t last_published_at_ = 0;
+class RTROS2SubscriberThread : public cactus_rt::CyclicThread, public cactus_rt::ros2::Ros2ThreadMixin {
+  int64_t last_msg_id_ = 0;
   int64_t run_duration_;
 
   // We force turn off the trivial data check, because the ROS message data type
   // has a defined constructor with code in it. That said, the code really is
   // pretty trivial so it is safe to use in real-time. We thus disable the trivial
   // type check manually.
-  std::shared_ptr<cactus_rt::ros2::Publisher<RealtimeType, RosType, false>> publisher_;
+  std::shared_ptr<cactus_rt::ros2::SubscriptionLatest<RealtimeType, RosType, false>> subscription_;
 
   static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
     cactus_rt::CyclicThreadConfig thread_config;
@@ -28,25 +28,25 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
   }
 
  public:
-  explicit RTROS2PublisherThread(std::chrono::nanoseconds run_duration = std::chrono::seconds(30))
-      : cactus_rt::CyclicThread("RTROS2Publisher", CreateThreadConfig()),
+  explicit RTROS2SubscriberThread(std::chrono::nanoseconds run_duration = std::chrono::seconds(30))
+      : cactus_rt::CyclicThread("RTROS2Subscriber", CreateThreadConfig()),
         run_duration_(run_duration.count()) {}
 
   void InitializeForRos2() override {
-    publisher_ = ros2_adapter_->CreatePublisher<RealtimeType, RosType, false>("/cactus_rt/simple", rclcpp::QoS(100));
+    subscription_ = ros2_adapter_->CreateSubscriptionForLatestValue<RealtimeType, RosType, false>("/cactus_rt/simple", rclcpp::QoS(100));
   }
 
  protected:
   bool Loop(int64_t elapsed_ns) noexcept override {
-    if (elapsed_ns - last_published_at_ > 10'000'000) {
-      last_published_at_ = elapsed_ns;
+    cactus_rt::ros2::StampedValue<std_msgs::msg::Int64> msg;
+    {
+      const auto span = Tracer().WithSpan("Subscription::ReadLatest");
+      msg = subscription_->ReadLatest();
+    }
 
-      const auto span = Tracer().WithSpan("Publish");
-
-      std_msgs::msg::Int64 msg;
-      msg.data = elapsed_ns;
-      const auto success = publisher_->Publish(msg);
-      LOG_INFO(Logger(), "{} integer {}", success ? "Published" : "Did not publish", msg.data);
+    if (msg.id != last_msg_id_) {
+      LOG_INFO(Logger(), "Got new data at {}: {} {}", elapsed_ns, msg.id, msg.value.data);
+      last_msg_id_ = msg.id;
     }
 
     return elapsed_ns > run_duration_;
@@ -56,18 +56,13 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
 
-  const cactus_rt::AppConfig app_config;
-
-  cactus_rt::ros2::Ros2Adapter::Config ros2_adapter_config;
-  ros2_adapter_config.timer_interval = std::chrono::milliseconds(50);
-
-  cactus_rt::ros2::App app("SimpleDataROS2Publisher", app_config, ros2_adapter_config);
-  app.StartTraceSession("build/publisher.perfetto");
+  cactus_rt::ros2::App app("SimpleDataROS2Subscriber");
+  app.StartTraceSession("build/subscriber.perfetto");
 
   constexpr std::chrono::seconds time(30);
   std::cout << "Testing RT loop for " << time.count() << " seconds.\n";
 
-  auto thread = app.CreateROS2EnabledThread<RTROS2PublisherThread>(time);
+  auto thread = app.CreateROS2EnabledThread<RTROS2SubscriberThread>(time);
   app.RegisterThread(thread);
 
   app.Start();

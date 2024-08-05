@@ -5,6 +5,7 @@
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
   },
   "clangd.arguments": [
-    "--compile-commands-dir=${workspaceFolder}/build/debug"
+    "--compile-commands-dir=${workspaceFolder}/build/debug",
+    "--header-insertion=never"
   ]
 }

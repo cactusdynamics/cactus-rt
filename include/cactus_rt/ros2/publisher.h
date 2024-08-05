@@ -1,9 +1,9 @@
 #ifndef CACTUS_RT_ROS2_PUBLISHER_H_
 #define CACTUS_RT_ROS2_PUBLISHER_H_
 
-#include <quill/detail/LogMacros.h>
 #include <readerwriterqueue.h>
 
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <type_traits>
 
@@ -20,8 +20,6 @@ class IPublisher {
   virtual ~IPublisher() = default;
 };
 
-#define print_type_of(_x) your_type_was_<decltype(_x)>()
-
 template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
 class Publisher : public IPublisher {
   friend class Ros2Adapter;
@@ -29,7 +27,7 @@ class Publisher : public IPublisher {
   static_assert(!CheckForTrivialRealtimeT || std::is_trivial_v<RealtimeT>, "RealtimeT must be a trivial object to be real-time safe");
 
   using NoConversion = std::is_same<RealtimeT, RosT>;
-  using AdaptedRosType = typename std::conditional<NoConversion::value, RosT, rclcpp::TypeAdapter<RealtimeT, RosT>>::type;
+  using AdaptedRosType = typename std::conditional_t<NoConversion::value, RosT, rclcpp::TypeAdapter<RealtimeT, RosT>>;
 
   typename rclcpp::Publisher<AdaptedRosType>::SharedPtr publisher_;
   moodycamel::ReaderWriterQueue<RealtimeT>              queue_;
@@ -81,12 +79,9 @@ class Publisher : public IPublisher {
     const rclcpp::QoS& qos,
     const size_t       rt_queue_size = 1000
   ) {
-    typename rclcpp::Publisher<AdaptedRosType>::SharedPtr publisher = node.create_publisher<AdaptedRosType>(topic_name, qos);
-    typename moodycamel::ReaderWriterQueue<RealtimeT>     queue(rt_queue_size);
-
     return std::make_shared<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>>(
-      std::move(publisher),
-      std::move(queue)
+      node.create_publisher<AdaptedRosType>(topic_name, qos),
+      moodycamel::ReaderWriterQueue<RealtimeT>(rt_queue_size)
     );
   }
 

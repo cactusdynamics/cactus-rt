@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <type_traits>
 
 #include "../experimental/lockless/spsc/realtime_readable_value.h"
 
@@ -20,26 +21,26 @@ class ISubscription {
 
 template <typename RealtimeT>
 struct StampedValue {
-  uint64_t  id;
+  int64_t   id;
   RealtimeT value;
 
   StampedValue() = default;
-  StampedValue(const uint64_t i, const RealtimeT& v) : id(i), value(v) {}
+  StampedValue(const int64_t i, const RealtimeT& v) : id(i), value(v) {}
 };
 
-// TODO: Theoretically it is possible to not use the type converter if we don't
-// copy the data on read with RealtimeReadableValue.
-template <typename RealtimeT, typename RosT>
+template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
 class SubscriptionLatest : public ISubscription {
   friend class Ros2Adapter;
 
-  static_assert(std::is_trivial_v<RealtimeT>, "RealtimeT must be a trivial object to be real-time safe");
-  using AdaptedRosType = rclcpp::TypeAdapter<RealtimeT, RosT>;
+  static_assert(!CheckForTrivialRealtimeT || std::is_trivial_v<RealtimeT>, "RealtimeT must be a trivial object to be real-time safe");
+
+  using NoConversion = std::is_same<RealtimeT, RosT>;
+  using AdaptedRosType = typename std::conditional_t<NoConversion::value, RosT, rclcpp::TypeAdapter<RealtimeT, RosT>>;
 
   using RealtimeReadableValue = cactus_rt::experimental::lockless::spsc::RealtimeReadableValue<StampedValue<RealtimeT>>;
 
   typename rclcpp::Subscription<AdaptedRosType>::SharedPtr ros_subscription_;
-  uint64_t                                                 current_msg_id_ = 0;
+  int64_t                                                  current_msg_id_ = 0;
   RealtimeReadableValue                                    latest_value_;
 
   void SubscriptionCallback(const RealtimeT& rt_msg) {
@@ -53,12 +54,12 @@ class SubscriptionLatest : public ISubscription {
     latest_value_.Write(stamped_value);
   }
 
-  static std::shared_ptr<SubscriptionLatest> Create(
+  static std::shared_ptr<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>> Create(
     rclcpp::Node&      node,
     const std::string& topic_name,
     const rclcpp::QoS& qos
   ) {
-    auto subscription = std::make_shared<SubscriptionLatest<RealtimeT, RosT>>();
+    auto subscription = std::make_shared<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>>();
 
     subscription->ros_subscription_ = node.create_subscription<AdaptedRosType>(
       topic_name,
@@ -80,7 +81,7 @@ class SubscriptionLatest : public ISubscription {
    */
   SubscriptionLatest() = default;
 
-  inline StampedValue<RealtimeT> ReadLatest() noexcept {
+  StampedValue<RealtimeT> ReadLatest() noexcept {
     return latest_value_.Read();
   }
 };
