@@ -7,12 +7,11 @@
 #include <memory>
 #include <mutex>
 #include <rclcpp/rclcpp.hpp>
-#include <stdexcept>
 #include <string>
-#include <type_traits>
-#include <utility>
+#include <vector>
 
 #include "publisher.h"
+#include "subscription.h"
 
 namespace cactus_rt::ros2 {
 
@@ -22,7 +21,7 @@ class Ros2Adapter {
     /**
      * The time interval for which the adapter node is polling for publisher data.
      */
-    std::chrono::microseconds timer_interval = std::chrono::microseconds(200'000);
+    std::chrono::microseconds timer_interval = std::chrono::milliseconds(100);
   };
 
  private:
@@ -36,8 +35,9 @@ class Ros2Adapter {
   // This means that during the timer callback, no subscribers, publishers, services, and etc. can be changed.
   std::mutex mut_;
 
-  // Publisher data
-  std::vector<std::shared_ptr<IPublisher>> publishers_;
+  // Publishers and subscriptions
+  std::vector<std::shared_ptr<IPublisher>>    publishers_;
+  std::vector<std::shared_ptr<ISubscription>> subscriptions_;
 
  public:
   Ros2Adapter(const std::string& name_, const Config& config);
@@ -46,31 +46,29 @@ class Ros2Adapter {
     return ros_node_;
   }
 
-  template <typename RealtimeT, typename RosT>
-  std::shared_ptr<Publisher<RealtimeT, RosT>> CreatePublisher(
-    const std::string&                                      topic_name,
-    const rclcpp::QoS&                                      qos,
-    std::optional<RealtimeToROS2Converter<RealtimeT, RosT>> converter,
-    size_t                                                  rt_queue_size = 1000
+  template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
+  std::shared_ptr<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>> CreatePublisher(
+    const std::string& topic_name,
+    const rclcpp::QoS& qos,
+    size_t             rt_queue_size = 1000
   ) {
-    if (!converter) {
-      if constexpr (!(std::is_trivial_v<RosT> && std::is_standard_layout_v<RosT> && std::is_same_v<RosT, RealtimeT>)) {
-        throw std::invalid_argument("RosT and RealtimeT must be the same and must be a plain object for converter not to be specified");
-      }
-    }
-
-    typename rclcpp::Publisher<RosT>::SharedPtr       publisher = this->ros_node_->create_publisher<RosT>(topic_name, qos);
-    typename moodycamel::ReaderWriterQueue<RealtimeT> queue{rt_queue_size};
-
-    auto publisher_bundle = std::make_shared<Publisher<RealtimeT, RosT>>(
-      std::move(publisher),
-      converter,
-      std::move(queue)
-    );
+    auto publisher = Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(*ros_node_, topic_name, qos, rt_queue_size);
 
     const std::scoped_lock lock(mut_);
-    publishers_.push_back(publisher_bundle);
-    return publisher_bundle;
+    publishers_.push_back(publisher);
+    return publisher;
+  }
+
+  template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
+  std::shared_ptr<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>> CreateSubscriptionForLatestValue(
+    const std::string& topic_name,
+    const rclcpp::QoS& qos
+  ) {
+    auto subscriber = SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(*this->ros_node_, topic_name, qos);
+
+    const std::scoped_lock lock(mut_);
+    subscriptions_.push_back(subscriber);
+    return subscriber;
   }
 
  private:

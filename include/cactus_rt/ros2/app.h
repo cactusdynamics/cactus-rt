@@ -9,15 +9,20 @@
 
 namespace cactus_rt::ros2 {
 
+class App;
+
 class Ros2ThreadMixin {
+  friend class App;
+
  protected:
   std::shared_ptr<Ros2Adapter> ros2_adapter_;
 
- public:
+ private:
   void SetRos2Adapter(std::shared_ptr<Ros2Adapter> ros2_adapter) {
     ros2_adapter_ = ros2_adapter;
   }
 
+ public:
   virtual void InitializeForRos2() = 0;
   virtual ~Ros2ThreadMixin() = 0;
 };

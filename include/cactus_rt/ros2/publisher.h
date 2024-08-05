@@ -3,66 +3,86 @@
 
 #include <readerwriterqueue.h>
 
-#include <functional>
-#include <optional>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <type_traits>
 
 namespace cactus_rt::ros2 {
 class Ros2Adapter;
 
-template <typename RealtimeT, typename RosT>
-using RealtimeToROS2Converter = std::function<void(const RealtimeT&, RosT&)>;
-
-template <typename RealtimeT, typename RosT>
-using Ros2ToRealtimeConverter = std::function<RealtimeT(const RosT&)>;
-
 class IPublisher {
   friend class Ros2Adapter;
 
-  virtual bool DequeueAndPublishToRos() = 0;
-  virtual void FullyDrainAndPublishToRos() = 0;
+  virtual bool   DequeueAndPublishToRos() = 0;
+  virtual size_t FullyDrainAndPublishToRos() = 0;
 
  public:
-  virtual ~IPublisher() = 0;
+  virtual ~IPublisher() = default;
 };
 
-template <typename RealtimeT, typename RosT>
+template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
 class Publisher : public IPublisher {
-  typename rclcpp::Publisher<RosT>::SharedPtr             publisher_;
-  std::optional<RealtimeToROS2Converter<RealtimeT, RosT>> converter_;
-  moodycamel::ReaderWriterQueue<RealtimeT>                queue_;
+  friend class Ros2Adapter;
+
+  static_assert(!CheckForTrivialRealtimeT || std::is_trivial_v<RealtimeT>, "RealtimeT must be a trivial object to be real-time safe");
+
+  using NoConversion = std::is_same<RealtimeT, RosT>;
+  using AdaptedRosType = typename std::conditional_t<NoConversion::value, RosT, rclcpp::TypeAdapter<RealtimeT, RosT>>;
+
+  typename rclcpp::Publisher<AdaptedRosType>::SharedPtr publisher_;
+  moodycamel::ReaderWriterQueue<RealtimeT>              queue_;
 
   bool DequeueAndPublishToRos() override {
-    RealtimeT rt_msg;
+    if constexpr (NoConversion::value) {
+      rclcpp::LoanedMessage<RealtimeT> loaned_msg = publisher_->borrow_loaned_message();
 
-    const bool has_data = queue_.try_dequeue(rt_msg);
-    if (!has_data) {
-      return false;
-    }
-
-    if (converter_) {
-      auto loaned_msg = publisher_->borrow_loaned_message();
-      converter_.value()(rt_msg, loaned_msg.get());
-      publisher_->publish(std::move(loaned_msg));
-    } else {
-      if constexpr (std::is_same_v<RealtimeT, RosT>) {
-        const auto* ros_msg = static_cast<const RosT*>(rt_msg);
-        publisher_->publish(*ros_msg);
-      } else {
-        throw std::invalid_argument{"converter not specified but RealtimeT and RosT are not the same?!"};
+      RealtimeT& rt_msg = loaned_msg.get();
+      // First copy
+      if (!queue_.try_dequeue(rt_msg)) {
+        return false;
       }
-    }
 
-    return true;
+      publisher_->publish(std::move(loaned_msg));
+      return true;
+    } else {
+      RealtimeT rt_msg;
+      // First copy
+      if (!queue_.try_dequeue(rt_msg)) {
+        return false;
+      }
+
+      // Possible allocation if middleware requires it.
+      rclcpp::LoanedMessage<RosT> loaned_msg = publisher_->borrow_loaned_message();
+      RosT&                       ros_msg = loaned_msg.get();
+
+      // Second copy
+      AdaptedRosType::convert_to_ros_message(rt_msg, ros_msg);
+
+      publisher_->publish(std::move(loaned_msg));
+      return true;
+    }
   }
 
-  void FullyDrainAndPublishToRos() override {
+  size_t FullyDrainAndPublishToRos() override {
+    size_t count = 0;
     while (true) {
-      const auto has_data = DequeueAndPublishToRos();
-      if (!has_data) {
-        break;
+      if (!DequeueAndPublishToRos()) {
+        return count;
       }
+      count++;
     }
+  }
+
+  static std::shared_ptr<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>> Create(
+    rclcpp::Node&      node,
+    const std::string& topic_name,
+    const rclcpp::QoS& qos,
+    const size_t       rt_queue_size = 1000
+  ) {
+    return std::make_shared<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>>(
+      node.create_publisher<AdaptedRosType>(topic_name, qos),
+      moodycamel::ReaderWriterQueue<RealtimeT>(rt_queue_size)
+    );
   }
 
  public:
@@ -72,12 +92,9 @@ class Publisher : public IPublisher {
    * @private
    */
   Publisher(
-    typename rclcpp::Publisher<RosT>::SharedPtr             publisher,
-    std::optional<RealtimeToROS2Converter<RealtimeT, RosT>> converter,
-    moodycamel::ReaderWriterQueue<RealtimeT>&&              queue
-  ) : publisher_(publisher), converter_(converter), queue_(std::move(queue)) {}
-
-  ~Publisher() override = default;
+    typename rclcpp::Publisher<AdaptedRosType>::SharedPtr publisher,
+    moodycamel::ReaderWriterQueue<RealtimeT>&&            queue
+  ) : publisher_(publisher), queue_(std::move(queue)) {}
 
   template <typename... Args>
   bool Publish(Args&&... args) noexcept {
