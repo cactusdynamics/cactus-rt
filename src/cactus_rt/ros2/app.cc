@@ -88,5 +88,4 @@ void App::Join() {
   ros2_executor_thread_->Join();
 }
 
-Ros2ThreadMixin::~Ros2ThreadMixin() = default;
 }  // namespace cactus_rt::ros2

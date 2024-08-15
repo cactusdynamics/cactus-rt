@@ -5,6 +5,7 @@ BasedOnStyle: Google
 IndentWidth: 2
 ColumnLimit: 0
 PointerAlignment: Left
+DerivePointerAlignment: false
 AlignConsecutiveDeclarations: true
 ContinuationIndentWidth: 2
 AlignAfterOpenBracket: BlockIndent

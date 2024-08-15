@@ -24,7 +24,7 @@ class Ros2ThreadMixin {
 
  public:
   virtual void InitializeForRos2() = 0;
-  virtual ~Ros2ThreadMixin() = 0;
+  virtual ~Ros2ThreadMixin() = default;
 };
 
 class Ros2ExecutorThread : public cactus_rt::Thread, public cactus_rt::ros2::Ros2ThreadMixin {

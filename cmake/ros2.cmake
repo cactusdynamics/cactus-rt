@@ -16,3 +16,7 @@ add_subdirectory(examples/ros2/publisher)
 add_subdirectory(examples/ros2/subscriber)
 
 ament_package()
+
+if(BUILD_TESTING)
+  add_subdirectory(tests/ros2)
+endif()
