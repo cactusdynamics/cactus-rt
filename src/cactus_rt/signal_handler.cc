@@ -6,6 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 namespace cactus_rt {
 /// @private
