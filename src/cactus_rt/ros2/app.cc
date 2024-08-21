@@ -25,8 +25,7 @@ void Ros2ExecutorThread::Run() {
     executor_->spin_once();
   }
 
-  // Execute one more time to ensure everything is processed.
-  executor_->spin_once();
+  ros2_adapter_->DrainQueues();
 
   executor_->remove_node(node_ptr);
 }
