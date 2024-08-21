@@ -16,13 +16,15 @@ void Ros2Adapter::TimerCallback() {
 void Ros2Adapter::DrainQueues() {
   const std::scoped_lock lock(mut_);
 
-  for (const auto& publisher : publishers_) {
-    // Hopefully the thread is not publishing so quickly that a single
-    // publisher monopolizes all resources. That said, if that happens the
-    // program is likely in bigger trouble anyway.
-    //
-    // TODO: make it so we dequeue once.
-    publisher->FullyDrainAndPublishToRos();
+  bool has_data = true;
+  while (has_data) {
+    has_data = false;
+
+    for (const auto& publisher : publishers_) {
+      if (publisher->DequeueAndPublishToRos()) {
+        has_data = true;
+      }
+    }
   }
 }
 

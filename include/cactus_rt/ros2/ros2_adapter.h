@@ -15,7 +15,11 @@
 
 namespace cactus_rt::ros2 {
 
+class Ros2ExecutorThread;
+
 class Ros2Adapter {
+  friend class Ros2ExecutorThread;
+
  public:
   struct Config {
     /**
