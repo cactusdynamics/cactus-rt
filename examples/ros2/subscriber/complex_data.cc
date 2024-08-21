@@ -62,7 +62,7 @@ class RTROS2SubscriberThread : public cactus_rt::CyclicThread, public cactus_rt:
   }
 
  protected:
-  bool Loop(int64_t elapsed_ns) noexcept override {
+  LoopControl Loop(int64_t elapsed_ns) noexcept override {
     cactus_rt::ros2::StampedValue<MyCoefficientData> msg;
     {
       const auto span = Tracer().WithSpan("Subscription::ReadLatest");
@@ -74,7 +74,7 @@ class RTROS2SubscriberThread : public cactus_rt::CyclicThread, public cactus_rt:
       last_msg_id_ = msg.id;
     }
 
-    return elapsed_ns > run_duration_;
+    return elapsed_ns > run_duration_ ? LoopControl::Stop : LoopControl::Continue;
   }
 };
 

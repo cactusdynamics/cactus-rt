@@ -7,7 +7,6 @@
 #include <atomic>
 #include <cstdint>
 #include <fstream>
-#include <tuple>
 #include <vector>
 
 using moodycamel::ReaderWriterQueue;

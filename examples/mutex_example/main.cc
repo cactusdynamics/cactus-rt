@@ -26,7 +26,7 @@ class RTThread : public CyclicThread {
         buf_(buf) {}
 
  protected:
-  bool Loop(int64_t ellapsed_ns) noexcept final {
+  LoopControl Loop(int64_t ellapsed_ns) noexcept final {
     constexpr double period = 5'000'000'000.0;  // 5 seconds period
     constexpr double amplitude = 1.0;
 
@@ -38,7 +38,7 @@ class RTThread : public CyclicThread {
 
     buf_.Write(d);
 
-    return false;
+    return LoopControl::Continue;
   }
 };
 

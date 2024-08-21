@@ -32,12 +32,12 @@ class ExampleRTThread : public CyclicThread {
    * @return true if you want the thread to stop
    * @return false if you want to thread to continue
    */
-  bool Loop(int64_t elapsed_ns) noexcept final {
+  LoopControl Loop(int64_t elapsed_ns) noexcept final {
     // Code written in this function executes every 1 ms.
 
     // This demonstrates the usage of the quill logger. This emits a log message every 1s.
     LOG_INFO_LIMIT(std::chrono::seconds(1), Logger(), "Looping for {}", std::chrono::nanoseconds(elapsed_ns));
-    return false;
+    return LoopControl::Continue;
   }
 
  private:

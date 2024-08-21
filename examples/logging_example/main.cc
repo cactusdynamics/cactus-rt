@@ -21,13 +21,13 @@ class ExampleRTThread : public CyclicThread {
   }
 
  protected:
-  bool Loop(int64_t /*now*/) noexcept final {
+  LoopControl Loop(int64_t /*now*/) noexcept final {
     loop_counter_++;
     if (loop_counter_ % 1000 == 0) {
       LOG_INFO(Logger(), "Loop {}", loop_counter_);
     }
     LOG_INFO_LIMIT(std::chrono::milliseconds{1500}, Logger(), "Log limit: Loop {}", loop_counter_);
-    return false;
+    return LoopControl::Continue;
   }
 };
 

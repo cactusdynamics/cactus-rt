@@ -1,8 +1,6 @@
 #include <cactus_rt/experimental/lockless.h>
 #include <cactus_rt/rt.h>
 
-#include <chrono>
-
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
 using cactus_rt::Thread;
@@ -75,14 +73,14 @@ class RTThread : public CyclicThread {
   RTThread(Context& ctx) : CyclicThread("RTThread", CreateThreadConfig()), ctx_(ctx) {}
 
  protected:
-  bool Loop(int64_t /*now*/) noexcept final {
+  LoopControl Loop(int64_t /*now*/) noexcept final {
     if (ctx_.done.Read()) {
-      return true;
+      return LoopControl::Stop;
     }
 
     const Pose new_pose = ctx_.target_pose.Read();
     if (!new_pose.valid) {
-      return false;
+      return LoopControl::Continue;
     }
 
     if (new_pose != current_target_pose_) {
@@ -99,7 +97,7 @@ class RTThread : public CyclicThread {
       );
     }
 
-    return false;
+    return LoopControl::Continue;
   }
 };
 

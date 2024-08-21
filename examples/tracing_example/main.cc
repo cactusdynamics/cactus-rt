@@ -35,7 +35,7 @@ class ExampleRTThread : public CyclicThread {
   }
 
  protected:
-  bool Loop(int64_t /*now*/) noexcept final {
+  LoopControl Loop(int64_t /*now*/) noexcept final {
     loop_counter_++;
     if (loop_counter_ % 1000 == 0) {
       LOG_INFO(Logger(), "Loop {}", loop_counter_);
@@ -51,7 +51,7 @@ class ExampleRTThread : public CyclicThread {
       WasteTime(std::chrono::microseconds(1200));
     }
 
-    return false;
+    return LoopControl::Continue;
   }
 
  private:
@@ -87,10 +87,10 @@ class SecondRTThread : public CyclicThread {
   SecondRTThread() : CyclicThread("SecondRTThread", CreateThreadConfig()) {}
 
  protected:
-  bool Loop(int64_t /*now*/) noexcept final {
+  LoopControl Loop(int64_t /*now*/) noexcept final {
     const auto span = Tracer().WithSpan("Sense");
     WasteTime(std::chrono::microseconds(2000));
-    return false;
+    return LoopControl::Continue;
   }
 };
 
