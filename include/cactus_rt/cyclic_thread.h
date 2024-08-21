@@ -9,6 +9,11 @@ class CyclicThread : public Thread {
   struct timespec next_wakeup_time_;
 
  public:
+  enum class LoopControl {
+    Continue = 0,
+    Stop,
+  };
+
   /**
    * @brief Create a cyclic thread
    * @param name The thread name
@@ -24,9 +29,9 @@ class CyclicThread : public Thread {
   /**
    * @brief The custom loop function that executes one iteration of the code.
    *
-   * @returns true if the loop should break, false if it should not
+   * @returns LoopControl::Stop if the loop should break, LoopControl::Continue if it should not
    */
-  virtual bool Loop(int64_t ellapsed_ns) noexcept = 0;
+  virtual LoopControl Loop(int64_t ellapsed_ns) noexcept = 0;
 
   /**
    * @brief Track the latency wakeup and loop latency.

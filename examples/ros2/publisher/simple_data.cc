@@ -37,7 +37,7 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
   }
 
  protected:
-  bool Loop(int64_t elapsed_ns) noexcept override {
+  LoopControl Loop(int64_t elapsed_ns) noexcept override {
     if (elapsed_ns - last_published_at_ > 10'000'000) {
       last_published_at_ = elapsed_ns;
 
@@ -49,7 +49,7 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
       LOG_INFO(Logger(), "{} integer {}", success ? "Published" : "Did not publish", msg.data);
     }
 
-    return elapsed_ns > run_duration_;
+    return elapsed_ns > run_duration_ ? LoopControl::Stop : LoopControl::Continue;
   }
 };
 

@@ -31,7 +31,7 @@ class RtThread : public CyclicThread {
   }
 
  protected:
-  bool Loop(int64_t ellapsed_ns) noexcept final;
+  LoopControl Loop(int64_t ellapsed_ns) noexcept final;
 };
 
 #endif

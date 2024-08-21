@@ -23,9 +23,9 @@ class ExampleDeadlineThread : public CyclicThread {
   }
 
  protected:
-  bool Loop(int64_t /*now*/) noexcept final {
+  LoopControl Loop(int64_t /*now*/) noexcept final {
     loop_counter_++;
-    return false;
+    return LoopControl::Continue;
   }
 };
 

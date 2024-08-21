@@ -25,7 +25,7 @@ void CyclicThread::Run() noexcept {
       Tracer().StartSpan("Loop", "cactusrt", loop_start);
     }
 
-    const bool should_stop = Loop(loop_start - Thread::StartMonotonicTimeNs());
+    const LoopControl loop_control = Loop(loop_start - Thread::StartMonotonicTimeNs());
 
     loop_end = NowNs();
 
@@ -58,7 +58,7 @@ void CyclicThread::Run() noexcept {
       next_wakeup_time_ns = next_wakeup_time_.tv_sec * 1'000'000'000 + next_wakeup_time_.tv_nsec;
     }
 
-    if (should_stop) {
+    if (loop_control == LoopControl::Stop) {
       break;
     }
 

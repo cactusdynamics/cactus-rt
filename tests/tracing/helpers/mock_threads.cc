@@ -74,7 +74,7 @@ MockCyclicThread::MockCyclicThread(
     num_iterations_(num_iterations) {
 }
 
-bool MockCyclicThread::Loop(int64_t /* ellapsed_ns */) noexcept {
+cactus_rt::CyclicThread::LoopControl MockCyclicThread::Loop(int64_t /* ellapsed_ns */) noexcept {
   if (custom_loop_func_) {
     custom_loop_func_(iterations_executed_);
   } else {
@@ -82,5 +82,5 @@ bool MockCyclicThread::Loop(int64_t /* ellapsed_ns */) noexcept {
   }
 
   iterations_executed_++;
-  return iterations_executed_ >= num_iterations_;
+  return iterations_executed_ >= num_iterations_ ? LoopControl::Stop : LoopControl::Continue;
 }
