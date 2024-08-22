@@ -5,7 +5,8 @@
 namespace cactus_rt::ros2 {
 
 Ros2Adapter::Ros2Adapter(const std::string& name, const Ros2Adapter::Config& config)
-    : ros_node_(std::make_shared<rclcpp::Node>(name + "_ros_adapter")) {
+    : ros_node_(std::make_shared<rclcpp::Node>(name + "_ros_adapter")),
+      logger_(quill::create_logger("Ros2Adapter")) {
   timer_ = this->ros_node_->create_wall_timer(config.timer_interval, [this] { TimerCallback(); });
 }
 
