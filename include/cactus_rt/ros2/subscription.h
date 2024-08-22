@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "../experimental/lockless/spsc/realtime_readable_value.h"
+#include "quill/Quill.h"
 
 // Note: ROS subscription dispatch is here: https://github.com/ros2/rclcpp/blob/e10728c/rclcpp/include/rclcpp/any_subscription_callback.hpp#L481
 // We are using the TypeAdapter method.
@@ -39,6 +40,7 @@ class SubscriptionLatest : public ISubscription {
 
   using RealtimeReadableValue = cactus_rt::experimental::lockless::spsc::RealtimeReadableValue<StampedValue<RealtimeT>>;
 
+  quill::Logger*                                           logger_;
   typename rclcpp::Subscription<AdaptedRosType>::SharedPtr ros_subscription_;
   int64_t                                                  current_msg_id_ = 0;
   RealtimeReadableValue                                    latest_value_;
@@ -55,11 +57,12 @@ class SubscriptionLatest : public ISubscription {
   }
 
   static std::shared_ptr<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>> Create(
+    quill::Logger*     logger,
     rclcpp::Node&      node,
     const std::string& topic_name,
     const rclcpp::QoS& qos
   ) {
-    auto subscription = std::make_shared<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>>();
+    auto subscription = std::make_shared<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>>(logger);
 
     subscription->ros_subscription_ = node.create_subscription<AdaptedRosType>(
       topic_name,
@@ -79,7 +82,7 @@ class SubscriptionLatest : public ISubscription {
    *
    * @private
    */
-  SubscriptionLatest() = default;
+  explicit SubscriptionLatest(quill::Logger* logger) : logger_(logger) {}
 
   StampedValue<RealtimeT> ReadLatest() noexcept {
     return latest_value_.Read();

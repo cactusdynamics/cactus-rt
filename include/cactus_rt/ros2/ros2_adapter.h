@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "publisher.h"
+#include "quill/Quill.h"
 #include "subscription.h"
 
 namespace cactus_rt::ros2 {
@@ -43,6 +44,8 @@ class Ros2Adapter {
   std::vector<std::shared_ptr<IPublisher>>    publishers_;
   std::vector<std::shared_ptr<ISubscription>> subscriptions_;
 
+  quill::Logger* logger_;
+
  public:
   Ros2Adapter(const std::string& name_, const Config& config);
 
@@ -56,7 +59,7 @@ class Ros2Adapter {
     const rclcpp::QoS& qos,
     size_t             rt_queue_size = 1000
   ) {
-    auto publisher = Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(*ros_node_, topic_name, qos, rt_queue_size);
+    auto publisher = Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(logger_, *ros_node_, topic_name, qos, rt_queue_size);
 
     const std::scoped_lock lock(mut_);
     publishers_.push_back(publisher);
@@ -68,7 +71,7 @@ class Ros2Adapter {
     const std::string& topic_name,
     const rclcpp::QoS& qos
   ) {
-    auto subscriber = SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(*this->ros_node_, topic_name, qos);
+    auto subscriber = SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(logger_, *this->ros_node_, topic_name, qos);
 
     const std::scoped_lock lock(mut_);
     subscriptions_.push_back(subscriber);
