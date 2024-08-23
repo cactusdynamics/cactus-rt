@@ -190,6 +190,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/signal_handling_example)
     add_subdirectory(examples/simple_deadline_example)
     add_subdirectory(examples/simple_example)
+    add_subdirectory(examples/random_example)
 
     if (ENABLE_TRACING)
       add_subdirectory(examples/tracing_protos_example)
