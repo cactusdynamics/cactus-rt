@@ -62,7 +62,9 @@ class SubscriptionLatest : public ISubscription {
     const std::string& topic_name,
     const rclcpp::QoS& qos
   ) {
-    auto subscription = std::make_shared<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>>(logger);
+    std::shared_ptr<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>> subscription(
+      new SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>(logger)
+    );
 
     subscription->ros_subscription_ = node.create_subscription<AdaptedRosType>(
       topic_name,
@@ -76,14 +78,9 @@ class SubscriptionLatest : public ISubscription {
     return subscription;
   }
 
- public:
-  /**
-   * @brief Do not use this method. Defined to allow make_shared to work.
-   *
-   * @private
-   */
   explicit SubscriptionLatest(quill::Logger* logger) : logger_(logger) {}
 
+ public:
   StampedValue<RealtimeT> ReadLatest() noexcept {
     return latest_value_.Read();
   }

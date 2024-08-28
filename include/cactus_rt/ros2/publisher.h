@@ -83,25 +83,22 @@ class Publisher : public IPublisher {
     const rclcpp::QoS& qos,
     const size_t       rt_queue_size = 1000
   ) {
-    return std::make_shared<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>>(
-      logger,
-      node.create_publisher<AdaptedRosType>(topic_name, qos),
-      moodycamel::ReaderWriterQueue<RealtimeT>(rt_queue_size)
+    return std::shared_ptr<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>>(
+      new Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>(
+        logger,
+        node.create_publisher<AdaptedRosType>(topic_name, qos),
+        moodycamel::ReaderWriterQueue<RealtimeT>(rt_queue_size)
+      )
     );
   }
 
- public:
-  /**
-   * Constructs a publisher. Shouldn't be called directly. Only public to enable make_shared.
-   *
-   * @private
-   */
   Publisher(
     quill::Logger*                                        logger,
     typename rclcpp::Publisher<AdaptedRosType>::SharedPtr publisher,
     moodycamel::ReaderWriterQueue<RealtimeT>&&            queue
   ) : logger_(logger), publisher_(publisher), queue_(std::move(queue)) {}
 
+ public:
   template <typename... Args>
   bool Publish(Args&&... args) noexcept {
     const bool success = queue_.try_emplace(std::forward<Args>(args)...);
