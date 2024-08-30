@@ -15,6 +15,11 @@ namespace cactus_rt {
 
 void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
+
+  if (!thread->created_by_app_) {
+    throw std::runtime_error(std::string("do not create Thread manually, use App::CreateThread to create thread") + thread->name_);
+  }
+
   thread->config_.scheduler->SetSchedAttr();
 
   pthread_setname_np(pthread_self(), thread->name_.c_str());
@@ -25,7 +30,11 @@ void* Thread::RunThread(void* data) {
   if (auto trace_aggregator = thread->trace_aggregator_.lock()) {
     trace_aggregator->RegisterThreadTracer(thread->tracer_);
   } else {
-    LOG_WARNING(thread->Logger(), "thread {} does not have app_ and tracing is disabled for this thread. Did you call App::RegisterThread?", thread->name_);
+    LOG_WARNING(
+      thread->Logger(),
+      "thread {} does not have app_ and tracing is disabled for this thread. Did the App/Thread go out of scope before the thread is launched?",
+      thread->name_
+    );
   }
 
   quill::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message

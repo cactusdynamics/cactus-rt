@@ -106,7 +106,6 @@ int main(int argc, const char* argv[]) {
   std::cout << "Testing RT loop for " << time.count() << " seconds.\n";
 
   auto thread = app.CreateROS2EnabledThread<RTROS2PublisherThread>(time);
-  app.RegisterThread(thread);
 
   app.Start();
 

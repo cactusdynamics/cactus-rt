@@ -24,16 +24,12 @@ class MultiThreadTracingTest : public ::testing::Test {
   }
 
  protected:
-  cactus_rt::App                     app_;
-  std::shared_ptr<MockRegularThread> regular_thread_;
-  std::shared_ptr<MockCyclicThread>  cyclic_thread_;
-  std::shared_ptr<MockSink>          sink_;
+  cactus_rt::App            app_;
+  std::shared_ptr<MockSink> sink_;
 
  public:
   MultiThreadTracingTest()
       : app_(kAppName, CreateAppConfig()),
-        regular_thread_(std::make_shared<MockRegularThread>()),
-        cyclic_thread_(std::make_shared<MockCyclicThread>()),
         sink_(std::make_shared<MockSink>()) {}
 
  protected:
@@ -51,19 +47,19 @@ class MultiThreadTracingTest : public ::testing::Test {
 };
 
 TEST_F(MultiThreadTracingTest, TraceFromMultipleThreads) {
-  app_.RegisterThread(regular_thread_);
-  app_.RegisterThread(cyclic_thread_);
+  auto regular_thread = app_.CreateThread<MockRegularThread>();
+  auto cyclic_thread = app_.CreateThread<MockCyclicThread>();
 
   app_.Start();
 
-  regular_thread_->RunOneIteration([](MockRegularThread* self) {
+  regular_thread->RunOneIteration([](MockRegularThread* self) {
     self->TracerForTest().InstantEvent("Event1");
     WasteTime(std::chrono::microseconds(1000));
   });
 
-  cyclic_thread_->Join();
-  regular_thread_->RequestStop();
-  regular_thread_->Join();
+  cyclic_thread->Join();
+  regular_thread->RequestStop();
+  regular_thread->Join();
 
   app_.StopTraceSession();
 
@@ -138,7 +134,7 @@ TEST_F(MultiThreadTracingTest, TraceFromMultipleThreads) {
 TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoop) {
   // TODO: move the configuration for the number of loops and time per loop here
   // so it's easier to check the assertions are working.
-  app_.RegisterThread(cyclic_thread_);
+  auto cyclic_thread = app_.CreateThread<MockCyclicThread>();
   app_.Start();
 
   // The cyclic thread should shutdown on its own.
@@ -196,12 +192,11 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesSleepAndDoesNotTraceLoopIfConfi
 
   const char* thread_name = "CustomCyclicThread";
 
-  auto cyclic_thread = std::make_shared<MockCyclicThread>(
+  auto cyclic_thread = app_.CreateThread<MockCyclicThread>(
     thread_name,
     tracer_config
   );
 
-  app_.RegisterThread(cyclic_thread);
   app_.Start();
 
   // The cyclic thread should shutdown on its own.
@@ -266,7 +261,7 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoopOverrun) {
 
   const char* thread_name = "CustomCyclicThread";
 
-  auto cyclic_thread = std::make_shared<MockCyclicThread>(
+  auto cyclic_thread = app_.CreateThread<MockCyclicThread>(
     thread_name,
     tracer_config,
     [](int64_t num_iterations) {
@@ -275,8 +270,6 @@ TEST_F(MultiThreadTracingTest, CyclicThreadTracesLoopOverrun) {
       }
     }
   );
-
-  app_.RegisterThread(cyclic_thread);
   app_.Start();
 
   // The cyclic thread should shutdown on its own.

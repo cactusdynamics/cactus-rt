@@ -88,7 +88,6 @@ class SecondRTThread : public CyclicThread {
 
  protected:
   LoopControl Loop(int64_t /*now*/) noexcept final {
-    const auto span = Tracer().WithSpan("Sense");
     WasteTime(std::chrono::microseconds(2000));
     return LoopControl::Continue;
   }
@@ -98,11 +97,10 @@ int main() {
   cactus_rt::AppConfig app_config;
   app_config.tracer_config.trace_aggregator_cpu_affinity = {0};  // doesn't work yet
 
-  auto thread1 = std::make_shared<ExampleRTThread>();
-  auto thread2 = std::make_shared<SecondRTThread>();
-  App  app("TracingExampleApp", app_config);
-  app.RegisterThread(thread1);
-  app.RegisterThread(thread2);
+  App app("TracingExampleApp", app_config);
+
+  auto thread1 = app.CreateThread<ExampleRTThread>();
+  auto thread2 = app.CreateThread<SecondRTThread>();
 
   std::cout << "Testing RT loop for 15 seconds with two trace sessions.\n";
 

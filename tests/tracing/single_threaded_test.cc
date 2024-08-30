@@ -31,12 +31,11 @@ class SingleThreadTracingTest : public ::testing::Test {
  public:
   SingleThreadTracingTest()
       : app_(kAppName, CreateAppConfig()),
-        regular_thread_(std::make_shared<MockRegularThread>()),
+        regular_thread_(app_.CreateThread<MockRegularThread>()),
         sink_(std::make_shared<MockSink>()) {}
 
  protected:
   void SetUp() override {
-    app_.RegisterThread(regular_thread_);
     app_.StartTraceSession(sink_);  // TODO: make each test manually start the trace session!
     app_.Start();
     while (!regular_thread_->Started()) {

@@ -65,12 +65,8 @@ int main() {
   // We first create cactus_rt App object.
   App app;
 
-  // We then create a thread object
-  auto thread = std::make_shared<ExampleRTThread>();
-
-  // We then register the thread with the app, which allows the app to start,
-  // stop, and join the thread via App::Start, App::RequestStop, and App::Join.
-  app.RegisterThread(thread);
+  // We then create a thread object.
+  auto thread = app.CreateThread<ExampleRTThread>();
 
   constexpr unsigned int time = 5;
   std::cout << "Testing RT loop for " << time << " seconds.\n";

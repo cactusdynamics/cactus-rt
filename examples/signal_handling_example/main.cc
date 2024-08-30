@@ -31,10 +31,8 @@ int main() {
   config.cpu_affinity = std::vector<size_t>{2};
   config.SetFifoScheduler(80);
 
-  auto thread = std::make_shared<ExampleRTThread>("ExampleRTThread", config);
   App  app;
-
-  app.RegisterThread(thread);
+  auto thread = app.CreateThread<ExampleRTThread>("ExampleRTThread", config);
 
   // Sets up the signal handlers for SIGINT and SIGTERM (by default).
   cactus_rt::SetUpTerminationSignalHandler();
