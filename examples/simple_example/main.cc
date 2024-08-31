@@ -65,9 +65,12 @@ int main() {
   // We first create cactus_rt App object.
   App app;
 
-  // We then create a thread object.
+  // We then create a thread object. Threads should always be created via the
+  // App::CreateThread factory method.
   auto thread = app.CreateThread<ExampleRTThread>();
 
+  // For the demo application, we are only executing for 5 seconds. Remove these
+  // lines if you don't need this.
   constexpr unsigned int time = 5;
   std::cout << "Testing RT loop for " << time << " seconds.\n";
 
@@ -75,11 +78,13 @@ int main() {
   // passed to App::RegisterThread) in the order they are registered.
   app.Start();
 
-  // We let the application run for 5 seconds.
+  // We let the application run for 5 seconds. If you want the application to
+  // run indefinitely, remove this line.
   std::this_thread::sleep_for(std::chrono::seconds(time));
 
-  // We ask the application to stop, which stops all registered threads in the
-  // order they are registered.
+  // We ask the application to stop, which stops all threads in the order they
+  // are created. If you want the application to run indefinitely, remove this
+  // line.
   app.RequestStop();
 
   // We wait until all threads registered are done here.
