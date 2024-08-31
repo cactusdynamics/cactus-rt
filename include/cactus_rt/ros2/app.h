@@ -61,7 +61,7 @@ class App : public cactus_rt::App {
   template <typename ThreadT, typename... Args>
   std::shared_ptr<ThreadT> CreateROS2EnabledThread(Args&&... args) {
     static_assert(std::is_base_of_v<Ros2ThreadMixin, ThreadT>, "Must derive ROS2 thread from Ros2ThreadMixin");
-    std::shared_ptr<ThreadT> thread = std::make_shared<ThreadT>(std::forward<Args>(args)...);
+    std::shared_ptr<ThreadT> thread = CreateThread<ThreadT>(std::forward<Args>(args)...);
 
     thread->SetRos2Adapter(ros2_adapter_);
     thread->InitializeForRos2();

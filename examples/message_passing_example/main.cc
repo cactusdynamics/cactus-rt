@@ -6,12 +6,10 @@
 using cactus_rt::App;
 
 int main() {
-  auto data_logger = std::make_shared<DataLogger>("build/data.csv");
-  auto rt_thread = std::make_shared<RtThread>(data_logger);
-
   App app;
-  app.RegisterThread(data_logger);
-  app.RegisterThread(rt_thread);
+
+  auto data_logger = app.CreateThread<DataLogger>("build/data.csv");
+  auto rt_thread = app.CreateThread<RtThread>(data_logger);
 
   app.Start();
   rt_thread->Join();           // This thread will terminate on its own.

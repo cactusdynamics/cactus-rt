@@ -128,12 +128,11 @@ class NonRTThread : public Thread {
 
 int main() {
   Context ctx;
-  auto    rt_thread = std::make_shared<RTThread>(ctx);
-  auto    non_rt_thread = std::make_shared<NonRTThread>(ctx);
 
   App app;
-  app.RegisterThread(rt_thread);
-  app.RegisterThread(non_rt_thread);
+
+  auto rt_thread = app.CreateThread<RTThread>(ctx);
+  auto non_rt_thread = app.CreateThread<NonRTThread>(ctx);
 
   app.Start();
   app.Join();

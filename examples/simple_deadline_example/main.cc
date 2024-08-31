@@ -35,10 +35,9 @@ int main() {
   config.period_ns = 1'000'000;
   config.SetDeadlineScheduler(500'000 /* runtime */, 1'000'000 /* deadline*/);
 
-  auto thread = std::make_shared<ExampleDeadlineThread>("ExampleRTThread", config);
   App  app;
+  auto thread = app.CreateThread<ExampleDeadlineThread>("ExampleRTThread", config);
 
-  app.RegisterThread(thread);
   constexpr unsigned int time = 5;
 
   std::cout << "Testing RT loop for " << time << " seconds.\n";

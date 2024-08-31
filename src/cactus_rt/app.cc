@@ -16,15 +16,6 @@ using FileSink = cactus_rt::tracing::FileSink;
 
 namespace cactus_rt {
 
-void App::SetupTraceAggregator(Thread& thread) {
-  thread.SetTraceAggregator(trace_aggregator_);
-}
-
-void App::RegisterThread(std::shared_ptr<Thread> thread) {
-  SetupTraceAggregator(*thread);
-  threads_.push_back(thread);
-}
-
 App::App(std::string name, AppConfig config)
     : name_(name),
       heap_size_(config.heap_size),

@@ -33,9 +33,9 @@ class App {
 
   TracerConfig tracer_config_;
 
-  std::vector<std::shared_ptr<Thread>> threads_;
+  std::shared_ptr<tracing::TraceAggregator> trace_aggregator_;  // Must be above threads_ to guarantee destructor order.
 
-  std::shared_ptr<tracing::TraceAggregator> trace_aggregator_;
+  std::vector<std::shared_ptr<Thread>> threads_;
 
   void SetDefaultLogFormat(quill::Config& cfg) {
     // Create a handler of stdout
@@ -62,19 +62,19 @@ class App {
   App(App&&) noexcept = delete;
   App& operator=(App&&) noexcept = delete;
 
-  /**
-   * @brief Registers a thread to be automatically started by the app. The start
-   * order of the threads are in the order of registration.
-   *
-   * @param thread A shared ptr to a thread.
-   */
-  void RegisterThread(std::shared_ptr<Thread> thread);
+  template <typename ThreadT, typename... Args>
+  std::shared_ptr<ThreadT> CreateThread(Args&&... args) {
+    static_assert(std::is_base_of_v<Thread, ThreadT>, "Must derive from cactus_rt::Thread");
+    std::shared_ptr<ThreadT> thread = std::make_shared<ThreadT>(std::forward<Args>(args)...);
 
-  /**
-   * @brief Sets up the trace aggregator. Call this before starting the thread
-   * if you don't want to call RegisterThread and maintain tracing capabilities.
-   */
-  void SetupTraceAggregator(Thread& thread);
+    Thread* base_thread = thread.get();
+    base_thread->trace_aggregator_ = trace_aggregator_;
+    base_thread->created_by_app_ = true;
+
+    threads_.push_back(thread);
+
+    return thread;
+  }
 
   /**
    * @brief Starts the app by locking the memory and reserving the memory. Also

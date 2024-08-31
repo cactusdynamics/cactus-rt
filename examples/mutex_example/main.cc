@@ -80,12 +80,10 @@ void ThreadedDemo() {
   // into the thread and maintain the object lifetime to this function.
   NaiveDoubleBuffer<Data> buf;
 
-  auto rt_thread = std::make_shared<RTThread>("RTThread", rt_thread_config, buf);
-  auto non_rt_thread = std::make_shared<NonRTThread>("NonRTThread", non_rt_thread_config, buf);
-  App  app;
+  App app;
 
-  app.RegisterThread(non_rt_thread);
-  app.RegisterThread(rt_thread);
+  auto rt_thread = app.CreateThread<RTThread>("RTThread", rt_thread_config, buf);
+  auto non_rt_thread = app.CreateThread<NonRTThread>("NonRTThread", non_rt_thread_config, buf);
 
   constexpr unsigned int time = 10;
   app.Start();

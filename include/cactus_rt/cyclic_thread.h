@@ -14,8 +14,10 @@ class CyclicThread : public Thread {
     Stop,
   };
 
+ protected:
   /**
-   * @brief Create a cyclic thread
+   * @brief Create a cyclic thread.
+   *
    * @param name The thread name
    * @param config A cactus_rt::CyclicThreadConfig that specifies configuration parameters for this thread
    */
@@ -23,7 +25,6 @@ class CyclicThread : public Thread {
                                                               period_ns_(config.period_ns) {
   }
 
- protected:
   void Run() noexcept final;
 
   /**

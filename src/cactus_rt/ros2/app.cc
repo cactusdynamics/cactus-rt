@@ -54,7 +54,6 @@ App::App(
   // Must initialize rclcpp before making the Ros2Adapter;
   ros2_adapter_ = std::make_shared<Ros2Adapter>(name, ros2_adapter_config);
   ros2_executor_thread_ = CreateROS2EnabledThread<Ros2ExecutorThread>();
-  SetupTraceAggregator(*ros2_executor_thread_);
 }
 
 App::~App() {

@@ -37,8 +37,6 @@ int main() {
   thread_config.cpu_affinity = std::vector<size_t>{2};
   thread_config.SetFifoScheduler(80);
 
-  auto thread = std::make_shared<ExampleRTThread>("ExampleRTThread", thread_config);
-
   // Create a cactus_rt app configuration
   cactus_rt::AppConfig app_config;
 
@@ -54,7 +52,7 @@ int main() {
   app_config.logger_config = logging_config;
   App app("LoggingExampleApp", app_config);
 
-  app.RegisterThread(thread);
+  auto                   thread = app.CreateThread<ExampleRTThread>("ExampleRTThread", thread_config);
   constexpr unsigned int time = 5;
 
   std::cout << "Testing RT loop for " << time << " seconds.\n";

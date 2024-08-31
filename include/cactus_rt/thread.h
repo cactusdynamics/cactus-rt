@@ -18,7 +18,13 @@ namespace cactus_rt {
 /// @private
 constexpr size_t kDefaultStackSize = 8 * 1024 * 1024;  // 8MB default stack space should be plenty
 
+class App;
+
 class Thread {
+  friend class App;
+
+  bool created_by_app_ = false;  // A guard to prevent users to create the thread without using App::CreateThread.
+
   ThreadConfig        config_;
   std::string         name_;
   std::vector<size_t> cpu_affinity_;
@@ -39,11 +45,10 @@ class Thread {
   static void* RunThread(void* data);
 
   // Non-owning TraceAggregator pointer. Used only for notifying that the thread
-  // has started/stopped for tracing purposes. Set by Thread::Start and read at
-  // the beginning of Thread::RunThread.
+  // has started/stopped for tracing purposes. Set by App::CreateThread.
   std::weak_ptr<tracing::TraceAggregator> trace_aggregator_;
 
- public:
+ protected:
   /**
    * Creates a new thread.
    *
@@ -61,6 +66,7 @@ class Thread {
     }
   }
 
+ public:
   /**
    * Returns the name of the thread
    *
@@ -110,16 +116,6 @@ class Thread {
    * @param start_monotonic_time_ns should be the start time in nanoseconds for the monotonic clock.
    */
   void Start(int64_t start_monotonic_time_ns);
-
-  /**
-   * @brief Sets the trace_aggregator_ pointer so the thread can notify the
-   *        trace_aggregator_ when it starts. This should only be called by App.
-   *
-   * @private
-   */
-  inline void SetTraceAggregator(std::weak_ptr<tracing::TraceAggregator> trace_aggregator) {
-    trace_aggregator_ = trace_aggregator;
-  }
 
  protected:
   inline quill::Logger* Logger() const { return logger_; }
