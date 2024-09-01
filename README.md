@@ -32,12 +32,15 @@ Examples
 * [`simple_example`](examples/simple_example/): The most basic example showing
   a single real-time looping thread running at 1000 Hz.
 * [`tracing_example`](examples/tracing_example/): This demonstrates how to use
-  the real-time-safe tracing system built into cactus-rt.
-* [`logging_example`](examples/logging_example/): Demonstrates setting up custom
-  logging configuration via `cactus_rt::App`.
+  the real-time-safe tracing system built into cactus-rt. This is probably a
+  good thing to undrestand immediately after the above example.
 * [`mutex_example`](examples/mutex_example/): Demonstrates the usage of
   priority-inheritence mutex (`cactus_rt::mutex`) to pass data between real-time
-  and non-real-time threads.
+  and non-real-time threads via the implementation of a mutex-based double
+  buffer.
+* [`logging_example`](examples/logging_example/): Demonstrates setting up custom
+  logging configuration via `cactus_rt::App`.
+
 * [`simple_deadline_example`](examples/simple_deadline_example/): Same as
   `simple_example`, except it uses `SCHED_DEADLINE` as opposed to `SCHED_FIFO`.
   This is for a more advanced use case.

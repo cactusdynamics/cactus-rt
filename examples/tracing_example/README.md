@@ -10,6 +10,13 @@ Features demonstrated:
 2. Trace custom code in your application with spans.
 3. Setting the output file location.
 
+To run this:
+
+```bash
+$ make debug
+$ sudo build/debug/examples/tracing_example/rt_tracing_example
+```
+
 To visualize the trace, go to https://cactusdynamics.github.io/perfetto (or
 https://ui.perfetto.dev which doesn't have as much bells and whistles) and load
 the trace in `build/data1.perfetto` and `build/data2.perfetto`.

@@ -10,6 +10,9 @@ using cactus_rt::App;
 using cactus_rt::CyclicThread;
 using cactus_rt::Thread;
 
+// This is the data structure we are passing between the RT and non-RT thread.
+// It is big enough such that it cannot be atomically changed with a single
+// instruction to necessitate a mutex.
 struct Data {
   double v1 = 0.0;
   double v2 = 0.0;
@@ -21,8 +24,8 @@ class RTThread : public CyclicThread {
   NaiveDoubleBuffer<Data>& buf_;
 
  public:
-  explicit RTThread(const char* name, cactus_rt::CyclicThreadConfig config, NaiveDoubleBuffer<Data>& buf)
-      : CyclicThread(name, config),
+  explicit RTThread(NaiveDoubleBuffer<Data>& buf)
+      : CyclicThread("RTThread", CreateConfig()),
         buf_(buf) {}
 
  protected:
@@ -40,14 +43,24 @@ class RTThread : public CyclicThread {
 
     return LoopControl::Continue;
   }
+
+ private:
+  static cactus_rt::CyclicThreadConfig CreateConfig() {
+    cactus_rt::CyclicThreadConfig thread_config;
+    thread_config.period_ns = 1'000'000;
+    thread_config.SetFifoScheduler(80);
+
+    return thread_config;
+  }
 };
 
 class NonRTThread : public Thread {
   NaiveDoubleBuffer<Data>& buf_;
 
  public:
-  explicit NonRTThread(const char* name, cactus_rt::CyclicThreadConfig config, NaiveDoubleBuffer<Data>& buf)
-      : Thread(name, config), buf_(buf) {}
+  explicit NonRTThread(NaiveDoubleBuffer<Data>& buf)
+      : Thread("NonRTThread", CreateConfig()),
+        buf_(buf) {}
 
  protected:
   void Run() final {
@@ -58,32 +71,33 @@ class NonRTThread : public Thread {
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
   }
+
+ private:
+  static cactus_rt::ThreadConfig CreateConfig() {
+    cactus_rt::CyclicThreadConfig rt_thread_config;
+    rt_thread_config.SetOtherScheduler(0 /* niceness */);
+    return rt_thread_config;
+  }
 };
 
+// Trivial demonstration of the double buffer.
 void TrivialDemo() {
-  // Trivial demonstration that the double buffer does work..
   NaiveDoubleBuffer<int> buf;
   buf.Write(2);
   auto a = buf.SwapAndRead();
   std::cout << "a is " << a << std::endl;
 }
 
+// The actual application running.
 void ThreadedDemo() {
-  cactus_rt::CyclicThreadConfig rt_thread_config;
-  rt_thread_config.period_ns = 1'000'000;
-  rt_thread_config.SetFifoScheduler(80 /* priority */);
-
-  cactus_rt::CyclicThreadConfig non_rt_thread_config;
-  non_rt_thread_config.SetOtherScheduler(0 /* niceness */);
-
   // The double buffer is shared between the two threads, so we pass a reference
   // into the thread and maintain the object lifetime to this function.
   NaiveDoubleBuffer<Data> buf;
 
   App app;
 
-  auto rt_thread = app.CreateThread<RTThread>("RTThread", rt_thread_config, buf);
-  auto non_rt_thread = app.CreateThread<NonRTThread>("NonRTThread", non_rt_thread_config, buf);
+  auto rt_thread = app.CreateThread<RTThread>(buf);
+  auto non_rt_thread = app.CreateThread<NonRTThread>(buf);
 
   constexpr unsigned int time = 10;
   app.Start();
