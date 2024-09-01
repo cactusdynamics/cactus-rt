@@ -29,14 +29,16 @@ class ExampleRTThread : public CyclicThread {
    * @brief This methods runs every loop, which for this particular example is every 1ms.
    *
    * @param elapsed_ns The number of nanoseconds elapsed since the App::Start was called.
-   * @return true if you want the thread to stop
-   * @return false if you want to thread to continue
+   * @return LoopControl::Continue if you want the thread to continue
+   * @return LoopControl::Stop if you want to thread to stop
    */
   LoopControl Loop(int64_t elapsed_ns) noexcept final {
     // Code written in this function executes every 1 ms.
 
     // This demonstrates the usage of the quill logger. This emits a log message every 1s.
     LOG_INFO_LIMIT(std::chrono::seconds(1), Logger(), "Looping for {}", std::chrono::nanoseconds(elapsed_ns));
+
+    // Return LoopControl::Stop if you want the thread to stop.
     return LoopControl::Continue;
   }
 

@@ -31,6 +31,8 @@ Examples
 
 * [`simple_example`](examples/simple_example/): The most basic example showing
   a single real-time looping thread running at 1000 Hz.
+* [`tracing_example`](examples/tracing_example/): This demonstrates how to use
+  the real-time-safe tracing system built into cactus-rt.
 * [`logging_example`](examples/logging_example/): Demonstrates setting up custom
   logging configuration via `cactus_rt::App`.
 * [`mutex_example`](examples/mutex_example/): Demonstrates the usage of
@@ -39,7 +41,7 @@ Examples
 * [`simple_deadline_example`](examples/simple_deadline_example/): Same as
   `simple_example`, except it uses `SCHED_DEADLINE` as opposed to `SCHED_FIFO`.
   This is for a more advanced use case.
-* [`tracing_example`](examples/tracing_example/): Shows how to dynamically start and stop tracing, as well as trace custom application functions.
+
 * [`tracing_example_no_rt`](examples/tracing_example_no_rt/): Shows how to using the tracing library in `cactus_rt` without using `cactus_rt::App`.
 
 
