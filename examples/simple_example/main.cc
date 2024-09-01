@@ -62,6 +62,9 @@ class ExampleRTThread : public CyclicThread {
 };
 
 int main() {
+  // Sets up the signal handlers for SIGINT and SIGTERM (by default).
+  cactus_rt::SetUpTerminationSignalHandler();
+
   // We first create cactus_rt App object.
   App app;
 
@@ -69,18 +72,16 @@ int main() {
   // App::CreateThread factory method.
   auto thread = app.CreateThread<ExampleRTThread>();
 
-  // For the demo application, we are only executing for 5 seconds. Remove these
-  // lines if you don't need this.
-  constexpr unsigned int time = 5;
-  std::cout << "Testing RT loop for " << time << " seconds.\n";
-
   // Start the application, which starts all the registered threads (any thread
   // passed to App::RegisterThread) in the order they are registered.
   app.Start();
 
-  // We let the application run for 5 seconds. If you want the application to
-  // run indefinitely, remove this line.
-  std::this_thread::sleep_for(std::chrono::seconds(time));
+  std::cout << "App started\n";
+
+  // This function blocks until SIGINT or SIGTERM are received.
+  cactus_rt::WaitForAndHandleTerminationSignal();
+
+  std::cout << "Caught signal, requesting stop...\n";
 
   // We ask the application to stop, which stops all threads in the order they
   // are created. If you want the application to run indefinitely, remove this

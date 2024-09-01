@@ -29,13 +29,8 @@ writing a real-time Linux application. Some key features are:
 Examples
 --------
 
-See each example's README for more details on what they do.
-
 * [`simple_example`](examples/simple_example/): The most basic example showing
-  a single real-time looping thread.
-* [`signal_handling_example`](examples/signal_handling_example/): Same as
-  `simple_example`, except the program respond to SIGTERM and SIGINT and quit
-  upon receiving the signal.
+  a single real-time looping thread running at 1000 Hz.
 * [`logging_example`](examples/logging_example/): Demonstrates setting up custom
   logging configuration via `cactus_rt::App`.
 * [`mutex_example`](examples/mutex_example/): Demonstrates the usage of
