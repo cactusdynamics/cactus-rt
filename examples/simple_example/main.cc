@@ -29,14 +29,16 @@ class ExampleRTThread : public CyclicThread {
    * @brief This methods runs every loop, which for this particular example is every 1ms.
    *
    * @param elapsed_ns The number of nanoseconds elapsed since the App::Start was called.
-   * @return true if you want the thread to stop
-   * @return false if you want to thread to continue
+   * @return LoopControl::Continue if you want the thread to continue
+   * @return LoopControl::Stop if you want to thread to stop
    */
   LoopControl Loop(int64_t elapsed_ns) noexcept final {
     // Code written in this function executes every 1 ms.
 
     // This demonstrates the usage of the quill logger. This emits a log message every 1s.
     LOG_INFO_LIMIT(std::chrono::seconds(1), Logger(), "Looping for {}", std::chrono::nanoseconds(elapsed_ns));
+
+    // Return LoopControl::Stop if you want the thread to stop.
     return LoopControl::Continue;
   }
 
@@ -62,24 +64,30 @@ class ExampleRTThread : public CyclicThread {
 };
 
 int main() {
+  // Sets up the signal handlers for SIGINT and SIGTERM (by default).
+  cactus_rt::SetUpTerminationSignalHandler();
+
   // We first create cactus_rt App object.
   App app;
 
-  // We then create a thread object.
+  // We then create a thread object. Threads should always be created via the
+  // App::CreateThread factory method.
   auto thread = app.CreateThread<ExampleRTThread>();
-
-  constexpr unsigned int time = 5;
-  std::cout << "Testing RT loop for " << time << " seconds.\n";
 
   // Start the application, which starts all the registered threads (any thread
   // passed to App::RegisterThread) in the order they are registered.
   app.Start();
 
-  // We let the application run for 5 seconds.
-  std::this_thread::sleep_for(std::chrono::seconds(time));
+  std::cout << "App started\n";
 
-  // We ask the application to stop, which stops all registered threads in the
-  // order they are registered.
+  // This function blocks until SIGINT or SIGTERM are received.
+  cactus_rt::WaitForAndHandleTerminationSignal();
+
+  std::cout << "Caught signal, requesting stop...\n";
+
+  // We ask the application to stop, which stops all threads in the order they
+  // are created. If you want the application to run indefinitely, remove this
+  // line.
   app.RequestStop();
 
   // We wait until all threads registered are done here.

@@ -3,7 +3,6 @@
 
 #include <cactus_rt/mutex.h>
 
-#include <cstdint>
 #include <mutex>
 
 /**
@@ -12,7 +11,11 @@
  * Also only uses a single mutex so reads, writes, and swaps contend on a
  * single lock, which is no good for performance.
  *
- * Realistically, you would implement this in a lock-free manner, like this:
+ * cactus-rt already has something for this use case (real-time thread writes
+ * and non-real-time thread reads) implemented via the
+ * cactus_rt::experimental::lockless::spsc::RealtimeWritableValue.
+ *
+ * There could also be alternative implementations like:
  * https://stackoverflow.com/questions/23666069/single-producer-single-consumer-data-structure-with-double-buffer-in-c
  */
 template <typename T>

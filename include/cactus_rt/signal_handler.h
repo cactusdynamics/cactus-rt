@@ -38,6 +38,8 @@ namespace cactus_rt {
  * cactus_rt::WaitForAndHandleTerminationSignal is unblocked. Further calls to
  * cactus_rt::HasTerminationSignalBeenReceived will return true.
  *
+ * Do not use this with the ROS2 app, as it already call it for you.
+ *
  * @param signals A vector of signals to catch. Default: SIGINT and SIGTERM.
  */
 void SetUpTerminationSignalHandler(std::vector<int> signals = {SIGINT, SIGTERM});
