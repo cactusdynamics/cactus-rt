@@ -10,7 +10,7 @@
 #include "cactus_rt/tracing/trace_aggregator.h"
 #include "cactus_rt/tracing/tracing_enabled.h"
 #include "cactus_rt/utils.h"
-#include "quill/Quill.h"
+#include "quill/Backend.h"
 
 using FileSink = cactus_rt::tracing::FileSink;
 
@@ -21,18 +21,12 @@ App::App(std::string name, AppConfig config)
       heap_size_(config.heap_size),
       logger_config_(config.logger_config),
       tracer_config_(config.tracer_config),
-      trace_aggregator_(std::make_shared<tracing::TraceAggregator>(name)) {
-  if (logger_config_.default_handlers.empty()) {
-    SetDefaultLogFormat(logger_config_);
-  }
-
-  // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
-  // logger_config_.backend_thread_notification_handler
+      trace_aggregator_(std::make_shared<tracing::TraceAggregator>(name, CreateLogger("__trace_aggregator__"))) {
 }
 
 App::~App() {
+  logger_config_.sink->flush_sink();
   StopTraceSession();
-  quill::flush();
 }
 
 void App::Start(int64_t start_monotonic_time_ns) {
@@ -155,9 +149,16 @@ void App::ReserveHeap() const {
   free(buf);
 }
 
-void App::StartQuill() {
-  quill::configure(logger_config_);
-  quill::start();
+cactus_rt::Logger* App::CreateLogger(const std::string& name) const {
+  cactus_rt::Logger* logger = Frontend::create_or_get_logger(
+    name, logger_config_.sink, logger_config_.format_pattern, logger_config_.time_pattern
+  );
+  logger->set_log_level(logger_config_.log_level);
+  return logger;
+}
+
+void App::StartQuill() const {
+  quill::Backend::start(logger_config_.backend_options);
 }
 
 void App::StopTraceAggregator() noexcept {

@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "publisher.h"
-#include "quill/Quill.h"
 #include "subscription.h"
 
 namespace cactus_rt::ros2 {
@@ -44,7 +43,7 @@ class Ros2Adapter {
   std::vector<std::shared_ptr<IPublisher>>    publishers_;
   std::vector<std::shared_ptr<ISubscription>> subscriptions_;
 
-  quill::Logger* logger_;
+  cactus_rt::Logger* logger_;
 
  public:
   Ros2Adapter(const std::string& name_, const Config& config);

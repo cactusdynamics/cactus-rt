@@ -1,5 +1,7 @@
 #include "rt_thread.h"
 
+#include <cmath>
+
 cactus_rt::CyclicThread::LoopControl RtThread::Loop(int64_t ellapsed_ns) noexcept {
   const double ellapsed_ms = static_cast<double>(ellapsed_ns) / 1'000'000.0;
 

@@ -3,6 +3,8 @@
 #include <chrono>
 #include <iostream>
 
+#include "quill/sinks/FileSink.h"
+
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
 
@@ -26,7 +28,7 @@ class ExampleRTThread : public CyclicThread {
     if (loop_counter_ % 1000 == 0) {
       LOG_INFO(Logger(), "Loop {}", loop_counter_);
     }
-    LOG_INFO_LIMIT(std::chrono::milliseconds{1500}, Logger(), "Log limit: Loop {}", loop_counter_);
+    LOG_DEBUG_LIMIT(std::chrono::milliseconds{1500}, Logger(), "Log limit: Loop {}", loop_counter_);
     return LoopControl::Continue;
   }
 };
@@ -40,14 +42,25 @@ int main() {
   // Create a cactus_rt app configuration
   cactus_rt::AppConfig app_config;
 
-  // Create a Quill logging config to configure logging
-  quill::Config logging_config;
-
-  // Disable strict timestamp order - this will be faster, but logs may appear out of order
-  logging_config.backend_thread_strict_log_timestamp_order = false;
+  // Create a logging config to configure logging
+  cactus_rt::LoggerConfig logging_config;
 
   // Set the background logging thread CPU affinity
-  logging_config.backend_thread_cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
+  logging_config.backend_options.backend_cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
+
+  // Configure the log level for debug messages
+  logging_config.log_level = quill::LogLevel::Debug;
+
+  logging_config.sink = cactus_rt::Frontend::create_or_get_sink<quill::FileSink>(
+    "log_file",
+    []() {
+      quill::FileSinkConfig cfg;
+      cfg.set_open_mode('w');
+      cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
+      return cfg;
+    }(),
+    quill::FileEventNotifier{}
+  );
 
   app_config.logger_config = logging_config;
   App app("LoggingExampleApp", app_config);

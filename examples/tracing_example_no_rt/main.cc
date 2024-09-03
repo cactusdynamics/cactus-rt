@@ -1,4 +1,7 @@
+#include <cactus_rt/logger.h>
 #include <cactus_rt/tracing.h>
+#include <quill/Backend.h>
+#include <quill/sinks/ConsoleSink.h>
 
 #include <memory>
 #include <thread>
@@ -19,13 +22,18 @@ void StartTracing(const char* app_name, const char* filename) {
   // Enable the tracing.
   cactus_rt::tracing::EnableTracing();
 
+  // Create a logger
+  cactus_rt::Logger* logger = cactus_rt::Frontend::create_or_get_logger(
+    "TraceAggregatorLogger", cactus_rt::Frontend::create_or_get_sink<quill::ConsoleSink>("console_sink")
+  );
+
   // Create the trace aggregator that will pop the queues and write the events to sinks.
-  trace_aggregator = std::make_unique<TraceAggregator>(app_name);
+  trace_aggregator = std::make_unique<TraceAggregator>(app_name, logger);
 
   // Create the file sink so the data aggregated by the TraceAggregator will be written to somewhere.
   auto file_sink = std::make_shared<FileSink>(filename);
 
-  quill::start();
+  quill::Backend::start();
   trace_aggregator->Start(file_sink);
 }
 

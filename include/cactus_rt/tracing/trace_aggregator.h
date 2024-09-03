@@ -4,8 +4,6 @@
 #ifndef CACTUS_RT_TRACING_ENABLED
 #include "trace_aggregator.disabled.h"
 #else
-#include <quill/Quill.h>
-
 #include <atomic>
 #include <list>
 #include <memory>
@@ -14,6 +12,7 @@
 #include <thread>
 #include <unordered_set>
 
+#include "../logger.h"
 #include "sink.h"
 #include "thread_tracer.h"
 
@@ -42,8 +41,8 @@ class TraceAggregator {
 
   const std::string process_name_;
 
-  const uint64_t process_track_uuid_;
-  quill::Logger* logger_;
+  const uint64_t     process_track_uuid_;
+  cactus_rt::Logger* logger_;
 
   // This mutex protects tracers_ and session_
   std::mutex mutex_;
@@ -59,7 +58,7 @@ class TraceAggregator {
   std::unique_ptr<SessionState> session_ = nullptr;
 
  public:
-  explicit TraceAggregator(std::string name);
+  TraceAggregator(std::string name, cactus_rt::Logger* logger);
 
   // No copy no move
   TraceAggregator(const TraceAggregator&) = delete;
@@ -94,7 +93,7 @@ class TraceAggregator {
   void Stop() noexcept;
 
  private:
-  quill::Logger* Logger() noexcept;
+  cactus_rt::Logger* Logger() noexcept;
 
   void Run();
   bool StopRequested() const noexcept;

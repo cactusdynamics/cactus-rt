@@ -52,7 +52,7 @@ App::App(
   signal_handling_thread_.detach();
 
   // Must initialize rclcpp before making the Ros2Adapter;
-  ros2_adapter_ = std::make_shared<Ros2Adapter>(name, ros2_adapter_config);
+  ros2_adapter_ = std::make_shared<Ros2Adapter>(name, ros2_adapter_config, CreateLogger("Ros2Adapter"));
   ros2_executor_thread_ = CreateROS2EnabledThread<Ros2ExecutorThread>();
 }
 
