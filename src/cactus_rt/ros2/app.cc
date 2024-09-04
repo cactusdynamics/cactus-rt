@@ -4,7 +4,6 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "cactus_rt/signal_handler.h"
-#include "cactus_rt/utils.h"
 
 namespace cactus_rt::ros2 {
 
@@ -58,16 +57,6 @@ App::App(
 
 App::~App() {
   rclcpp::shutdown();
-}
-
-void App::Start(int64_t start_monotonic_time_ns) {
-  // Start the Ros2ExecutorThread first. Don't think it is 100% necessary but why not get a head start.
-  if (start_monotonic_time_ns == -1) {
-    start_monotonic_time_ns = NowNs();
-  }
-
-  ros2_executor_thread_->Start(start_monotonic_time_ns);
-  cactus_rt::App::Start(start_monotonic_time_ns);
 }
 
 void App::RequestStop() {

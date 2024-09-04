@@ -69,8 +69,6 @@ class App : public cactus_rt::App {
     return thread;
   }
 
-  void Start(int64_t start_monotonic_time_ns = -1) override;
-
   void RequestStop() override;
 
   void Join() override;
