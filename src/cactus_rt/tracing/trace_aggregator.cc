@@ -54,10 +54,10 @@ void SetupCPUAffinityIfNecessary(const std::vector<size_t>& cpu_affinity) {
 }  // namespace
 
 namespace cactus_rt::tracing {
-TraceAggregator::TraceAggregator(std::string process_name)
+TraceAggregator::TraceAggregator(std::string process_name, cactus_rt::Logger* logger)
     : process_name_(process_name),
       process_track_uuid_(static_cast<uint64_t>(getpid())),
-      logger_(quill::create_logger("__trace_aggregator__")) {
+      logger_(logger) {
 }
 
 void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer) {
@@ -129,7 +129,7 @@ void TraceAggregator::Stop() noexcept {
   mutex_.unlock();
 }
 
-quill::Logger* TraceAggregator::Logger() noexcept {
+cactus_rt::Logger* TraceAggregator::Logger() noexcept {
   return logger_;
 }
 

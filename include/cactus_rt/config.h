@@ -1,11 +1,14 @@
 #ifndef CACTUS_RT_CONFIG_H_
 #define CACTUS_RT_CONFIG_H_
 
-#include <quill/Quill.h>
-
 #include <memory>
 
 #include "cactus_rt/scheduler.h"
+#include "logger.h"
+#include "quill/backend/BackendOptions.h"
+#include "quill/core/LogLevel.h"
+#include "quill/sinks/ConsoleSink.h"
+#include "quill/sinks/Sink.h"
 
 namespace cactus_rt {
 
@@ -19,6 +22,34 @@ struct TracerConfig {
   std::vector<size_t> trace_aggregator_cpu_affinity;
 };
 
+struct LoggerConfig {
+  /**
+   * @brief Backend options for Quill logging
+   */
+  quill::BackendOptions backend_options;
+
+  /**
+   * @brief Pattern for formatting logs
+   */
+  std::string format_pattern = "[%(time)][%(log_level)][%(logger)][%(file_name):%(line_number)] %(message)";
+
+  /**
+   * @brief Pattern for formatting time
+   */
+  std::string time_pattern = "%Y-%m-%d %H:%M:%S.%Qns";
+
+  /**
+   * @brief Log level for Quill logging
+   */
+  quill::LogLevel log_level = quill::LogLevel::Info;
+
+  /**
+   * @brief The sink to log to. Default is console.
+   */
+  std::shared_ptr<quill::Sink> sink;
+
+  LoggerConfig() : sink(Frontend::create_or_get_sink<quill::ConsoleSink>("console_sink")) {}
+};
 /**
  * @brief The configuration required for an App
  */
@@ -31,7 +62,7 @@ struct AppConfig {
   /**
    * @brief The configuration for quill logging
    */
-  quill::Config logger_config;
+  LoggerConfig logger_config;
 
   /**
    * @brief The config for the tracer if enabled (ENABLE_TRACING option in cmake)

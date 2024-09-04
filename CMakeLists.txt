@@ -27,8 +27,8 @@ if(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES)
   FetchContent_Declare(
     quill
     GIT_REPOSITORY https://github.com/odygrd/quill.git
-    GIT_TAG        9a270d5d6f57a3ac19451292e3a9f370fcd744b1
-    # GIT_TAG        v3.3.2
+    GIT_TAG        1401d2d90f85a6b83ab1b259590d8ba227446a92
+    # GIT_TAG        v6.1.2
   )
 
   FetchContent_MakeAvailable(quill)

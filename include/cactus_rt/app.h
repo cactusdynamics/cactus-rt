@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "config.h"
-#include "quill/Quill.h"
+#include "logger.h"
 #include "thread.h"
 #include "tracing/thread_tracer.h"
 #include "tracing/trace_aggregator.h"
@@ -29,25 +29,13 @@ class App {
   size_t heap_size_;
 
   // Configuration for quill logging
-  quill::Config logger_config_;
+  LoggerConfig logger_config_;
 
   TracerConfig tracer_config_;
 
   std::shared_ptr<tracing::TraceAggregator> trace_aggregator_;  // Must be above threads_ to guarantee destructor order.
 
   std::vector<std::shared_ptr<Thread>> threads_;
-
-  void SetDefaultLogFormat(quill::Config& cfg) {
-    // Create a handler of stdout
-    const std::shared_ptr<quill::Handler> handler = quill::stdout_handler();
-
-    // Enable console colours on the handler
-    static_cast<quill::ConsoleHandler*>(handler.get())->enable_console_colours();
-
-    // Set the default pattern
-    handler->set_pattern("[%(ascii_time)][%(level_id)][%(logger_name)][%(filename):%(lineno)] %(message)", "%Y-%m-%d %H:%M:%S.%Qns");
-    cfg.default_handlers.push_back(handler);
-  }
 
  public:
   explicit App(std::string name = "RTApp", AppConfig config = AppConfig());
@@ -62,6 +50,8 @@ class App {
   App(App&&) noexcept = delete;
   App& operator=(App&&) noexcept = delete;
 
+  cactus_rt::Logger* CreateLogger(const std::string& name) const;
+
   template <typename ThreadT, typename... Args>
   std::shared_ptr<ThreadT> CreateThread(Args&&... args) {
     static_assert(std::is_base_of_v<Thread, ThreadT>, "Must derive from cactus_rt::Thread");
@@ -70,6 +60,7 @@ class App {
     Thread* base_thread = thread.get();
     base_thread->trace_aggregator_ = trace_aggregator_;
     base_thread->created_by_app_ = true;
+    base_thread->logger_ = CreateLogger(base_thread->name_);
 
     threads_.push_back(thread);
 
@@ -143,7 +134,7 @@ class App {
   /**
    * Starts the Quill background logging thread.
    */
-  void StartQuill();
+  void StartQuill() const;
 
  private:
   void StopTraceAggregator() noexcept;
