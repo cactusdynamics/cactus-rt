@@ -78,6 +78,19 @@ class Ros2Adapter {
     return subscriber;
   }
 
+  template <typename RealtimeT, typename RosT, bool CheckForTrivialRealtimeT = true>
+  std::shared_ptr<SubscriptionQueued<RealtimeT, RosT, CheckForTrivialRealtimeT>> CreateSubscriptionQueued(
+    const std::string& topic_name,
+    const rclcpp::QoS& qos,
+    size_t             rt_queue_size = 1000
+  ) {
+    auto subscriber = SubscriptionQueued<RealtimeT, RosT, CheckForTrivialRealtimeT>::Create(logger_, *this->ros_node_, topic_name, qos, rt_queue_size);
+
+    const std::scoped_lock lock(mut_);
+    subscriptions_.push_back(subscriber);
+    return subscriber;
+  }
+
  private:
   void TimerCallback();
   void DrainQueues();
