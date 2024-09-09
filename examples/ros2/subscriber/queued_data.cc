@@ -31,8 +31,8 @@ class RTROS2SubscriberThread : public cactus_rt::CyclicThread, public cactus_rt:
       : cactus_rt::CyclicThread("RTROS2Subscriber", CreateThreadConfig()),
         run_duration_(run_duration.count()) {}
 
-  void InitializeForRos2() override {
-    subscription_ = ros2_adapter_->CreateSubscriptionQueued<RealtimeType, RosType, false>("/cactus_rt/simple", rclcpp::QoS(100));
+  void InitializeForRos2(cactus_rt::ros2::Ros2Adapter& ros2_adapter) override {
+    subscription_ = ros2_adapter.CreateSubscriptionQueued<RealtimeType, RosType, false>("/cactus_rt/simple", rclcpp::QoS(100));
   }
 
  protected:

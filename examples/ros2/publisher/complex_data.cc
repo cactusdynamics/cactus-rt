@@ -57,8 +57,8 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
       : cactus_rt::CyclicThread("RTROS2Publisher", CreateThreadConfig()),
         run_duration_(run_duration.count()) {}
 
-  void InitializeForRos2() override {
-    publisher_ = ros2_adapter_->CreatePublisher<RealtimeType, RosType>("/cactus_rt/complex", rclcpp::QoS(100));
+  void InitializeForRos2(cactus_rt::ros2::Ros2Adapter& ros2_adapter) override {
+    publisher_ = ros2_adapter.CreatePublisher<RealtimeType, RosType>("/cactus_rt/complex", rclcpp::QoS(100));
   }
 
  protected:
