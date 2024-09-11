@@ -41,3 +41,24 @@ install(
   TARGETS rt_ros2_subscriber_complex_data
   DESTINATION lib/${PROJECT_NAME}
 )
+
+add_executable(rt_ros2_subscriber_queued_data
+  queued_data.cc
+)
+
+target_link_libraries(rt_ros2_subscriber_queued_data
+  PRIVATE
+  cactus_rt
+)
+
+setup_cactus_rt_target_options(rt_ros2_subscriber_queued_data)
+
+ament_target_dependencies(rt_ros2_subscriber_queued_data
+  PUBLIC
+  std_msgs
+)
+
+install(
+  TARGETS rt_ros2_subscriber_queued_data
+  DESTINATION lib/${PROJECT_NAME}
+)
