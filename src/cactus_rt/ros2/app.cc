@@ -12,7 +12,9 @@ cactus_rt::ThreadConfig Ros2ExecutorThread::CreateThreadConfig() {
   return thread_config;
 }
 
-Ros2ExecutorThread::Ros2ExecutorThread() : Thread("ROS2ExecutorThread", CreateThreadConfig()) {}
+Ros2ExecutorThread::Ros2ExecutorThread(std::shared_ptr<Ros2Adapter> ros2_adapter)
+    : Thread("ROS2ExecutorThread", CreateThreadConfig()),
+      ros2_adapter_(ros2_adapter) {}
 
 void Ros2ExecutorThread::Run() {
   rclcpp::ExecutorOptions options;
@@ -52,7 +54,7 @@ App::App(
 
   // Must initialize rclcpp before making the Ros2Adapter;
   ros2_adapter_ = std::make_shared<Ros2Adapter>(name, ros2_adapter_config);
-  ros2_executor_thread_ = CreateROS2EnabledThread<Ros2ExecutorThread>();
+  ros2_executor_thread_ = CreateROS2EnabledThread<Ros2ExecutorThread>(ros2_adapter_);
 }
 
 App::~App() {

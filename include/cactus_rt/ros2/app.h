@@ -12,32 +12,23 @@ namespace cactus_rt::ros2 {
 class App;
 
 class Ros2ThreadMixin {
-  friend class App;
-
- protected:
-  std::shared_ptr<Ros2Adapter> ros2_adapter_;
-
- private:
-  void SetRos2Adapter(std::shared_ptr<Ros2Adapter> ros2_adapter) {
-    ros2_adapter_ = ros2_adapter;
-  }
-
  public:
-  virtual void InitializeForRos2() = 0;
+  virtual void InitializeForRos2(Ros2Adapter& ros2_adapter) = 0;
   virtual ~Ros2ThreadMixin() = 0;
 };
 
 class Ros2ExecutorThread : public cactus_rt::Thread, public cactus_rt::ros2::Ros2ThreadMixin {
+  std::shared_ptr<Ros2Adapter>                             ros2_adapter_;
   std::optional<rclcpp::executors::SingleThreadedExecutor> executor_;
 
   static cactus_rt::ThreadConfig CreateThreadConfig();
 
  public:
-  Ros2ExecutorThread();
+  explicit Ros2ExecutorThread(std::shared_ptr<Ros2Adapter> ros2_adapter);
 
   void Run() override;
 
-  void InitializeForRos2() override {}
+  void InitializeForRos2(Ros2Adapter& /*ros2_adapter*/) override {}
 };
 
 class App : public cactus_rt::App {
@@ -63,8 +54,7 @@ class App : public cactus_rt::App {
     static_assert(std::is_base_of_v<Ros2ThreadMixin, ThreadT>, "Must derive ROS2 thread from Ros2ThreadMixin");
     std::shared_ptr<ThreadT> thread = CreateThread<ThreadT>(std::forward<Args>(args)...);
 
-    thread->SetRos2Adapter(ros2_adapter_);
-    thread->InitializeForRos2();
+    thread->InitializeForRos2(*ros2_adapter_);
 
     return thread;
   }
