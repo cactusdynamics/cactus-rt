@@ -105,10 +105,8 @@ endfunction()
 # Cactus RT library #
 #####################
 
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if (ENABLE_TRACING)
-    add_subdirectory(protos)
-  endif()
+if (ENABLE_TRACING)
+  add_subdirectory(protos)
 endif()
 
 add_library(cactus_rt
