@@ -17,35 +17,35 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
-#########################
+# ########################
 # External dependencies #
-#########################
-
+# ########################
 if(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES)
   Include(FetchContent)
 
   FetchContent_Declare(
     quill
     GIT_REPOSITORY https://github.com/odygrd/quill.git
-    GIT_TAG        9a270d5d6f57a3ac19451292e3a9f370fcd744b1
+    GIT_TAG 9a270d5d6f57a3ac19451292e3a9f370fcd744b1
+
     # GIT_TAG        v3.3.2
   )
 
   FetchContent_MakeAvailable(quill)
 
-# This is needed to make sure that when building the tests, catch2's headers
-# are treated as system headers, as otherwise clang-tidy will run on them. This
-# is different from the above because clang-tidy will run on the headers which
-# is included from the tests, where as the above is for compiling catch2.
-#
-# After cmake 3.25, this shouldn't be needed anymore: https://gitlab.kitware.com/cmake/cmake/-/issues/18040
+  # This is needed to make sure that when building the tests, catch2's headers
+  # are treated as system headers, as otherwise clang-tidy will run on them. This
+  # is different from the above because clang-tidy will run on the headers which
+  # is included from the tests, where as the above is for compiling catch2.
+  #
+  # After cmake 3.25, this shouldn't be needed anymore: https://gitlab.kitware.com/cmake/cmake/-/issues/18040
   get_target_property(QUILL_INC quill INTERFACE_INCLUDE_DIRECTORIES)
   set_target_properties(quill PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${QUILL_INC}")
 
   FetchContent_Declare(
     readerwriterqueue
-    GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue.git
-    GIT_TAG           v1.0.6
+    GIT_REPOSITORY https://github.com/cameron314/readerwriterqueue.git
+    GIT_TAG v1.0.6
   )
 
   FetchContent_MakeAvailable(readerwriterqueue)
@@ -53,10 +53,9 @@ if(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES)
   set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
 endif()
 
-##########################################################
+# #########################################################
 # Helper function to setup all cactus-rt related targets #
-##########################################################
-
+# #########################################################
 function(setup_cactus_rt_target_options target_name)
   # https://github.com/cpp-best-practices/cppbestpractices/blob/b1629eb/02-Use_the_Tools_Available.md#gcc--clang
   target_compile_options(${target_name}
@@ -91,7 +90,7 @@ function(setup_cactus_rt_target_options target_name)
   )
 
   if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-    if (ENABLE_CLANG_TIDY)
+    if(ENABLE_CLANG_TIDY)
       # Need the extra args because g++ on 22.04 is by default C++17 which
       # means cmake won't generate the -std=gnu++17 flag, which causes
       # clang-tidy-14 (also 22.04 default) to fail.
@@ -101,12 +100,11 @@ function(setup_cactus_rt_target_options target_name)
   endif()
 endfunction()
 
-#####################
+# ####################
 # Cactus RT library #
-#####################
-
+# ####################
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if (ENABLE_TRACING)
+  if(ENABLE_TRACING)
     add_subdirectory(protos)
   endif()
 endif()
@@ -137,7 +135,9 @@ target_link_libraries(cactus_rt
 target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if (ENABLE_TRACING)
+  if(ENABLE_TRACING)
+    message(STATUS "Building tracing targets. Turn it off via ENABLE_TRACING=OFF")
+
     target_sources(cactus_rt
       PRIVATE
       src/cactus_rt/tracing/sink.cc
@@ -158,7 +158,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     )
   endif()
 
-  if (ENABLE_CLANG_TIDY)
+  if(ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY clang-tidy clang-tidy-18 clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
   else()
     message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
@@ -166,7 +166,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 endif()
 
 # ROS 2 build support
-if (ENABLE_ROS2)
+if(ENABLE_ROS2)
   include(cmake/ros2.cmake)
 endif()
 
@@ -177,11 +177,11 @@ setup_cactus_rt_target_options(cactus_rt)
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   include(CTest)
 
-  if (BUILD_TESTING)
+  if(BUILD_TESTING)
     add_subdirectory(tests)
   endif()
 
-  if (ENABLE_EXAMPLES)
+  if(ENABLE_EXAMPLES)
     message(STATUS "Building example programs. Turn it off via ENABLE_EXAMPLES=OFF")
     add_subdirectory(examples/lockless_examples)
     add_subdirectory(examples/logging_example)
@@ -191,14 +191,14 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/simple_example)
     add_subdirectory(examples/random_example)
 
-    if (ENABLE_TRACING)
+    if(ENABLE_TRACING)
       add_subdirectory(examples/tracing_protos_example)
       add_subdirectory(examples/tracing_example)
       add_subdirectory(examples/tracing_example_no_rt)
     endif()
   endif()
 
-  if (BUILD_DOCS)
+  if(BUILD_DOCS)
     message(STATUS "Building documentations. Turn it off via BUILD_DOCS=OFF")
     find_package(Doxygen REQUIRED)
 
