@@ -135,9 +135,8 @@ target_link_libraries(cactus_rt
 target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
 # Build optional tracing sources
-if(ENABLE_TRACING)
+if (ENABLE_TRACING)
   message(STATUS "Building tracing sources. Turn it off via ENABLE_TRACING=OFF")
-
   target_sources(cactus_rt
     PRIVATE
     src/cactus_rt/tracing/sink.cc
@@ -160,7 +159,7 @@ endif()
 
 # Run clang-tidy, only if this project is not embedded in another project.
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if(ENABLE_CLANG_TIDY)
+  if (ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY clang-tidy clang-tidy-18 clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
   else()
     message(STATUS "Not running clang-tidy. Use ENABLE_CLANG_TIDY=ON to run clang-tidy.")
