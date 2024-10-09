@@ -17,9 +17,8 @@
 #include <cstring>
 #include <string>
 
-#include "quill/Frontend.h"
+#include "cactus_rt/logging.h"
 #include "quill/LogMacros.h"
-#include "quill/sinks/ConsoleSink.h"
 
 using cactus_tracing::vendor::perfetto::protos::InternedData;
 using cactus_tracing::vendor::perfetto::protos::ProcessDescriptor;
@@ -61,21 +60,13 @@ namespace cactus_rt::tracing {
 TraceAggregator::TraceAggregator(std::string process_name)
     : process_name_(process_name),
       process_track_uuid_(static_cast<uint64_t>(getpid())),
-      logger_(
-        // TODO: VERY UGLY, move to another header file (cactus_rt/logging.h?)
-        quill::Frontend::create_or_get_logger(
-          "__trace_aggregator__",
-          quill::Frontend::create_or_get_sink<quill::ConsoleSink>(
-            "__trace_aggregator__"
-            "_ConsoleSink",  // Sink name is based on thread name
-            true             // Enable console colours
-          ),
-          quill::PatternFormatterOptions(
-            "[%(time)][%(log_level_short_code)][%(logger)][%(file_name):%(line_number)] %(message)",
-            "%Y-%m-%d %H:%M:%S.%Qns"
-          )
-        )
-      ) {
+      logger_(cactus_rt::DefaultLogger("__trace_aggregator__")) {
+}
+
+TraceAggregator::~TraceAggregator() {
+  // Blocks until all messages up to the current timestamp are flushed on the
+  // logger, to ensure every message is logged.
+  this->Logger()->flush_log();
 }
 
 void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer) {

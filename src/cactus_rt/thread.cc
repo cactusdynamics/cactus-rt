@@ -13,7 +13,6 @@
 #include "quill/Frontend.h"
 #include "quill/LogMacros.h"
 #include "quill/Logger.h"
-#include "quill/sinks/ConsoleSink.h"
 
 namespace cactus_rt {
 
@@ -21,21 +20,6 @@ Thread::~Thread() {
   // Blocks until all messages up to the current timestamp are flushed on the
   // logger, to ensure every message is logged.
   this->Logger()->flush_log();
-}
-
-quill::Logger* Thread::CreateDefaultThreadLogger(std::string logger_name) {
-  // TODO: (QUILL v7.3.0) move to another header file (cactus_rt/logging.h?)
-  return quill::Frontend::create_or_get_logger(
-    logger_name,
-    quill::Frontend::create_or_get_sink<quill::ConsoleSink>(
-      logger_name + "_ConsoleSink",  // Sink name is based on thread name
-      true                           // Enable console colours
-    ),
-    quill::PatternFormatterOptions(
-      "[%(time)][%(log_level_short_code)][%(logger)][%(file_name):%(line_number)] %(message)",
-      "%Y-%m-%d %H:%M:%S.%Qns"
-    )
-  );
 }
 
 void* Thread::RunThread(void* data) {

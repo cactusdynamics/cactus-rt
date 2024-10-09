@@ -60,7 +60,8 @@ class TraceAggregator {
  public:
   explicit TraceAggregator(std::string name);
 
-  // TODO: (QUILL v7.3.0) Do we want to include a destructor which flushes the logger_?
+  // Destructor is needed to flush the logger when this thread is destroyed
+  ~TraceAggregator();
 
   // No copy no move
   TraceAggregator(const TraceAggregator&) = delete;

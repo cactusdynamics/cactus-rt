@@ -9,6 +9,7 @@
 #include <string>
 
 #include "config.h"
+#include "logging.h"
 #include "quill/Logger.h"
 #include "tracing/thread_tracer.h"
 #include "tracing/trace_aggregator.h"
@@ -60,7 +61,7 @@ class Thread {
         name_(name),
         cpu_affinity_(config_.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
-        logger_(Thread::CreateDefaultThreadLogger(name_)) {
+        logger_(cactus_rt::DefaultLogger(name_)) {
     if (!config.scheduler) {
       throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
     }
@@ -82,15 +83,6 @@ class Thread {
       throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
     }
   }
-
-  /**
-   * Create a quill Logger object with default settings suitable for thread
-   * logging.
-   *
-   * @param logger_name Logger name to use. This can be e.g. the thread name.
-   * @return Pointer to the created logger.
-   */
-  static quill::Logger* CreateDefaultThreadLogger(std::string logger_name);
 
  public:
   /**
