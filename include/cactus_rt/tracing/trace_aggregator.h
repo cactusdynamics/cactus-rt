@@ -60,7 +60,7 @@ class TraceAggregator {
  public:
   explicit TraceAggregator(std::string name);
 
-  // TODO: Do we want to include a destructor which flushes the logger_?
+  // TODO: (QUILL v7.3.0) Do we want to include a destructor which flushes the logger_?
 
   // No copy no move
   TraceAggregator(const TraceAggregator&) = delete;
