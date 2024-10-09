@@ -24,6 +24,7 @@ Thread::~Thread() {
 }
 
 quill::Logger* Thread::CreateDefaultThreadLogger(std::string logger_name) {
+  // TODO: move to another header file (cactus_rt/logging.h?)
   return quill::Frontend::create_or_get_logger(
     logger_name,
     quill::Frontend::create_or_get_sink<quill::ConsoleSink>(

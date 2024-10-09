@@ -1,11 +1,9 @@
-#ifndef CACTUS_RT_TRACING_TRACE_AGGREGATOR_H_
-#define CACTUS_RT_TRACING_TRACE_AGGREGATOR_H_
+#ifndef TRACING_TRACE_AGGREGATOR
+#define TRACING_TRACE_AGGREGATOR
 
 #ifndef CACTUS_RT_TRACING_ENABLED
 #include "trace_aggregator.disabled.h"
 #else
-#include <quill/Quill.h>
-
 #include <atomic>
 #include <list>
 #include <memory>
@@ -14,6 +12,7 @@
 #include <thread>
 #include <unordered_set>
 
+#include "quill/Logger.h"
 #include "sink.h"
 #include "thread_tracer.h"
 
@@ -60,6 +59,8 @@ class TraceAggregator {
 
  public:
   explicit TraceAggregator(std::string name);
+
+  // TODO: Do we want to include a destructor which flushes the logger_?
 
   // No copy no move
   TraceAggregator(const TraceAggregator&) = delete;
@@ -128,4 +129,4 @@ class TraceAggregator {
 }  // namespace cactus_rt::tracing
 
 #endif
-#endif
+#endif  // TRACING_TRACE_AGGREGATOR
