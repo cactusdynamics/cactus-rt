@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_THREAD_H_
-#define CACTUS_RT_THREAD_H_
+#ifndef CACTUS_RT_THREAD
+#define CACTUS_RT_THREAD
 
 #include <atomic>
 #include <climits>  // For PTHREAD_STACK_MIN
@@ -9,7 +9,7 @@
 #include <string>
 
 #include "config.h"
-#include "quill/Quill.h"
+#include "quill/Logger.h"
 #include "tracing/thread_tracer.h"
 #include "tracing/trace_aggregator.h"
 
@@ -60,11 +60,37 @@ class Thread {
         name_(name),
         cpu_affinity_(config_.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
-        logger_(quill::create_logger(name_)) {
+        logger_(Thread::CreateDefaultThreadLogger(name_)) {
     if (!config.scheduler) {
       throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
     }
   }
+
+  /**
+   * Creates a new thread.
+   *
+   * @param name The thread name
+   * @param config The configuration for the thread
+   */
+  Thread(std::string name, ThreadConfig config, quill::Logger* thread_logger)
+      : config_(config),
+        name_(name),
+        cpu_affinity_(config_.cpu_affinity),
+        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
+        logger_(thread_logger) {
+    if (!config.scheduler) {
+      throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
+    }
+  }
+
+  /**
+   * Create a quill Logger object with default settings suitable for thread
+   * logging.
+   *
+   * @param logger_name Logger name to use. This can be e.g. the thread name.
+   * @return Pointer to the created logger.
+   */
+  static quill::Logger* CreateDefaultThreadLogger(std::string logger_name);
 
  public:
   /**
@@ -94,7 +120,7 @@ class Thread {
 
   // The constructors and destructors are needed because we need to delete
   // objects of type Thread polymorphically, through the map in the App class.
-  virtual ~Thread() = default;
+  virtual ~Thread();
 
   // Copy constructors are not allowed
   Thread(const Thread&) = delete;
@@ -163,4 +189,4 @@ class Thread {
 };
 }  // namespace cactus_rt
 
-#endif
+#endif  // CACTUS_RT_THREAD

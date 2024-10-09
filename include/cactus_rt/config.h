@@ -1,7 +1,7 @@
 #ifndef CACTUS_RT_CONFIG_H_
 #define CACTUS_RT_CONFIG_H_
 
-#include <quill/Quill.h>
+#include <quill/Backend.h>
 
 #include <memory>
 
@@ -29,9 +29,9 @@ struct AppConfig {
   size_t heap_size = 0;
 
   /**
-   * @brief The configuration for quill logging
+   * @brief The Quill Backend configuration for logging
    */
-  quill::Config logger_config;
+  quill::BackendOptions logger_backend_options;
 
   /**
    * @brief The config for the tracer if enabled (ENABLE_TRACING option in cmake)

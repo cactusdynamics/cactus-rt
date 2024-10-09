@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_APP_H_
-#define CACTUS_RT_APP_H_
+#ifndef CACTUS_RT_APP
+#define CACTUS_RT_APP
 
 #include <gtest/gtest_prod.h>
 
@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "config.h"
-#include "quill/Quill.h"
 #include "thread.h"
 #include "tracing/thread_tracer.h"
 #include "tracing/trace_aggregator.h"
@@ -29,25 +28,13 @@ class App {
   size_t heap_size_;
 
   // Configuration for quill logging
-  quill::Config logger_config_;
+  quill::BackendOptions logger_backend_options_;
 
   TracerConfig tracer_config_;
 
   std::shared_ptr<tracing::TraceAggregator> trace_aggregator_;  // Must be above threads_ to guarantee destructor order.
 
   std::vector<std::shared_ptr<Thread>> threads_;
-
-  void SetDefaultLogFormat(quill::Config& cfg) {
-    // Create a handler of stdout
-    const std::shared_ptr<quill::Handler> handler = quill::stdout_handler();
-
-    // Enable console colours on the handler
-    static_cast<quill::ConsoleHandler*>(handler.get())->enable_console_colours();
-
-    // Set the default pattern
-    handler->set_pattern("[%(ascii_time)][%(level_id)][%(logger_name)][%(filename):%(lineno)] %(message)", "%Y-%m-%d %H:%M:%S.%Qns");
-    cfg.default_handlers.push_back(handler);
-  }
 
  public:
   explicit App(std::string name = "RTApp", AppConfig config = AppConfig());
@@ -150,4 +137,4 @@ class App {
 };
 }  // namespace cactus_rt
 
-#endif
+#endif  // CACTUS_RT_APP
