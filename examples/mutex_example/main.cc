@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "double_buffer.h"
+#include "quill/LogMacros.h"  // Required for the logging macro
 
 using cactus_rt::App;
 using cactus_rt::CyclicThread;

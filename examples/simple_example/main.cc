@@ -3,6 +3,9 @@
 #include <chrono>
 #include <iostream>
 
+#include "quill/LogMacros.h"   // Required for the logging macro
+#include "quill/std/Chrono.h"  // Required to parse std::chrono inside logging macros
+
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
 

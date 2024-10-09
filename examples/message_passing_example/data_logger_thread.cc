@@ -1,6 +1,9 @@
 #include "data_logger_thread.h"
 
 #include <chrono>
+#include <iomanip>
+
+#include "quill/LogMacros.h"  // Required for the logging macro
 
 DataLogger::DataLogger(
   const std::string& data_file_path,

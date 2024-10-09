@@ -3,6 +3,8 @@
 #include <chrono>
 #include <iostream>
 
+#include "quill/LogMacros.h"  // Required for the logging macro
+
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
 
@@ -40,16 +42,17 @@ int main() {
   // Create a cactus_rt app configuration
   cactus_rt::AppConfig app_config;
 
-  // Create a Quill logging config to configure logging
-  quill::Config logging_config;
+  // Create a Quill backend logging config to configure the Quill backend thread
+  quill::BackendOptions logger_backend_options;
 
   // Disable strict timestamp order - this will be faster, but logs may appear out of order
-  logging_config.backend_thread_strict_log_timestamp_order = false;
+  // See quill::BackendOptions documentation for more info
+  logger_backend_options.log_timestamp_ordering_grace_period = std::chrono::microseconds(0);
 
   // Set the background logging thread CPU affinity
-  logging_config.backend_thread_cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
+  logger_backend_options.cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
 
-  app_config.logger_config = logging_config;
+  app_config.logger_backend_options = logger_backend_options;
   App app("LoggingExampleApp", app_config);
 
   auto                   thread = app.CreateThread<ExampleRTThread>("ExampleRTThread", thread_config);

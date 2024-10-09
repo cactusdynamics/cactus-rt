@@ -1,6 +1,8 @@
 #include <cactus_rt/experimental/lockless.h>
 #include <cactus_rt/rt.h>
 
+#include "quill/LogMacros.h"  // Required for the logging macro
+
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
 using cactus_rt::Thread;
