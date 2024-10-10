@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "quill/LogMacros.h"  // Required for the logging macro
+#include "quill/sinks/FileSink.h"
 
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
@@ -45,9 +46,10 @@ int main() {
   // Create a Quill backend logging config to configure the Quill backend thread
   quill::BackendOptions logger_backend_options;
 
-  // Disable strict timestamp order - this will be faster, but logs may appear out of order
+  // Disable strict timestamp order by setting the grace period to 0 - this will be faster, but logs may appear out of order
   // See quill::BackendOptions documentation for more info
-  logger_backend_options.log_timestamp_ordering_grace_period = std::chrono::microseconds(0);
+  // TODO: Setting this to 0 causes assertion error in Debug builds. Perhaps a bug in Quill (https://github.com/odygrd/quill/issues/605)?
+  logger_backend_options.log_timestamp_ordering_grace_period = std::chrono::microseconds(1);
 
   // Set the background logging thread CPU affinity
   logger_backend_options.cpu_affinity = 1;  // Different CPU than the CyclicThread CPU!
@@ -55,7 +57,40 @@ int main() {
   app_config.logger_backend_options = logger_backend_options;
   App app("LoggingExampleApp", app_config);
 
-  auto                   thread = app.CreateThread<ExampleRTThread>("ExampleRTThread", thread_config);
+  auto thread = app.CreateThread<ExampleRTThread>("ExampleRTThread", thread_config);
+
+  // Create another thread with a custom logger, which has multiple sinks
+  cactus_rt::CyclicThreadConfig other_thread_config = thread_config;  // Copy thread config
+
+  // Create another console sink
+  auto console_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("OtherConsoleSink", true);
+
+  // Create a file sink too
+  quill::FileSinkConfig file_sink_config;
+  file_sink_config.set_open_mode('w');
+  file_sink_config.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
+  auto file_sink = quill::Frontend::create_or_get_sink<quill::FileSink>(
+    "file_logging_example.log",
+    file_sink_config,
+    quill::FileEventNotifier{}
+  );
+
+  // Add both sinks to a vector
+  std::vector<std::shared_ptr<quill::Sink>> sinks = {console_sink, file_sink};
+
+  // Create a custom formatter pattern
+  auto pattern_format = quill::PatternFormatterOptions(
+    "[%(time)][%(log_level_short_code)][%(logger)][%(file_name):%(line_number)] - WOW custom message format - %(message)",
+    "%H:%M:%S.%Qns"
+  );
+
+  // Use the new sinks and pattern to create a custom logger for the other thread
+  other_thread_config.logger_config.thread_logger = quill::Frontend::create_or_get_logger("CustomThreadLogger", sinks, pattern_format);
+
+  // Add a second instance of the example thread class, which uses the configuration with the new logger
+  auto other_thread = app.CreateThread<ExampleRTThread>("OtherExampleRTThread", other_thread_config);
+
+  // Start the app
   constexpr unsigned int time = 5;
 
   std::cout << "Testing RT loop for " << time << " seconds.\n";
