@@ -134,9 +134,6 @@ target_link_libraries(cactus_rt
   Threads::Threads
 )
 
-# Use a bounded queue
-target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
-
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   if (ENABLE_TRACING)
     target_sources(cactus_rt
