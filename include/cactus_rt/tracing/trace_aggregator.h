@@ -12,7 +12,7 @@
 #include <thread>
 #include <unordered_set>
 
-#include "quill/Logger.h"
+#include "cactus_rt/logging.h"
 #include "sink.h"
 #include "thread_tracer.h"
 
@@ -42,7 +42,8 @@ class TraceAggregator {
   const std::string process_name_;
 
   const uint64_t process_track_uuid_;
-  quill::Logger* logger_;
+
+  cactus_rt::logging::Logger* logger_;  // Use the custom BoundedDroppingLogger
 
   // This mutex protects tracers_ and session_
   std::mutex mutex_;
@@ -96,7 +97,7 @@ class TraceAggregator {
   void Stop() noexcept;
 
  private:
-  quill::Logger* Logger() noexcept;
+  cactus_rt::logging::Logger* Logger() noexcept;
 
   void Run();
   bool StopRequested() const noexcept;

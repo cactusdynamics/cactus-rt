@@ -9,10 +9,9 @@
 #include <stdexcept>
 
 #include "cactus_rt/config.h"
+#include "cactus_rt/logging.h"
 #include "cactus_rt/tracing/thread_tracer.h"
-#include "quill/Frontend.h"
 #include "quill/LogMacros.h"
-#include "quill/Logger.h"
 
 namespace cactus_rt {
 
@@ -46,7 +45,7 @@ void* Thread::RunThread(void* data) {
     );
   }
 
-  quill::Frontend::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
+  cactus_rt::logging::Frontend::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
 
   thread->BeforeRun();
   thread->Run();

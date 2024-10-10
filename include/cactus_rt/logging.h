@@ -6,14 +6,16 @@
 
 #include "quill/Frontend.h"
 #include "quill/Logger.h"
+#include "quill/backend/BackendOptions.h"
 #include "quill/sinks/ConsoleSink.h"
 #include "quill/sinks/Sink.h"
 
-namespace cactus_rt {
-
+namespace cactus_rt::logging {
 /**
  * Defines a Bounded Dropping queue, to drop logging messages if the buffers
- * fill up. FrontendOptions are compile-time options and must be passed as a
+ * fill up. This prevents run-time reallocations.
+
+ * FrontendOptions are compile-time options and must be passed as a
  * template argument.
  *
  * Based on:
@@ -28,21 +30,47 @@ struct BoundedDroppingFrontendOptions {
 };
 
 /**
- * Define a quill::Frontend class using the custom options. FrontendOptions are
- * compile-time options and must be passed as a template argument.
+ * Define a quill::Frontend class using the custom options. This Frontend must
+ * be used consistently throughout the application instead of the default
+ * `quill::Frontend`.
+ *
+ * FrontendOptions are compile-time options and must be passed as a template
+ * argument.
  */
 using BoundedDroppingFrontend = quill::FrontendImpl<BoundedDroppingFrontendOptions>;
 
+/// Type alias for `BoundedDroppingFrontend`
+using Frontend = BoundedDroppingFrontend;
+
 /**
- * Define a custom quill::Logger to also use the custom options. FrontendOptions
- * are compile-time options and must be passed as a template argument.
+ * Define a custom quill::Logger to also use the custom options. This Logger
+ * must be used consistently throughout the application instead of the default
+ * `quill::Logger`.
+ *
+ * FrontendOptions are compile-time options and must be passed as a template
+ * argument.
  */
 using BoundedDroppingLogger = quill::LoggerImpl<BoundedDroppingFrontendOptions>;
 
-/**
- * Type alias for `cactus_rt::BoundedDroppingLogger`.
- */
+/// Type alias for `BoundedDroppingLogger`
 using Logger = BoundedDroppingLogger;
+
+/**
+ * Sets `quill:BackendOptions` to suitable defaults for real-time logging.
+ *
+ * @return quill::BackendOptions
+ */
+static quill::BackendOptions DefaultBackendOptions() {
+  // Many of the default options set by Quill are already OK for real-time logging
+  quill::BackendOptions default_backend_options;
+
+  // Disable strict timestamp order by setting the grace period to 0 - this will be faster, but logs may appear out of order
+  // See quill::BackendOptions documentation for more info
+  // TODO: Setting this to 0 causes assertion error in Debug builds. Perhaps a bug in Quill (https://github.com/odygrd/quill/issues/605)?
+  default_backend_options.log_timestamp_ordering_grace_period = std::chrono::milliseconds(1);
+
+  return default_backend_options;
+}
 
 /**
  * Create a ConsoleSink object with console colours.
@@ -84,15 +112,14 @@ static quill::PatternFormatterOptions DefaultPatternFormatterOptions() {
  * @return A pointer to the created logger. If a logger with that ID already
  * existed, a pointer to the existing logger is returned instead.
  */
-static quill::Logger* DefaultLogger(std::string logger_name) {
+static cactus_rt::logging::Logger* DefaultLogger(std::string logger_name) {
   // TODO: (QUILL v7.3.0): move implementation to .cpp file
-  return quill::Frontend::create_or_get_logger(
+  return cactus_rt::logging::Frontend::create_or_get_logger(
     logger_name,
     DefaultConsoleSink(logger_name + "_ConsoleSink"),
     DefaultPatternFormatterOptions()
   );
 }
-
-}  // namespace cactus_rt
+}  // namespace cactus_rt::logging
 
 #endif  // CACTUS_RT_LOGGING

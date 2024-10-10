@@ -44,7 +44,7 @@ int main() {
   cactus_rt::AppConfig app_config;
 
   // Create a Quill backend logging config to configure the Quill backend thread
-  quill::BackendOptions logger_backend_options;
+  quill::BackendOptions logger_backend_options = cactus_rt::logging::DefaultBackendOptions();
 
   // Disable strict timestamp order by setting the grace period to 0 - this will be faster, but logs may appear out of order
   // See quill::BackendOptions documentation for more info
@@ -63,13 +63,14 @@ int main() {
   cactus_rt::CyclicThreadConfig other_thread_config = thread_config;  // Copy thread config
 
   // Create another console sink
-  auto console_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("OtherConsoleSink", true);
+  // Make sure to use cactus_rt's logging Frontend instead of Quill's default
+  auto console_sink = cactus_rt::logging::Frontend::create_or_get_sink<quill::ConsoleSink>("OtherConsoleSink", true);
 
   // Create a file sink too
   quill::FileSinkConfig file_sink_config;
   file_sink_config.set_open_mode('w');
   file_sink_config.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
-  auto file_sink = quill::Frontend::create_or_get_sink<quill::FileSink>(
+  auto file_sink = cactus_rt::logging::Frontend::create_or_get_sink<quill::FileSink>(
     "file_logging_example.log",
     file_sink_config,
     quill::FileEventNotifier{}
@@ -85,7 +86,7 @@ int main() {
   );
 
   // Use the new sinks and pattern to create a custom logger for the other thread
-  other_thread_config.logger_config.thread_logger = quill::Frontend::create_or_get_logger("CustomThreadLogger", sinks, pattern_format);
+  other_thread_config.logger_config.thread_logger = cactus_rt::logging::Frontend::create_or_get_logger("CustomThreadLogger", sinks, pattern_format);
 
   // Add a second instance of the example thread class, which uses the configuration with the new logger
   auto other_thread = app.CreateThread<ExampleRTThread>("OtherExampleRTThread", other_thread_config);

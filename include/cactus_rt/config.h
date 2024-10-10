@@ -1,11 +1,11 @@
 #ifndef CACTUS_RT_CONFIG_H_
 #define CACTUS_RT_CONFIG_H_
 
-#include <quill/Backend.h>
-
 #include <memory>
 
+#include "cactus_rt/logging.h"
 #include "cactus_rt/scheduler.h"
+#include "quill/backend/BackendOptions.h"
 
 namespace cactus_rt {
 
@@ -29,9 +29,11 @@ struct AppConfig {
   size_t heap_size = 0;
 
   /**
-   * @brief The Quill Backend configuration for logging
+   * @brief The Quill Backend configuration for logging.
+   *
+   * It is set to sensible default values for real-time logging.
    */
-  quill::BackendOptions logger_backend_options;
+  quill::BackendOptions logger_backend_options = cactus_rt::logging::DefaultBackendOptions();
 
   /**
    * @brief The config for the tracer if enabled (ENABLE_TRACING option in cmake)
@@ -105,7 +107,7 @@ struct ThreadTracerConfig {
 struct ThreadLoggerConfig {
   // Pointer to the thread logger that is to be used. If nullptr is given, a default thread logger is created instead.
   // TODO: (QUILL v7.3.0): Use a string as the logger name instead?
-  quill::Logger* thread_logger = nullptr;
+  cactus_rt::logging::Logger* thread_logger = nullptr;
 };
 
 /**

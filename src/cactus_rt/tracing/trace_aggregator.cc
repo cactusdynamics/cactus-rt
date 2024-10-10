@@ -60,7 +60,7 @@ namespace cactus_rt::tracing {
 TraceAggregator::TraceAggregator(std::string process_name)
     : process_name_(process_name),
       process_track_uuid_(static_cast<uint64_t>(getpid())),
-      logger_(cactus_rt::DefaultLogger("__trace_aggregator__")) {
+      logger_(cactus_rt::logging::DefaultLogger("__trace_aggregator__")) {
 }
 
 TraceAggregator::~TraceAggregator() {
@@ -138,12 +138,15 @@ void TraceAggregator::Stop() noexcept {
   mutex_.unlock();
 }
 
-quill::Logger* TraceAggregator::Logger() noexcept {
+cactus_rt::logging::Logger* TraceAggregator::Logger() noexcept {
   return logger_;
 }
 
 void TraceAggregator::Run() {
   ::SetupCPUAffinityIfNecessary(session_->cpu_affinity);
+
+  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
+  cactus_rt::logging::Frontend::preallocate();
 
   while (!session_->stop_requested.load(std::memory_order_relaxed)) {
     Trace trace;

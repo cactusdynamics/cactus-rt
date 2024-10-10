@@ -10,7 +10,6 @@
 
 #include "config.h"
 #include "logging.h"
-#include "quill/Logger.h"
 #include "tracing/thread_tracer.h"
 #include "tracing/trace_aggregator.h"
 
@@ -31,7 +30,7 @@ class Thread {
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
 
-  quill::Logger*                         logger_;
+  cactus_rt::logging::Logger*            logger_;  // Use the custom BoundedDroppingLogger
   std::shared_ptr<tracing::ThreadTracer> tracer_ = nullptr;
 
   std::atomic_bool stop_requested_ = false;
@@ -68,7 +67,7 @@ class Thread {
 
     // If no logger was passed in the thread configuration, create a default logger instead
     if (logger_ == nullptr) {
-      logger_ = DefaultLogger(name_);
+      logger_ = cactus_rt::logging::DefaultLogger(name_);
     }
   }
 
@@ -124,7 +123,7 @@ class Thread {
   void Start(int64_t start_monotonic_time_ns);
 
  protected:
-  inline quill::Logger* Logger() const { return logger_; }
+  inline cactus_rt::logging::Logger* Logger() const { return logger_; }
 
   /**
    * Gets the current tracer object. Should only ever be called from within the thread itself.
