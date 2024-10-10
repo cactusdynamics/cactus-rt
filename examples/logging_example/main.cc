@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "quill/LogMacros.h"  // Required for the logging macro
+#include "quill/sinks/ConsoleSink.h"
 #include "quill/sinks/FileSink.h"
 
 using cactus_rt::App;
