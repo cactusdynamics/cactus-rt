@@ -1,5 +1,5 @@
-#ifndef TRACING_TRACE_AGGREGATOR
-#define TRACING_TRACE_AGGREGATOR
+#ifndef TRACING_TRACE_AGGREGATOR_H_
+#define TRACING_TRACE_AGGREGATOR_H_
 
 #ifndef CACTUS_RT_TRACING_ENABLED
 #include "trace_aggregator.disabled.h"
@@ -131,4 +131,4 @@ class TraceAggregator {
 }  // namespace cactus_rt::tracing
 
 #endif
-#endif  // TRACING_TRACE_AGGREGATOR
+#endif
