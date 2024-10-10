@@ -1,5 +1,6 @@
 #include "app.h"
 #include "cyclic_thread.h"
+#include "logging.h"
 #include "mutex.h"
 #include "signal_handler.h"
 #include "thread.h"
