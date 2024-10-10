@@ -59,15 +59,17 @@ class Thread {
       : config_(config),
         name_(name),
         cpu_affinity_(config_.cpu_affinity),
-        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
-        logger_(config.logger_config.thread_logger) {
+        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size) {
     if (!config.scheduler) {
       throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
     }
 
-    // If no logger was passed in the thread configuration, create a default logger instead
-    if (logger_ == nullptr) {
-      logger_ = cactus_rt::logging::DefaultLogger(name_);
+    if (!config.logger_config.logger_name.empty()) {
+      // If a logger name was passed in the thread configuration, get or create it
+      logger_ = cactus_rt::logging::DefaultLogger(config_.logger_config.logger_name);
+    } else {
+      // If no logger name was passed in the thread configuration, create a new one using the thread name
+      logger_ = cactus_rt::logging::DefaultLogger(this->Name());
     }
   }
 

@@ -105,9 +105,14 @@ struct ThreadTracerConfig {
  * @brief The configuration needed for Quill logging in a thread
  */
 struct ThreadLoggerConfig {
-  // Pointer to the thread logger that is to be used. If nullptr is given, a default thread logger is created instead.
-  // TODO: (QUILL v7.3.0): Use a string as the logger name instead?
-  cactus_rt::logging::Logger* thread_logger = nullptr;
+  /**
+   * @brief Name of the logger that is to be used as thread logger.
+   *
+   * @note If not given, a default thread logger is created with the name set to the thread name.
+   *
+   * @note If the name given does not correspond to a created logger, a default thread logger is created with the `logger_name`.
+   */
+  std::string logger_name;
 };
 
 /**

@@ -82,12 +82,13 @@ int main() {
 
   // Create a custom formatter pattern
   auto pattern_format = quill::PatternFormatterOptions(
-    "[%(time)][%(log_level_short_code)][%(logger)][%(file_name):%(line_number)] - WOW custom message format - %(message)",
+    "[%(time)][%(log_level_short_code)][%(logger)][%(process_id)][%(file_name):%(line_number)] - WOW custom message format - %(message)",
     "%H:%M:%S.%Qns"
   );
 
   // Use the new sinks and pattern to create a custom logger for the other thread
-  other_thread_config.logger_config.thread_logger = cactus_rt::logging::Frontend::create_or_get_logger("CustomThreadLogger", sinks, pattern_format);
+  auto* custom_thread_logger = cactus_rt::logging::Frontend::create_or_get_logger("CustomThreadLogger", sinks, pattern_format);
+  other_thread_config.logger_config.logger_name = custom_thread_logger->get_logger_name();
 
   // Add a second instance of the example thread class, which uses the configuration with the new logger
   auto other_thread = app.CreateThread<ExampleRTThread>("OtherExampleRTThread", other_thread_config);

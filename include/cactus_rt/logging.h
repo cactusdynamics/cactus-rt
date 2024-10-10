@@ -67,8 +67,8 @@ quill::BackendOptions DefaultBackendOptions();
 /**
  * Create a ConsoleSink object with console colours.
  *
- * @param sink_name The Sink ID.
- * @return A pointer to the created sink. If a sink with that ID already
+ * @param sink_name The sink name to use.
+ * @return A pointer to the created sink. If a sink with that name already
  * existed, a pointer to the existing sink is returned instead.
  */
 std::shared_ptr<quill::Sink> DefaultConsoleSink(std::string sink_name);
@@ -79,14 +79,11 @@ std::shared_ptr<quill::Sink> DefaultConsoleSink(std::string sink_name);
 quill::PatternFormatterOptions DefaultPatternFormatterOptions();
 
 /**
- * Create a Logger object with default settings which will write logs to the
- * console with a default format.
+ * Create or get a Logger object with default settings which will write logs to
+ * the console with a default format.
  *
- * TODO: (QUILL v7.3.0): What happens if we pass in a logger name which already
- * exists? Are the sink and format discarded?
- *
- * @param logger_name
- * @return A pointer to the created logger. If a logger with that ID already
+ * @param logger_name The logger name to use.
+ * @return A pointer to the created logger. If a logger with that name already
  * existed, a pointer to the existing logger is returned instead.
  */
 cactus_rt::logging::Logger* DefaultLogger(std::string logger_name);
