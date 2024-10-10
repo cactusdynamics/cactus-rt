@@ -119,6 +119,7 @@ add_library(cactus_rt
   src/cactus_rt/thread.cc
   src/cactus_rt/cyclic_thread.cc
   src/cactus_rt/signal_handler.cc
+  src/cactus_rt/logging.cc
   src/cactus_rt/experimental/lockless/atomic_bitset.cc
 )
 
