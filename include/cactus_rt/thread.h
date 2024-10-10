@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_THREAD
-#define CACTUS_RT_THREAD
+#ifndef CACTUS_RT_THREAD_H_
+#define CACTUS_RT_THREAD_H_
 
 #include <atomic>
 #include <climits>  // For PTHREAD_STACK_MIN
@@ -168,4 +168,4 @@ class Thread {
 };
 }  // namespace cactus_rt
 
-#endif  // CACTUS_RT_THREAD
+#endif
