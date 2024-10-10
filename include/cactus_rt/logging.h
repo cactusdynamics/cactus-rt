@@ -82,9 +82,6 @@ quill::PatternFormatterOptions DefaultPatternFormatterOptions();
  * Create a Logger object with default settings which will write logs to the
  * console with a default format.
  *
- * TODO: (QUILL v7.3.0): Make this use the `cactus_rt::Logger`
- * (`cactus_rt::BoundedDroppingLogger`) instead
- *
  * TODO: (QUILL v7.3.0): What happens if we pass in a logger name which already
  * exists? Are the sink and format discarded?
  *

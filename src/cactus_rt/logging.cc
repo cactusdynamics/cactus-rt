@@ -23,7 +23,6 @@ quill::BackendOptions cactus_rt::logging::DefaultBackendOptions() {
 }
 
 cactus_rt::logging::Logger* cactus_rt::logging::DefaultLogger(std::string logger_name) {
-  // TODO: (QUILL v7.3.0): move implementation to .cpp file
   return cactus_rt::logging::Frontend::create_or_get_logger(
     logger_name,
     DefaultConsoleSink(logger_name + "_ConsoleSink"),
@@ -32,7 +31,6 @@ cactus_rt::logging::Logger* cactus_rt::logging::DefaultLogger(std::string logger
 }
 
 std::shared_ptr<quill::Sink> cactus_rt::logging::DefaultConsoleSink(std::string sink_name) {
-  // TODO: (QUILL v7.3.0): move implementation to .cpp file
   return cactus_rt::logging::Frontend::create_or_get_sink<quill::ConsoleSink>(
     sink_name,
     true  // Enable console colours
@@ -40,7 +38,6 @@ std::shared_ptr<quill::Sink> cactus_rt::logging::DefaultConsoleSink(std::string 
 }
 
 quill::PatternFormatterOptions cactus_rt::logging::DefaultPatternFormatterOptions() {
-  // TODO: (QUILL v7.3.0): move implementation to .cpp file
   return quill::PatternFormatterOptions(
     "[%(time)][%(log_level_short_code)][%(logger)][%(file_name):%(line_number)] %(message)",
     "%Y-%m-%d %H:%M:%S.%Qns"
