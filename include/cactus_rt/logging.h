@@ -77,6 +77,9 @@ static quill::PatternFormatterOptions DefaultPatternFormatterOptions() {
  * TODO: (QUILL v7.3.0): Make this use the `cactus_rt::Logger`
  * (`cactus_rt::BoundedDroppingLogger`) instead
  *
+ * TODO: (QUILL v7.3.0): What happens if we pass in a logger name which already
+ * exists? Are the sink and format discarded?
+ *
  * @param logger_name
  * @return A pointer to the created logger. If a logger with that ID already
  * existed, a pointer to the existing logger is returned instead.
