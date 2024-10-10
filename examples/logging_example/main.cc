@@ -77,7 +77,7 @@ int main() {
   );
 
   // Add both sinks to a vector
-  std::vector<std::shared_ptr<quill::Sink>> sinks = {console_sink, file_sink};
+  const std::vector<std::shared_ptr<quill::Sink>> sinks = {console_sink, file_sink};
 
   // Create a custom formatter pattern
   auto pattern_format = quill::PatternFormatterOptions(
