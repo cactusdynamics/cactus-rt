@@ -100,6 +100,15 @@ struct ThreadTracerConfig {
 };
 
 /**
+ * @brief The configuration needed for Quill logging in a thread
+ */
+struct ThreadLoggerConfig {
+  // Pointer to the thread logger that is to be used. If nullptr is given, a default thread logger is created instead.
+  // TODO: (QUILL v7.3.0): Use a string as the logger name instead?
+  quill::Logger* thread_logger = nullptr;
+};
+
+/**
  * @brief The configuration required for a thread
  */
 struct ThreadConfig {
@@ -110,6 +119,8 @@ struct ThreadConfig {
   size_t stack_size = 8 * 1024 * 1024;
 
   ThreadTracerConfig tracer_config;
+
+  ThreadLoggerConfig logger_config;
 
   // The scheduler type, default scheduler is SCHED_OTHER
   std::shared_ptr<Scheduler> scheduler = std::make_shared<OtherScheduler>();

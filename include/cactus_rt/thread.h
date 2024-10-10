@@ -61,26 +61,14 @@ class Thread {
         name_(name),
         cpu_affinity_(config_.cpu_affinity),
         stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
-        logger_(cactus_rt::DefaultLogger(name_)) {
+        logger_(config.logger_config.thread_logger) {
     if (!config.scheduler) {
       throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
     }
-  }
 
-  /**
-   * Creates a new thread.
-   *
-   * @param name The thread name
-   * @param config The configuration for the thread
-   */
-  Thread(std::string name, ThreadConfig config, quill::Logger* thread_logger)
-      : config_(config),
-        name_(name),
-        cpu_affinity_(config_.cpu_affinity),
-        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
-        logger_(thread_logger) {
-    if (!config.scheduler) {
-      throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
+    // If no logger was passed in the thread configuration, create a default logger instead
+    if (logger_ == nullptr) {
+      logger_ = DefaultLogger(name_);
     }
   }
 
