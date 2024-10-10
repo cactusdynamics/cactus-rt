@@ -3,8 +3,7 @@
 #include <memory>
 #include <thread>
 
-#include "quill/Backend.h"    // Required to start/stop the quill backend thread
-#include "quill/LogMacros.h"  // Required for the logging macro
+#include "quill/Backend.h"  // Required to start/stop the quill backend thread
 
 using namespace std::chrono_literals;
 using FileSink = cactus_rt::tracing::FileSink;

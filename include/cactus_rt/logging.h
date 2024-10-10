@@ -12,6 +12,10 @@
 #include "quill/core/PatternFormatterOptions.h"
 #include "quill/sinks/Sink.h"
 
+// The quill logging macros are explicitly included in this header file.
+// This is convenience to prevent another #include when using cactus_rt logging.
+#include "quill/LogMacros.h"  // IWYU pragma: export
+
 namespace cactus_rt::logging {
 /**
  * Defines a Bounded Dropping queue, to drop logging messages if the buffers
