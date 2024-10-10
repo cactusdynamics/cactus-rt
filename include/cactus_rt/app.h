@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_APP
-#define CACTUS_RT_APP
+#ifndef CACTUS_RT_APP_H_
+#define CACTUS_RT_APP_H_
 
 #include <gtest/gtest_prod.h>
 
@@ -137,4 +137,4 @@ class App {
 };
 }  // namespace cactus_rt
 
-#endif  // CACTUS_RT_APP
+#endif
