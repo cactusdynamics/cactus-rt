@@ -1,5 +1,5 @@
-#ifndef CACTUS_RT_LOGGING
-#define CACTUS_RT_LOGGING
+#ifndef CACTUS_RT_LOGGING_H_
+#define CACTUS_RT_LOGGING_H_
 
 #include <cstdint>
 #include <memory>
@@ -122,4 +122,4 @@ static cactus_rt::logging::Logger* DefaultLogger(std::string logger_name) {
 }
 }  // namespace cactus_rt::logging
 
-#endif  // CACTUS_RT_LOGGING
+#endif
