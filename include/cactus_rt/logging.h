@@ -66,7 +66,7 @@ static quill::PatternFormatterOptions DefaultPatternFormatterOptions() {
   // TODO: (QUILL v7.3.0): move implementation to .cpp file
   return quill::PatternFormatterOptions(
     "[%(time)][%(log_level_short_code)][%(logger)][%(file_name):%(line_number)] %(message)",
-    "%Y-%;m-%d %H:%M:%S.%Qns"
+    "%Y-%m-%d %H:%M:%S.%Qns"
   );
 }
 
