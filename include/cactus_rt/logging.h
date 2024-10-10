@@ -68,14 +68,18 @@ using Logger = BoundedDroppingLogger;
  */
 quill::BackendOptions DefaultBackendOptions();
 
+std::string DefaultConsoleSinkName();
+
 /**
- * Create a ConsoleSink object with console colours.
+ * Create a default ConsoleSink object with console colours. The name of this
+ * sink is defined by `cactus_rt::logging::DefaultConsoleSinkName()`.
  *
- * @param sink_name The sink name to use.
- * @return A pointer to the created sink. If a sink with that name already
- * existed, a pointer to the existing sink is returned instead.
+ * @note If this is not the first call to this function, a pointer to the
+ * existing default console sink is returned instead of creating a new one.
+ *
+ * @return A pointer to the sink.
  */
-std::shared_ptr<quill::Sink> DefaultConsoleSink(std::string sink_name);
+std::shared_ptr<quill::Sink> DefaultConsoleSink();
 
 /**
  * Get a default pattern format.

@@ -25,14 +25,16 @@ quill::BackendOptions cactus_rt::logging::DefaultBackendOptions() {
 cactus_rt::logging::Logger* cactus_rt::logging::DefaultLogger(std::string logger_name) {
   return cactus_rt::logging::Frontend::create_or_get_logger(
     logger_name,
-    DefaultConsoleSink(logger_name + "_ConsoleSink"),
+    DefaultConsoleSink(),
     DefaultPatternFormatterOptions()
   );
 }
 
-std::shared_ptr<quill::Sink> cactus_rt::logging::DefaultConsoleSink(std::string sink_name) {
+std::string cactus_rt::logging::DefaultConsoleSinkName() { return "DefaultConsoleSink"; }
+
+std::shared_ptr<quill::Sink> cactus_rt::logging::DefaultConsoleSink() {
   return cactus_rt::logging::Frontend::create_or_get_sink<quill::ConsoleSink>(
-    sink_name,
+    cactus_rt::logging::DefaultConsoleSinkName(),
     true  // Enable console colours
   );
 }
