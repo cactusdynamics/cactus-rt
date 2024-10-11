@@ -3,8 +3,12 @@
 #include <chrono>
 #include <iostream>
 
+#include "quill/backend/BackendOptions.h"
 #include "quill/sinks/ConsoleSink.h"
 #include "quill/sinks/FileSink.h"
+
+// Required to parse std::chrono inside logging macros
+#include "quill/std/Chrono.h"  // IWYU pragma: keep
 
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
@@ -24,10 +28,10 @@ class ExampleRTThread : public CyclicThread {
   }
 
  protected:
-  LoopControl Loop(int64_t /*now*/) noexcept final {
+  LoopControl Loop(int64_t elapsed_ns) noexcept final {
     loop_counter_++;
     if (loop_counter_ % 1000 == 0) {
-      LOG_INFO(Logger(), "Loop {}", loop_counter_);
+      LOG_INFO(Logger(), "Loop {} ({})", loop_counter_, std::chrono::nanoseconds(elapsed_ns));
     }
     LOG_INFO_LIMIT(std::chrono::milliseconds{1500}, Logger(), "Log limit: Loop {}", loop_counter_);
     return LoopControl::Continue;
