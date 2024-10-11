@@ -18,6 +18,7 @@
 #include <string>
 
 #include "cactus_rt/logging.h"
+#include "quill/Backend.h"
 #include "quill/LogMacros.h"
 
 using cactus_tracing::vendor::perfetto::protos::InternedData;
@@ -64,9 +65,13 @@ TraceAggregator::TraceAggregator(std::string process_name)
 }
 
 TraceAggregator::~TraceAggregator() {
-  // Blocks until all messages up to the current timestamp are flushed on the
-  // logger, to ensure every message is logged.
-  this->Logger()->flush_log();
+  // Flushing the logger only if the background thread is still running,
+  // otherwise `flush_log()` will block indefinitely.
+  if (quill::Backend::is_running()) {
+    // Blocks until all messages up to the current timestamp are flushed on the
+    // logger, to ensure every message is logged.
+    this->Logger()->flush_log();
+  }
 }
 
 void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer) {
