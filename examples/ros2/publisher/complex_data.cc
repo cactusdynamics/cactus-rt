@@ -70,7 +70,7 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
 
       const auto elapsed_ns_f = static_cast<float>(elapsed_ns);
 
-      MyCoefficientData msg{
+      const MyCoefficientData msg{
         elapsed_ns_f,
         elapsed_ns_f / 10.0F,
         elapsed_ns_f / 100.0F,
