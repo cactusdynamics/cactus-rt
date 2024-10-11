@@ -7,7 +7,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <type_traits>
 
-#include "quill/Quill.h"
+#include "cactus_rt/logging.h"
+#include "quill/LogMacros.h"
 
 namespace cactus_rt::ros2 {
 class Ros2Adapter;
@@ -31,7 +32,7 @@ class Publisher : public IPublisher {
   using NoConversion = std::is_same<RealtimeT, RosT>;
   using AdaptedRosType = typename std::conditional_t<NoConversion::value, RosT, rclcpp::TypeAdapter<RealtimeT, RosT>>;
 
-  quill::Logger*                                        logger_;
+  cactus_rt::logging::Logger*                           logger_;
   typename rclcpp::Publisher<AdaptedRosType>::SharedPtr publisher_;
   moodycamel::ReaderWriterQueue<RealtimeT>              queue_;
 
@@ -77,11 +78,11 @@ class Publisher : public IPublisher {
   }
 
   static std::shared_ptr<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>> Create(
-    quill::Logger*     logger,
-    rclcpp::Node&      node,
-    const std::string& topic_name,
-    const rclcpp::QoS& qos,
-    const size_t       rt_queue_size = 1000
+    cactus_rt::logging::Logger* logger,
+    rclcpp::Node&               node,
+    const std::string&          topic_name,
+    const rclcpp::QoS&          qos,
+    const size_t                rt_queue_size = 1000
   ) {
     return std::shared_ptr<Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>>(
       new Publisher<RealtimeT, RosT, CheckForTrivialRealtimeT>(
@@ -93,7 +94,7 @@ class Publisher : public IPublisher {
   }
 
   Publisher(
-    quill::Logger*                                        logger,
+    cactus_rt::logging::Logger*                           logger,
     typename rclcpp::Publisher<AdaptedRosType>::SharedPtr publisher,
     moodycamel::ReaderWriterQueue<RealtimeT>&&            queue
   ) : logger_(logger), publisher_(publisher), queue_(std::move(queue)) {}
