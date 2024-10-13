@@ -29,6 +29,8 @@ writing a real-time Linux application. Some key features are:
 Examples
 --------
 
+Core examples that show you how to use all the facilities of cactus-rt:
+
 * [`simple_example`](examples/simple_example/): The most basic example showing
   a single real-time looping thread running at 1000 Hz.
 * [`tracing_example`](examples/tracing_example/): This demonstrates how to use
@@ -44,11 +46,15 @@ Examples
 * [`logging_example`](examples/logging_example/): Demonstrates setting up custom
   logging configuration via `cactus_rt::App`.
 
+Some examples showing optional/advanced features/usage patterns of cactus-rt.
+
 * [`simple_deadline_example`](examples/simple_deadline_example/): Same as
   `simple_example`, except it uses `SCHED_DEADLINE` as opposed to `SCHED_FIFO`.
   This is for a more advanced use case.
-
-* [`tracing_example_no_rt`](examples/tracing_example_no_rt/): Shows how to using the tracing library in `cactus_rt` without using `cactus_rt::App`.
+* [`random_example`](examples/random_example/): Shows you how to use cactus-rt's
+  real-time-safe random number generator.
+* [`tracing_example_no_rt`](examples/tracing_example_no_rt/): Shows how to using
+  the tracing library in `cactus_rt` without using `cactus_rt::App`.
 
 
 Installation instructions
