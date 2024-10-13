@@ -38,6 +38,9 @@ Examples
   priority-inheritence mutex (`cactus_rt::mutex`) to pass data between real-time
   and non-real-time threads via the implementation of a mutex-based double
   buffer.
+* [`lockless_examples`](examples/lockless_examples/): Demonstrates the usage of
+  lockless data structures built into cactus-rt to safely pass data to and from
+  the real-time thread.
 * [`logging_example`](examples/logging_example/): Demonstrates setting up custom
   logging configuration via `cactus_rt::App`.
 
