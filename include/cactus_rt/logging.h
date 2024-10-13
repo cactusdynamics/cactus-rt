@@ -35,6 +35,9 @@ struct BoundedDroppingFrontendOptions {
   static constexpr bool             huge_pages_enabled = false;
 };
 
+/// Type alias for `BoundedDroppingFrontendOptions`
+using FrontendOptions = BoundedDroppingFrontendOptions;
+
 /**
  * Define a quill::Frontend class using the custom options. This Frontend must
  * be used consistently throughout the application instead of the default
