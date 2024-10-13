@@ -13,7 +13,10 @@ thread writes to the double buffer at 1 kHz and the non-RT thread reads it every
 half second. Once it is read, it is logged via the `cactus_rt` logging
 capability.
 
-_Note: a lockless version of this double buffer is implemented by the cactus-rt framework under `cactus_rt::experimental::lockless::spsc::AtomicWritableValue` which doesn't require a lock. That serves as an alternative to this code without the usage of a mutex._
+_Note: a lockless version of this double buffer is implemented by the cactus-rt
+framework under `cactus_rt::experimental::lockless::spsc::RealtimeWritableValue`
+which doesn't require a lock. That serves as an alternative to this code without
+the usage of a mutex._
 
 To run:
 

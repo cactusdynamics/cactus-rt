@@ -13,6 +13,8 @@ using cactus_rt::Thread;
 // This is the data structure we are passing between the RT and non-RT thread.
 // It is big enough such that it cannot be atomically changed with a single
 // instruction to necessitate a mutex.
+//
+// Alternatively, you can also use RealtimeWritableValue instead of a mutex.
 struct Data {
   double v1 = 0.0;
   double v2 = 0.0;
@@ -25,7 +27,7 @@ class RTThread : public CyclicThread {
 
  public:
   explicit RTThread(NaiveDoubleBuffer<Data>& buf)
-      : CyclicThread("RTThread", CreateConfig()),
+      : CyclicThread("RTThread", MakeConfig()),
         buf_(buf) {}
 
  protected:
@@ -45,7 +47,7 @@ class RTThread : public CyclicThread {
   }
 
  private:
-  static cactus_rt::CyclicThreadConfig CreateConfig() {
+  static cactus_rt::CyclicThreadConfig MakeConfig() {
     cactus_rt::CyclicThreadConfig thread_config;
     thread_config.period_ns = 1'000'000;
     thread_config.SetFifoScheduler(80);
@@ -59,7 +61,7 @@ class NonRTThread : public Thread {
 
  public:
   explicit NonRTThread(NaiveDoubleBuffer<Data>& buf)
-      : Thread("NonRTThread", CreateConfig()),
+      : Thread("NonRTThread", MakeConfig()),
         buf_(buf) {}
 
  protected:
@@ -73,7 +75,7 @@ class NonRTThread : public Thread {
   }
 
  private:
-  static cactus_rt::ThreadConfig CreateConfig() {
+  static cactus_rt::ThreadConfig MakeConfig() {
     cactus_rt::CyclicThreadConfig rt_thread_config;
     rt_thread_config.SetOtherScheduler(0 /* niceness */);
     return rt_thread_config;
