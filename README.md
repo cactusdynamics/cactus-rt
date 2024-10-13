@@ -45,6 +45,11 @@ Core examples that show you how to use all the facilities of cactus-rt:
   the real-time thread.
 * [`logging_example`](examples/logging_example/): Demonstrates setting up custom
   logging configuration via `cactus_rt::App`.
+* [`message_passing_example`](examples/message_passing_example/): A simplified
+  example of a real robotics application consists of two threads: a real-time
+  thread that is generating metrics and a non-real-time data logger that logs
+  the metrics to disk.
+* [`ros2`](examples/ros2/): Shows how to use cactus-rt with ROS2.
 
 Some examples showing optional/advanced features/usage patterns of cactus-rt.
 
