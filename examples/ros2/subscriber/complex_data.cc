@@ -43,7 +43,7 @@ class RTROS2SubscriberThread : public cactus_rt::CyclicThread, public cactus_rt:
 
   std::shared_ptr<cactus_rt::ros2::SubscriptionLatest<RealtimeType, RosType>> subscription_;
 
-  static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
+  static cactus_rt::CyclicThreadConfig MakeConfig() {
     cactus_rt::CyclicThreadConfig thread_config;
     thread_config.period_ns = 1'000'000;
     thread_config.cpu_affinity = std::vector<size_t>{2};
@@ -54,7 +54,7 @@ class RTROS2SubscriberThread : public cactus_rt::CyclicThread, public cactus_rt:
 
  public:
   explicit RTROS2SubscriberThread(std::chrono::nanoseconds run_duration = std::chrono::seconds(30))
-      : cactus_rt::CyclicThread("RTROS2Subscriber", CreateThreadConfig()),
+      : cactus_rt::CyclicThread("RTROS2Subscriber", MakeConfig()),
         run_duration_(run_duration.count()) {}
 
   void InitializeForRos2(cactus_rt::ros2::Ros2Adapter& ros2_adapter) override {

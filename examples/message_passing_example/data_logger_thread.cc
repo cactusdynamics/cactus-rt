@@ -11,7 +11,7 @@ DataLogger::DataLogger(
     period_ns_(period_ns),
     write_data_interval_ns_(write_data_interval_ns),
     queue_(kQueueCapacity),
-    message_count_({0, 0}) {
+    message_count_(CountData{0, 0}) {
   file_.open(data_file_path);
   if (!file_.is_open()) {
     throw std::runtime_error{"failed to open data file"};
@@ -62,10 +62,6 @@ void DataLogger::Run() {
         break;
       }
 
-      // TODO: looking at the code for this, it seems safe as it just calls
-      // nanosleep. That said, to make it explicit that we're not using the c++
-      // thread library, should just refactor that code out in to Thread::sleep
-      // here.
       std::this_thread::sleep_for(std::chrono::nanoseconds(period_ns_));
     }
   }
@@ -88,22 +84,17 @@ void DataLogger::WriteAndEmptyDataFromBuffer() noexcept {
 }
 
 void DataLogger::ReadAndLogMessageCount() noexcept {
-  const auto current_count = message_count_.load();
+  const auto current_count = message_count_.Read();
 
   LOG_INFO(Logger(), "received {} messages and dropped {}", current_count.total_messages, current_count.total_messages - current_count.successful_messages);
 }
 
 // A demonstration of how to pass a small amount of data via std::atomic if it can be done in a lock free manner.
-// This is called from the real-time thread. The loop is probably unnecessary
-// because it must be the only thread that reads and writes to this variable..
-// successful_message_count should be either 0 or 1...
+// This is called from the real-time thread.
 void DataLogger::IncrementMessageCount(uint32_t successful_message_count) noexcept {
-  auto                old_count = message_count_.load();
-  decltype(old_count) new_count;
-
-  do {
-    new_count = old_count;
-    new_count.successful_messages += successful_message_count;
-    new_count.total_messages += 1;
-  } while (!message_count_.compare_exchange_weak(old_count, new_count));
+  message_count_.Modify([successful_message_count](CountData old_value) noexcept {
+    old_value.successful_messages += successful_message_count;
+    old_value.total_messages += 1;
+    return old_value;
+  });
 }

@@ -1,10 +1,10 @@
 #ifndef CACTUS_RT_EXAMPLES_MESSAGE_PASSING_EXAMPLE_DATA_LOGGER_H_
 #define CACTUS_RT_EXAMPLES_MESSAGE_PASSING_EXAMPLE_DATA_LOGGER_H_
 
+#include <cactus_rt/experimental/lockless.h>
 #include <cactus_rt/rt.h>
 #include <readerwriterqueue.h>
 
-#include <atomic>
 #include <cstdint>
 #include <fstream>
 #include <vector>
@@ -38,9 +38,8 @@ class DataLogger : public Thread {
     uint32_t total_messages;
   };
 
-  using AtomicMessageCount = std::atomic<CountData>;
+  using AtomicMessageCount = cactus_rt::experimental::lockless::AtomicMessage<CountData>;
   AtomicMessageCount message_count_;
-  static_assert(AtomicMessageCount::is_always_lock_free);
 
   std::vector<OutputData> data_buffer_;  // A simple buffer to hold the data in non-realtime thread so batch writing can occur
 

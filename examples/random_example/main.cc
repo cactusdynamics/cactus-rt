@@ -28,15 +28,18 @@ class Histogram {
 };
 
 int main() {
+  // Generate the seed once in non-real-time code.
   const uint64_t seed = std::random_device{}();
   std::cout << "Seed: " << seed << "\n";
 
   Histogram<20> hist;
 
-  cactus_rt::experimental::Xorshift64Rand rng(seed);
+  // Initialize the RNG state in non-real-time code.
+  cactus_rt::experimental::random::Xorshift64Rand rng(seed);
 
   for (int i = 0; i < 1'000'000; i++) {
-    const float num = cactus_rt::experimental::RandomRealNumber(rng);
+    // RealNumber(rng) is always O(1).
+    const float num = cactus_rt::experimental::random::RealNumber(rng);
     if (num >= 1.0F || num < 0.0F) {
       std::cerr << "ERROR: seed = " << seed << " i = " << i << " num = " << num << " is out of range \n";
       return 1;
