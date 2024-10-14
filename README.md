@@ -295,6 +295,8 @@ FetchContent_MakeAvailable(cactus_rt)
 target_link_libraries(myapp PRIVATE cactus_rt)
 ```
 
+See https://github.com/cactusdynamics/cactus-rt-sample-app for an example.
+
 Note that if you compile your app in debug mode, cactus-rt will be compiled in
 debug mode due to how `FetchContent` works. To get cactus-rt in release mode,
 compile your app in release mode.

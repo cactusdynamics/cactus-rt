@@ -5,6 +5,10 @@ inline bool IsTracingEnabled() noexcept {
   return false;
 }
 
+inline bool IsTracingAvailable() noexcept {
+  return false;
+}
+
 inline void EnableTracing() noexcept {}
 
 inline void DisableTracing() noexcept {}

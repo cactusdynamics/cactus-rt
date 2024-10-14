@@ -19,6 +19,10 @@ inline bool IsTracingEnabled() noexcept {
   return tracing_enabled.load(std::memory_order_relaxed);
 }
 
+inline bool IsTracingAvailable() noexcept {
+  return true;
+}
+
 inline void EnableTracing() noexcept {
   tracing_enabled = true;
 }
