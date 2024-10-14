@@ -18,7 +18,7 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
   // type check manually.
   std::shared_ptr<cactus_rt::ros2::Publisher<RealtimeType, RosType, false>> publisher_;
 
-  static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
+  static cactus_rt::CyclicThreadConfig MakeConfig() {
     cactus_rt::CyclicThreadConfig thread_config;
     thread_config.period_ns = 1'000'000;
     thread_config.cpu_affinity = std::vector<size_t>{2};
@@ -29,7 +29,7 @@ class RTROS2PublisherThread : public cactus_rt::CyclicThread, public cactus_rt::
 
  public:
   explicit RTROS2PublisherThread(std::chrono::nanoseconds run_duration = std::chrono::seconds(30))
-      : cactus_rt::CyclicThread("RTROS2Publisher", CreateThreadConfig()),
+      : cactus_rt::CyclicThread("RTROS2Publisher", MakeConfig()),
         run_duration_(run_duration.count()) {}
 
   void InitializeForRos2(cactus_rt::ros2::Ros2Adapter& ros2_adapter) override {

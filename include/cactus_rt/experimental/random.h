@@ -21,7 +21,7 @@
  * [3]: https://doi.org/10.18637/jss.v008.i14
  */
 
-namespace cactus_rt::experimental {
+namespace cactus_rt::experimental::random {
 class Xorshift64Rand {
   uint64_t x_;
 
@@ -62,7 +62,7 @@ class Xorshift64Rand {
  * @return T A random number between [0, 1)
  */
 template <typename T = float, typename Generator = Xorshift64Rand>
-T RandomRealNumber(Generator& rng) {
+T RealNumber(Generator& rng) {
   T v = static_cast<T>(rng() - Generator::min()) / static_cast<T>(Generator::max() - Generator::min());
   if (v == static_cast<T>(1.0)) {
     // Random numbers are supposed to be [0, 1). This is a hack to make sure we never land on 1.
@@ -72,6 +72,6 @@ T RandomRealNumber(Generator& rng) {
   return v;
 }
 
-}  // namespace cactus_rt::experimental
+}  // namespace cactus_rt::experimental::random
 
 #endif

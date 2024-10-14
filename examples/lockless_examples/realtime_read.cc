@@ -60,7 +60,7 @@ class RTThread : public CyclicThread {
   Context& ctx_;
   Pose     current_target_pose_;
 
-  static cactus_rt::CyclicThreadConfig CreateThreadConfig() {
+  static cactus_rt::CyclicThreadConfig MakeConfig() {
     cactus_rt::CyclicThreadConfig thread_config;
     thread_config.period_ns = 1'000'000;
     thread_config.cpu_affinity = std::vector<size_t>{2};
@@ -70,7 +70,7 @@ class RTThread : public CyclicThread {
   }
 
  public:
-  RTThread(Context& ctx) : CyclicThread("RTThread", CreateThreadConfig()), ctx_(ctx) {}
+  RTThread(Context& ctx) : CyclicThread("RTThread", MakeConfig()), ctx_(ctx) {}
 
  protected:
   LoopControl Loop(int64_t /*now*/) noexcept final {
@@ -104,14 +104,14 @@ class RTThread : public CyclicThread {
 class NonRTThread : public Thread {
   Context& ctx_;
 
-  static cactus_rt::ThreadConfig CreateThreadConfig() {
+  static cactus_rt::ThreadConfig MakeConfig() {
     cactus_rt::ThreadConfig thread_config;
     thread_config.SetOtherScheduler();
     return thread_config;
   }
 
  public:
-  NonRTThread(Context& ctx) : Thread("NonRTThread", CreateThreadConfig()), ctx_(ctx) {}
+  NonRTThread(Context& ctx) : Thread("NonRTThread", MakeConfig()), ctx_(ctx) {}
 
   void Run() final {
     ctx_.target_pose.Write(Pose(1.5, 2.5, 3.5, 4.5, 5.5, 6.5));

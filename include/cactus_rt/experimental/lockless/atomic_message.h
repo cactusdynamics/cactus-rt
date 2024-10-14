@@ -56,7 +56,7 @@ class AtomicMessage {
       "Argument f to AtomicMessage::Modify requires an invocable signature T(T) noexcept"
     );
 
-    auto old_value = Read();
+    T old_value = Read();
 
     while (true) {
       T new_value = f(old_value);
