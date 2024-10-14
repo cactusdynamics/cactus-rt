@@ -14,5 +14,6 @@ ament_target_dependencies(cactus_rt
 
 add_subdirectory(examples/ros2/publisher)
 add_subdirectory(examples/ros2/subscriber)
+add_subdirectory(examples/ros2/roscon2024)
 
 ament_package()
