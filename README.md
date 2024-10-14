@@ -3,28 +3,174 @@ cactus-rt: a Linux real-time app framework
 
 Relevant blog posts: [Part 1](https://shuhaowu.com/blog/2022/01-linux-rt-appdev-part1.html) | [Part 2](https://shuhaowu.com/blog/2022/02-linux-rt-appdev-part2.html) | [Part 3](https://shuhaowu.com/blog/2022/03-linux-rt-appdev-part3.html) | [Part 4](https://shuhaowu.com/blog/2022/04-linux-rt-appdev-part4.html)
 
-`cactus_rt` library
--------------------
+Developing real-time applications is already difficult due to the need to
+validate all parts of the system from hardware to the application. On a
+general-purpose operating system such as Linux, the complexity increases further
+due to most APIs being optimized for throughput as opposed to maximum latency.
 
-This is a library that refactors a lot of the boilerplate code needed for
-writing a real-time Linux application. Some key features are:
+cactus-rt is a C++ library that aims to make writing real-time Linux
+applications as easy as writing Arduino programs. Real-time application
+developers simply have to fill out a `Loop` function achieve 1000 Hz on Linux.
+The library should make most of the tedious decisions for you and provide sane defaults for everything.
 
-* `cactus_rt::App`: Implements logic for memory locking, memory reservation, and
-  `malloc` tuning.
-  * The memory reservation and `malloc` tuning may not be needed if an O(1)
-    allocator is not used. See [this discussion](https://github.com/ros-realtime/ros2-realtime-examples/issues/9>).
-* `cactus_rt::Thread<SchedulerT>`: Implements a thread class. Applications are
-  expected to create a derived class for their custom threads. The `SchedulerT`
-  template argument specifies the scheduler class the thread can use. Right now,
-  `cactus_rt::schedulers::Fifo`, `cactus_rt::schedulers::Deadline`, and
-  `cactus_rt::schedulers::Other` (non-RT) can be used.
-* `cactus_rt::CyclicThread<SchedulerT>`: Implements a looping thread.
-  * For applications with extra low-jitter requirements, it implements a busy
-    wait method to reduce wakeup jitter. See [this](https://shuhaowu.com/blog/2022/04-linux-rt-appdev-part4.html#trick-to-deal-with-wake-up-jitter)
-    for more details. In the future, this will be a scheduler
-    (`cactus_rt::schedulers::FifoBusyWait`) but it is not yet implemented.
-* `cactus_rt::mutex`: A priority-inheriting mutex that is a drop-in replacement
-  for `std::mutex`.
+How?
+----
+
+### Core library
+
+The core of cactus-rt consists of code that wraps the underlying OS-level
+real-time APIs so your application do not have to call them manually. These
+components includes:
+
+- `cactus_rt::App`: memory locking, malloc tuning, service thread creation.
+- `cactus_rt::Thread`: pthreads API for real-time thread creation
+- `cactus_rt::CyclicThread`: real-time-safe clock to implement real-time timer
+- `signal_handler`: handle signals
+
+These are the bare minimum needed to create a real-time application. The
+interface is simple enough that all the application developer needs to do is to
+fill out `Loop` methods on classes derived from `CyclicThread`.
+
+Example (full example in [examples/simple_example](examples/simple_example/)):
+
+```c++
+class ExampleRTThread : public cactus_rt::CyclicThread {
+ public:
+  ExampleRTThread() : CyclicThread("ExampleRTThread", MakeConfig()) {}
+
+ protected:
+  LoopControl Loop(int64_t elapsed_ns) noexcept final {
+    // Your code here...
+    return LoopControl::Continue;
+  }
+
+  // ... MakeConfig definition omitted
+};
+
+```
+
+### Asynchronous logging integration via [Quill][quill]
+
+Debugging logic bugs in real-time applications during development can be tedious
+as logging via STL logging facilities (`std::cout`, `std::print`) are not
+real-time-safe in general. To get around this problem, cactus-rt natively
+integrates with [Quill][quill], which is an asynchronous, lock-free, and
+allocation-free logging library that also allows for simple usability with
+template strings. cactus-rt sets up Quill to run in non-allocating mode which is
+safe for real-time usage.
+
+Since printf debugging is a critical feature to debug during development (and
+beyond), having Quill integrated directly in cactus-rt makes debugging real-time
+applications as easy as normal applications.
+
+Example (full example in [examples/simple_example](examples/simple_example/)):
+
+```c++
+LoopControl Loop(int64_t elapsed_ns) noexcept final {
+  LOG_INFO(Logger(), "Hello {} {}", "world", 123); // Hello world 123
+  return LoopControl::Continue;
+}
+```
+
+[quill]: https://github.com/odygrd/quill
+
+### Runtime performance tracing and visualization
+
+Debugging timing bugs in real-time applications is critical as missed deadlines
+can have catastrophic consequences. One of the design goal of this library is to
+make debugging timing problems as easy as printf debugging. To accomplish this,
+cactus-rt includes a real-time-safe tracing system (implemented in a lock-free
+and allocation-free manner) that can measure the timing of spans within the
+code.
+
+This system is designed to be safe to run for real-time application in
+production, as many timing issues can only be debugged within production. For
+certain applications, the entire run session can theoretically be traced to
+enable detailed analysis in post.
+
+Example (full example in [examples/tracing_example](examples/tracing_example/)):
+
+```c++
+void Plan noexcept {
+  // span will use RAII to emit a start and end event to be used for visualization
+  // For this span, it would be the duration of this function
+  auto span = Tracer().WithSpan("Plan");
+  // ... your code
+}
+```
+
+The tracing system emits data in [Perfetto][perfetto]-compatible format.
+Perfetto has likely the best tracing visualization and analysis system in the
+world. All you need to do is load up the generated trace file in a web UI
+(hosted on https://cactusdynamics.github.io/perfetto or https://ui.perfetto.dev;
+the analysis UI is entirely client side so no data is uploaded to any servers)
+the above code looks like the following in Perfetto:
+
+<img src=docs/imgs/perfetto1.png />
+
+You can also use SQL and [Vega-Lite](https://vega.github.io/vega-lite/) to
+further analyze your data. For more information, see [the tracing
+document](docs/tracing.md).
+
+With this system in place, debugging timing issues for real-time applications
+becomes as simple as loading up a web UI.
+
+[perfetto]: https://perfetto.dev/
+
+### Native [ROS 2][ros2] support
+
+Many real-time applications are written for robotics applications where
+interaction with ROS 2 is required. cactus-rt provides builtin support to publish
+and subscribe to ROS 2 topics from the real-time thread with a simple API. This
+API is designed to allow information to be passed to and from the real-time
+thread without impacting the real-time thread's maximum latency. An example use
+case maybe passing a goal pose to a real-time thread from ROS 2 and passing
+robot metrics collected by the real-time thread to ROS 2.
+
+Example (full examples in [examples/ros2](examples/ros2/)):
+
+```c++
+LoopControl Loop(int64_t elapsed_ns) noexcept final {
+  StampedValue<Velocity2D> msg = cmd_vel_sub_->ReadLatest();
+
+  Velocity2D achieved_velocity = Drive(msg.value.vx, msg.value.vy, msg.value.w);
+  feedback_pub_->Publish(achieved_velocity);
+
+  return LoopControl::Continue;
+}
+```
+
+This significantly simplifies real-time robotics application development with ROS 2.
+
+[ros2]: https://ros.org/
+
+### Real-time-safe inter-thread communication
+
+Passing messages between real-time and non-real-time threads is very common use
+case in real-time applications.  Yet, it is quite difficult to do this in a
+real-time-safe manner. The simplest method, `std::mutex` is not even usable due
+to [priority inversion](https://en.wikipedia.org/wiki/Priority_inversion).
+cactus-rt solves this with a few different (yet non-exhaustive) approaches:
+
+- The inclusion of `cactus_rt::mutex` which is a mutex that respects priority inheritance.
+- Lockless data structures that allows for a single value to be shared between a
+  single non-real-time and a single real-time-thread under
+  `cactus_rt::experimental::lockless`.
+  - Some of these algorithms are developed by [Dave Rowland and Fabien Renn-Giles](https://www.youtube.com/watch?v=PoZAo2Vikbo). We also formally analyzed these algorithms with [TLA+](tla) which gives high confidence of their correctness.
+
+Further, cactus-rt extensively uses and therefore links to
+[`moodycamel::readerwriterqueue`](https://github.com/cameron314/readerwriterqueue),
+which is a SPSC lockless, allocation-free queue. This can also solve a number of
+communication problems.
+
+The integration of inter-thread communication APIs is designed to make life
+easier as then developers no longer have to manually implement or include
+libraries that do the same thing.
+
+### Others and future work
+
+There are some other utilities in cactus-rt other than the above, and there are always more ideas to allow for simpler real-time application development.
+
 
 Examples
 --------
@@ -156,7 +302,7 @@ compile your app in release mode.
 LICENSE
 -------
 
-Open source projects and some commercial projects can use [MPL 2.0](https://www.mozilla.org/MPL/2.0/).
+Open source projects and some commercial projects can use [MPL 2.0](https://www.mozilla.org/MPL/2.0/). Please note the license's section 6 and 7 where it is noted that the software is provided "as is" and is not liable for any damages (the license text supersedes this excerpt).
 
 If you need commercial, closed-sourced modifications, please obtain a license from [Cactus Dynamics](https://cactusdynamics.com).
 
