@@ -6,7 +6,7 @@ cd docker
 docker build . -t cactus-rt-test
 cd ..
 docker run --rm \
-  -e ENABLE_TRACING=${ENABLE_TRACING:-ON} \
+  -e CACTUS_RT_ENABLE_TRACING=${CACTUS_RT_ENABLE_TRACING:-ON} \
   -it \
   --cap-add IPC_LOCK \
   -v $(pwd):/cactus-rt/source \

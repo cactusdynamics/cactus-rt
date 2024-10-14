@@ -34,7 +34,7 @@ struct AppConfig {
   quill::Config logger_config;
 
   /**
-   * @brief The config for the tracer if enabled (ENABLE_TRACING option in cmake)
+   * @brief The config for the tracer if enabled (CACTUS_RT_ENABLE_TRACING option in cmake)
    */
   TracerConfig tracer_config;
 };

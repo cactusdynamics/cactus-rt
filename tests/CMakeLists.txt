@@ -29,7 +29,7 @@ target_compile_definitions(cactus_rt_tests
 
 gtest_discover_tests(cactus_rt_tests)
 
-if(ENABLE_TRACING)
+if(CACTUS_RT_ENABLE_TRACING)
   add_executable(cactus_rt_tracing_tests
 
     tracing/single_threaded_test.cc
@@ -60,7 +60,7 @@ add_executable(cactus_rt_tracing_benchmark
   tracing/tracing_benchmark.cc
 )
 
-if (ENABLE_TRACING)
+if (CACTUS_RT_ENABLE_TRACING)
   target_sources(cactus_rt_tracing_benchmark
     PRIVATE
     tracing/string_interner_benchmark.cc

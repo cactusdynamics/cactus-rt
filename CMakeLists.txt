@@ -3,14 +3,22 @@ project(cactus_rt)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
-option(ENABLE_EXAMPLES "Build example programs" ON)
-option(ENABLE_TRACING "Enable runtime tracing support" ON)
-option(ENABLE_ROS2 "Enables ROS2 support" OFF)
-option(BUILD_DOCS "Build documentations" OFF)
+#################
+# Setup options #
+#################
 
 # Used for building cactus-rt when all dependencies are vendored
 option(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES "Fetch dependencies during build" ON)
+
+# Used to disable tracing in some builds where the overhead of tracing is unwanted.
+option(CACTUS_RT_ENABLE_TRACING "Enable runtime tracing support" ON)
+
+# Below are internal options
+option(ENABLE_CLANG_TIDY "Run clang-tidy" OFF)
+option(ENABLE_EXAMPLES "Build example programs" ON)
+option(ENABLE_ROS2 "Enables ROS2 support" OFF)
+option(BUILD_DOCS "Build documentations" OFF)
+
 
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -105,10 +113,8 @@ endfunction()
 # Cactus RT library #
 #####################
 
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if (ENABLE_TRACING)
-    add_subdirectory(protos)
-  endif()
+if (CACTUS_RT_ENABLE_TRACING)
+  add_subdirectory(protos)
 endif()
 
 add_library(cactus_rt
@@ -136,28 +142,28 @@ target_link_libraries(cactus_rt
 # Use a bounded queue
 target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
+if (CACTUS_RT_ENABLE_TRACING)
+  target_sources(cactus_rt
+    PRIVATE
+    src/cactus_rt/tracing/sink.cc
+    src/cactus_rt/tracing/thread_tracer.cc
+    src/cactus_rt/tracing/trace_aggregator.cc
+    src/cactus_rt/tracing/tracing_enabled.cc
+    src/cactus_rt/tracing/utils/string_interner.cc
+  )
+
+  target_link_libraries(cactus_rt
+    PUBLIC
+    cactus_tracing_embedded_perfetto_protos
+  )
+
+  target_compile_definitions(cactus_rt
+    PUBLIC
+    CACTUS_RT_TRACING_ENABLED=1
+  )
+endif()
+
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  if (ENABLE_TRACING)
-    target_sources(cactus_rt
-      PRIVATE
-      src/cactus_rt/tracing/sink.cc
-      src/cactus_rt/tracing/thread_tracer.cc
-      src/cactus_rt/tracing/trace_aggregator.cc
-      src/cactus_rt/tracing/tracing_enabled.cc
-      src/cactus_rt/tracing/utils/string_interner.cc
-    )
-
-    target_link_libraries(cactus_rt
-      PUBLIC
-      cactus_tracing_embedded_perfetto_protos
-    )
-
-    target_compile_definitions(cactus_rt
-      PUBLIC
-      CACTUS_RT_TRACING_ENABLED=1
-    )
-  endif()
-
   if (ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY clang-tidy clang-tidy-18 clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14)
   else()
@@ -191,7 +197,7 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(examples/simple_example)
     add_subdirectory(examples/random_example)
 
-    if (ENABLE_TRACING)
+    if (CACTUS_RT_ENABLE_TRACING)
       add_subdirectory(examples/tracing_protos_example)
       add_subdirectory(examples/tracing_example)
       add_subdirectory(examples/tracing_example_no_rt)
