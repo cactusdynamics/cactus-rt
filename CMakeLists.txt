@@ -27,8 +27,8 @@ if(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES)
   FetchContent_Declare(
     quill
     GIT_REPOSITORY https://github.com/odygrd/quill.git
-    GIT_TAG        9a270d5d6f57a3ac19451292e3a9f370fcd744b1
-    # GIT_TAG        v3.3.2
+    # GIT_TAG        a058985253dffd6a77b4eeca3ba4aa5ad85a2d02
+    GIT_TAG        v7.3.0
   )
 
   FetchContent_MakeAvailable(quill)
@@ -117,6 +117,7 @@ add_library(cactus_rt
   src/cactus_rt/thread.cc
   src/cactus_rt/cyclic_thread.cc
   src/cactus_rt/signal_handler.cc
+  src/cactus_rt/logging.cc
   src/cactus_rt/experimental/lockless/atomic_bitset.cc
 )
 
@@ -132,9 +133,6 @@ target_link_libraries(cactus_rt
   PRIVATE
   Threads::Threads
 )
-
-# Use a bounded queue
-target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   if (ENABLE_TRACING)

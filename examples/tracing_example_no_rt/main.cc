@@ -3,6 +3,8 @@
 #include <memory>
 #include <thread>
 
+#include "quill/Backend.h"  // Required to start/stop the quill backend thread
+
 using namespace std::chrono_literals;
 using FileSink = cactus_rt::tracing::FileSink;
 using TraceAggregator = cactus_rt::tracing::TraceAggregator;
@@ -25,7 +27,7 @@ void StartTracing(const char* app_name, const char* filename) {
   // Create the file sink so the data aggregated by the TraceAggregator will be written to somewhere.
   auto file_sink = std::make_shared<FileSink>(filename);
 
-  quill::start();
+  quill::Backend::start();
   trace_aggregator->Start(file_sink);
 }
 

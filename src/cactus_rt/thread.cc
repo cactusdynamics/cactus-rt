@@ -9,9 +9,22 @@
 #include <stdexcept>
 
 #include "cactus_rt/config.h"
+#include "cactus_rt/logging.h"
 #include "cactus_rt/tracing/thread_tracer.h"
+#include "quill/Backend.h"
+#include "quill/LogMacros.h"
 
 namespace cactus_rt {
+
+Thread::~Thread() {
+  // Flushing the logger only if the background thread is still running,
+  // otherwise `flush_log()` will block indefinitely.
+  if (quill::Backend::is_running()) {
+    // Blocks until all messages up to the current timestamp are flushed on the
+    // logger, to ensure every message is logged.
+    this->Logger()->flush_log();
+  }
+}
 
 void* Thread::RunThread(void* data) {
   auto* thread = static_cast<Thread*>(data);
@@ -37,7 +50,7 @@ void* Thread::RunThread(void* data) {
     );
   }
 
-  quill::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
+  cactus_rt::logging::Frontend::preallocate();  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
 
   thread->BeforeRun();
   thread->Run();

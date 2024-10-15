@@ -1,11 +1,11 @@
 #ifndef CACTUS_RT_CONFIG_H_
 #define CACTUS_RT_CONFIG_H_
 
-#include <quill/Quill.h>
-
 #include <memory>
 
+#include "cactus_rt/logging.h"
 #include "cactus_rt/scheduler.h"
+#include "quill/backend/BackendOptions.h"
 
 namespace cactus_rt {
 
@@ -29,9 +29,11 @@ struct AppConfig {
   size_t heap_size = 0;
 
   /**
-   * @brief The configuration for quill logging
+   * @brief The Quill Backend configuration for logging.
+   *
+   * It is set to sensible default values for real-time logging.
    */
-  quill::Config logger_config;
+  quill::BackendOptions logger_backend_options = cactus_rt::logging::DefaultBackendOptions();
 
   /**
    * @brief The config for the tracer if enabled (ENABLE_TRACING option in cmake)
@@ -100,6 +102,20 @@ struct ThreadTracerConfig {
 };
 
 /**
+ * @brief The configuration needed for Quill logging in a thread
+ */
+struct ThreadLoggerConfig {
+  /**
+   * @brief Name of the logger that is to be used as thread logger.
+   *
+   * @note If not given, a default thread logger is created with the name set to the thread name.
+   *
+   * @note If the name given does not correspond to a created logger, a default thread logger is created with the `logger_name`.
+   */
+  std::string logger_name;
+};
+
+/**
  * @brief The configuration required for a thread
  */
 struct ThreadConfig {
@@ -110,6 +126,8 @@ struct ThreadConfig {
   size_t stack_size = 8 * 1024 * 1024;
 
   ThreadTracerConfig tracer_config;
+
+  ThreadLoggerConfig logger_config;
 
   // The scheduler type, default scheduler is SCHED_OTHER
   std::shared_ptr<Scheduler> scheduler = std::make_shared<OtherScheduler>();

@@ -1,6 +1,7 @@
 #include "cactus_rt/cyclic_thread.h"
 
 #include "cactus_rt/utils.h"
+#include "quill/LogMacros.h"
 
 namespace cactus_rt {
 

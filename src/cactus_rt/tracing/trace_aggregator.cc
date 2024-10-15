@@ -17,6 +17,10 @@
 #include <cstring>
 #include <string>
 
+#include "cactus_rt/logging.h"
+#include "quill/Backend.h"
+#include "quill/LogMacros.h"
+
 using cactus_tracing::vendor::perfetto::protos::InternedData;
 using cactus_tracing::vendor::perfetto::protos::ProcessDescriptor;
 using cactus_tracing::vendor::perfetto::protos::ThreadDescriptor;
@@ -57,7 +61,17 @@ namespace cactus_rt::tracing {
 TraceAggregator::TraceAggregator(std::string process_name)
     : process_name_(process_name),
       process_track_uuid_(static_cast<uint64_t>(getpid())),
-      logger_(quill::create_logger("__trace_aggregator__")) {
+      logger_(cactus_rt::logging::DefaultLogger("__trace_aggregator__")) {
+}
+
+TraceAggregator::~TraceAggregator() {
+  // Flushing the logger only if the background thread is still running,
+  // otherwise `flush_log()` will block indefinitely.
+  if (quill::Backend::is_running()) {
+    // Blocks until all messages up to the current timestamp are flushed on the
+    // logger, to ensure every message is logged.
+    this->Logger()->flush_log();
+  }
 }
 
 void TraceAggregator::RegisterThreadTracer(std::shared_ptr<ThreadTracer> tracer) {
@@ -129,12 +143,15 @@ void TraceAggregator::Stop() noexcept {
   mutex_.unlock();
 }
 
-quill::Logger* TraceAggregator::Logger() noexcept {
+cactus_rt::logging::Logger* TraceAggregator::Logger() noexcept {
   return logger_;
 }
 
 void TraceAggregator::Run() {
   ::SetupCPUAffinityIfNecessary(session_->cpu_affinity);
+
+  // Pre-allocates thread-local data to avoid the need to allocate on the first log message
+  cactus_rt::logging::Frontend::preallocate();
 
   while (!session_->stop_requested.load(std::memory_order_relaxed)) {
     Trace trace;

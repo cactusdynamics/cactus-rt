@@ -1,6 +1,7 @@
 #include "data_logger_thread.h"
 
 #include <chrono>
+#include <iomanip>
 
 DataLogger::DataLogger(
   const std::string& data_file_path,

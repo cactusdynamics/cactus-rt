@@ -9,7 +9,7 @@
 #include <type_traits>
 
 #include "../experimental/lockless/spsc/realtime_readable_value.h"
-#include "quill/Quill.h"
+#include "cactus_rt/logging.h"
 
 // Note: ROS subscription dispatch is here: https://github.com/ros2/rclcpp/blob/e10728c/rclcpp/include/rclcpp/any_subscription_callback.hpp#L481
 // We are using the TypeAdapter method.
@@ -43,7 +43,7 @@ class SubscriptionLatest : public ISubscription {
 
   using RealtimeReadableValue = cactus_rt::experimental::lockless::spsc::RealtimeReadableValue<StampedValue<RealtimeT>>;
 
-  quill::Logger*                                           logger_;
+  cactus_rt::logging::Logger*                              logger_;
   typename rclcpp::Subscription<AdaptedRosType>::SharedPtr ros_subscription_;
   int64_t                                                  current_msg_id_ = 0;
   RealtimeReadableValue                                    latest_value_;
@@ -60,10 +60,10 @@ class SubscriptionLatest : public ISubscription {
   }
 
   static std::shared_ptr<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>> Create(
-    quill::Logger*     logger,
-    rclcpp::Node&      node,
-    const std::string& topic_name,
-    const rclcpp::QoS& qos
+    cactus_rt::logging::Logger* logger,
+    rclcpp::Node&               node,
+    const std::string&          topic_name,
+    const rclcpp::QoS&          qos
   ) {
     std::shared_ptr<SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>> subscription(
       new SubscriptionLatest<RealtimeT, RosT, CheckForTrivialRealtimeT>(logger)
@@ -81,7 +81,7 @@ class SubscriptionLatest : public ISubscription {
     return subscription;
   }
 
-  explicit SubscriptionLatest(quill::Logger* logger) : logger_(logger) {}
+  explicit SubscriptionLatest(cactus_rt::logging::Logger* logger) : logger_(logger) {}
 
  public:
   StampedValue<RealtimeT> ReadLatest() noexcept {
@@ -100,7 +100,7 @@ class SubscriptionQueued : public ISubscription {
 
   using Queue = moodycamel::ReaderWriterQueue<StampedValue<RealtimeT>>;
 
-  quill::Logger*                                           logger_;
+  cactus_rt::logging::Logger*                              logger_;
   typename rclcpp::Subscription<AdaptedRosType>::SharedPtr ros_subscription_;
   int64_t                                                  current_msg_id_ = 0;
   Queue                                                    queue_;
@@ -114,11 +114,11 @@ class SubscriptionQueued : public ISubscription {
   }
 
   static std::shared_ptr<SubscriptionQueued<RealtimeT, RosT, CheckForTrivialRealtimeT>> Create(
-    quill::Logger*     logger,
-    rclcpp::Node&      node,
-    const std::string& topic_name,
-    const rclcpp::QoS& qos,
-    const size_t       rt_queue_size = 1000
+    cactus_rt::logging::Logger* logger,
+    rclcpp::Node&               node,
+    const std::string&          topic_name,
+    const rclcpp::QoS&          qos,
+    const size_t                rt_queue_size = 1000
   ) {
     std::shared_ptr<SubscriptionQueued<RealtimeT, RosT, CheckForTrivialRealtimeT>> subscription(
       new SubscriptionQueued<RealtimeT, RosT, CheckForTrivialRealtimeT>(
@@ -140,7 +140,7 @@ class SubscriptionQueued : public ISubscription {
   }
 
   SubscriptionQueued(
-    quill::Logger*                                           logger,
+    cactus_rt::logging::Logger*                              logger,
     moodycamel::ReaderWriterQueue<StampedValue<RealtimeT>>&& queue
   ) : logger_(logger), queue_(std::move(queue)) {}
 

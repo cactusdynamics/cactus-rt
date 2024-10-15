@@ -3,6 +3,9 @@
 #include <chrono>
 #include <iostream>
 
+// Required to parse std::chrono inside logging macros
+#include "quill/std/Chrono.h"  // IWYU pragma: keep
+
 using cactus_rt::App;
 using cactus_rt::CyclicThread;
 

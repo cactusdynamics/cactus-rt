@@ -9,7 +9,7 @@
 #include <string>
 
 #include "config.h"
-#include "quill/Quill.h"
+#include "logging.h"
 #include "tracing/thread_tracer.h"
 #include "tracing/trace_aggregator.h"
 
@@ -30,7 +30,7 @@ class Thread {
   std::vector<size_t> cpu_affinity_;
   size_t              stack_size_;
 
-  quill::Logger*                         logger_;
+  cactus_rt::logging::Logger*            logger_;  // Use the custom BoundedDroppingLogger
   std::shared_ptr<tracing::ThreadTracer> tracer_ = nullptr;
 
   std::atomic_bool stop_requested_ = false;
@@ -59,10 +59,17 @@ class Thread {
       : config_(config),
         name_(name),
         cpu_affinity_(config_.cpu_affinity),
-        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size),
-        logger_(quill::create_logger(name_)) {
+        stack_size_(static_cast<size_t>(PTHREAD_STACK_MIN) + config_.stack_size) {
     if (!config.scheduler) {
       throw std::runtime_error("ThreadConfig::scheduler cannot be nullptr");
+    }
+
+    if (!config.logger_config.logger_name.empty()) {
+      // If a logger name was passed in the thread configuration, get or create it
+      logger_ = cactus_rt::logging::DefaultLogger(config_.logger_config.logger_name);
+    } else {
+      // If no logger name was passed in the thread configuration, create a new one using the thread name
+      logger_ = cactus_rt::logging::DefaultLogger(this->Name());
     }
   }
 
@@ -94,7 +101,7 @@ class Thread {
 
   // The constructors and destructors are needed because we need to delete
   // objects of type Thread polymorphically, through the map in the App class.
-  virtual ~Thread() = default;
+  virtual ~Thread();
 
   // Copy constructors are not allowed
   Thread(const Thread&) = delete;
@@ -118,7 +125,7 @@ class Thread {
   void Start(int64_t start_monotonic_time_ns);
 
  protected:
-  inline quill::Logger* Logger() const { return logger_; }
+  inline cactus_rt::logging::Logger* Logger() const { return logger_; }
 
   /**
    * Gets the current tracer object. Should only ever be called from within the thread itself.

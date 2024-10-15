@@ -10,7 +10,7 @@
 #include "cactus_rt/tracing/trace_aggregator.h"
 #include "cactus_rt/tracing/tracing_enabled.h"
 #include "cactus_rt/utils.h"
-#include "quill/Quill.h"
+#include "quill/Backend.h"
 
 using FileSink = cactus_rt::tracing::FileSink;
 
@@ -19,20 +19,13 @@ namespace cactus_rt {
 App::App(std::string name, AppConfig config)
     : name_(name),
       heap_size_(config.heap_size),
-      logger_config_(config.logger_config),
+      logger_backend_options_(config.logger_backend_options),
       tracer_config_(config.tracer_config),
       trace_aggregator_(std::make_shared<tracing::TraceAggregator>(name)) {
-  if (logger_config_.default_handlers.empty()) {
-    SetDefaultLogFormat(logger_config_);
-  }
-
-  // TODO: backend_thread_notification_handler can throw - we need to handle this somehow
-  // logger_config_.backend_thread_notification_handler
 }
 
 App::~App() {
   StopTraceSession();
-  quill::flush();
 }
 
 void App::Start(int64_t start_monotonic_time_ns) {
@@ -156,8 +149,7 @@ void App::ReserveHeap() const {
 }
 
 void App::StartQuill() {
-  quill::configure(logger_config_);
-  quill::start();
+  quill::Backend::start(logger_backend_options_);
 }
 
 void App::StopTraceAggregator() noexcept {

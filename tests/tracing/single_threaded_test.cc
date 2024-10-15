@@ -1,6 +1,6 @@
 #include <cactus_rt/rt.h>
 #include <gtest/gtest.h>
-#include <quill/detail/LogManager.h>
+#include <quill/Backend.h>
 
 #include <chrono>
 #include <memory>
@@ -48,7 +48,7 @@ class SingleThreadTracingTest : public ::testing::Test {
     app_.Join();
 
     // Need to stop it for every test as every app.Start() will start a background thread.
-    quill::detail::LogManagerSingleton::instance().log_manager().stop_backend_worker();
+    quill::Backend::stop();
   }
 };
 
