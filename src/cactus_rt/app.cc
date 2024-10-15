@@ -26,8 +26,6 @@ App::App(std::string name, AppConfig config)
 
 App::~App() {
   StopTraceSession();
-  // Quill flush is handled per logger
-  quill::Backend::stop();  // Stop the quill backend thread
 }
 
 void App::Start(int64_t start_monotonic_time_ns) {
