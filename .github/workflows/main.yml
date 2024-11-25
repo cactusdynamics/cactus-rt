@@ -38,7 +38,7 @@ jobs:
     runs-on: [self-hosted, noble, real-time]
     env:
       CACTUS_RT_BUILD_DIR: build
-      ENABLE_TRACING: "OFF"
+      CACTUS_RT_ENABLE_TRACING: "OFF"
     steps:
       - uses: actions/checkout@v3
 
